@@ -1,21 +1,20 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Camera, ChevronLeft, ChevronRight, X, Grid2x2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// ─── Placeholder Images ────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────────
 
-const PLACEHOLDER_IMAGES = [
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBBioc3bTmd4Cnx4CoLqJwDmgifaSLFft8aWGsZ1UYQ46TH6NU5Kvh-1364-pR8mPAMsMJLBgBVCHJExeY1E3cquupJrkzBWRN8eSCZtWzuOSZuJ4azGtDymccmGJ85JZw7CK-FHn0mop4-k3for8HLgyfMkTMtQqb1PtbX1VoZOAf76fnYGWgW_Cf0dQ0fEXRybxY8I08w3nAlM12D9XlRPeqbl1CYOqumHQXwjaKfoBouF-jie-kW5GNU62plTWU_RDDbdD3sdTnf",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuAOGJjlWzTSbpYdmeITEUBmfJdtmadS9Ay9SNiBmfjU5kRlTLW4jX-TSeaKJJezQdBrxBVhMu2jdr8QoNccFs51MfKdr7nqLte-WRQMvtN_q7TRDcQXgtqKn2qmFHZaRS1p9L45c-6w0GM7zAaY7c6hbyxlmi3ToaXHpSuOL4XtdGjK86KOFZBLdWNy2AajEZzDCnaY4klzoY1uHCSr9Jg3jP5telIwz-tE8CAsjnWCBZ3h0eA-wEKva_VOnkTZyaCd4tykP6RIlU-A",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuA1r2AYVVLCTOz-mmG5ZzpriCqSXko4D-XObLhN6mkIC-zUlW2TMsa6RIaQ2tWKX_4kMxr9yfqTqhaEVSUzOYJeIIYyP0rnTSbOzCX3iQDfTYG0xMq0iMLYv9UqBkM_Tc4iQycBB3tG84bTBHhM9nSA3v8HO79oFN72mYlYcjG_TUFU-j91BQ1YLTspDevHLHhBIP1SPIQ3cNyQ1TbPBQj2fEdzD2qQc3Ux2zB8QTDRqhQ3KCYBP0cv478LWmbwOt5qmOiqYc_2HQEE",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBom54qUEQA1Ay3uqpWhluPk5Kafp4lGEoInKPGdyvgUeXqfqSPIBm5RtN4QxlqygEthuU6zAikwfGj2eTq6LRoB5vb0f_g_C7fh4jjSV3NcetMB9N_qvdNuuKIPPpYgKB2rSlhh4YpNS23FUz1RaTKBnJA8bPDZawjCL-kC2sDednG6otjg9k7IBBnVIAc5MxFVnyIumh_PaV45b_S80xyeoz7hQ5DS1VIHLshDv_n1HDaDIF3HHxWmaYSOYBVMSVEZxS1v2wC7UMp",
-  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&auto=format&fit=crop&q=80",
-];
+export interface GalleryProps {
+  /** Array of image URLs to display. First image is the featured (large) image. */
+  images: string[];
+  /** Alt text prefix for accessibility (defaults to "Property photo") */
+  altPrefix?: string;
+  /** Optional class override for the root wrapper */
+  className?: string;
+}
 
 // ─── Animation Variants ────────────────────────────────────────────────────────
 
@@ -81,14 +80,14 @@ function GalleryImage({ src, alt, index, className, overlay, onClick }: GalleryI
 
 interface LightboxProps {
   images: string[];
+  altPrefix: string;
   currentIndex: number;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
 }
 
-function Lightbox({ images, currentIndex, onClose, onPrev, onNext }: LightboxProps) {
-  // Close on Escape
+function Lightbox({ images, altPrefix, currentIndex, onClose, onPrev, onNext }: LightboxProps) {
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -151,7 +150,7 @@ function Lightbox({ images, currentIndex, onClose, onPrev, onNext }: LightboxPro
         <motion.img
           key={currentIndex}
           src={images[currentIndex]}
-          alt={`Property photo ${currentIndex + 1}`}
+          alt={`${altPrefix} ${currentIndex + 1}`}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
@@ -166,7 +165,13 @@ function Lightbox({ images, currentIndex, onClose, onPrev, onNext }: LightboxPro
 
 // ─── Mobile Swipeable Gallery ──────────────────────────────────────────────────
 
-function MobileGallery({ images, onImageClick }: { images: string[]; onImageClick: (i: number) => void }) {
+interface MobileGalleryProps {
+  images: string[];
+  altPrefix: string;
+  onImageClick: (i: number) => void;
+}
+
+function MobileGallery({ images, altPrefix, onImageClick }: MobileGalleryProps) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = React.useState(0);
 
@@ -198,7 +203,7 @@ function MobileGallery({ images, onImageClick }: { images: string[]; onImageClic
           >
             <img
               src={src}
-              alt={`Property photo ${i + 1}`}
+              alt={`${altPrefix} ${i + 1}`}
               className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
               loading={i === 0 ? "eager" : "lazy"}
             />
@@ -225,10 +230,9 @@ function MobileGallery({ images, onImageClick }: { images: string[]; onImageClic
   );
 }
 
-// ─── Gallery (Default Export) ──────────────────────────────────────────────────
+// ─── Gallery ──────────────────────────────────────────────────────────────────
 
-export function Gallery() {
-  const images = PLACEHOLDER_IMAGES;
+export function Gallery({ images, altPrefix = "Property photo", className }: GalleryProps) {
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
 
   const totalPhotos = images.length;
@@ -246,7 +250,7 @@ export function Gallery() {
   // ── Empty / Skeleton state ──
   if (!images.length) {
     return (
-      <div className="w-full">
+      <div className={cn("w-full", className)}>
         {/* Desktop skeleton */}
         <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-2 h-[420px] rounded-xl overflow-hidden">
           <Skeleton className="col-span-2 row-span-2 rounded-none rounded-l-xl" />
@@ -265,13 +269,13 @@ export function Gallery() {
   }
 
   return (
-    <>
+    <div className={cn("w-full", className)}>
       {/* ── Desktop Layout ── */}
       <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-2 h-[420px] rounded-xl overflow-hidden">
         {/* Featured Image — spans left half */}
         <GalleryImage
           src={featuredImage}
-          alt="Property featured photo"
+          alt={`${altPrefix} — featured`}
           index={0}
           className="col-span-2 row-span-2 rounded-l-xl"
           onClick={() => openLightbox(0)}
@@ -309,7 +313,7 @@ export function Gallery() {
             <GalleryImage
               key={i}
               src={src}
-              alt={`Property photo ${i + 2}`}
+              alt={`${altPrefix} ${i + 2}`}
               index={i + 1}
               className={cn(
                 isTopRight && "rounded-tr-xl",
@@ -331,13 +335,14 @@ export function Gallery() {
       </div>
 
       {/* ── Mobile Layout ── */}
-      <MobileGallery images={images} onImageClick={openLightbox} />
+      <MobileGallery images={images} altPrefix={altPrefix} onImageClick={openLightbox} />
 
       {/* ── Lightbox ── */}
       <AnimatePresence>
         {lightboxIndex !== null && (
           <Lightbox
             images={images}
+            altPrefix={altPrefix}
             currentIndex={lightboxIndex}
             onClose={closeLightbox}
             onPrev={prevImage}
@@ -345,7 +350,7 @@ export function Gallery() {
           />
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }
 
