@@ -85,12 +85,45 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={cn(
-          "sticky top-0 z-navbar w-full transition-all duration-300 border-b",
+        style={
           isScrolled
-            ? "bg-background/85 backdrop-blur-md border-border py-3 shadow-md"
-            : "bg-background border-transparent py-5"
-        )}
+            ? {
+                position: "fixed",
+                top: "16px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "80%",
+                maxWidth: "1280px",
+                zIndex: 1000,
+                background: "rgba(255, 255, 255, 0.85)",
+                backdropFilter: "blur(24px)",
+                WebkitBackdropFilter: "blur(24px)",
+                border: "1px solid rgba(0, 0, 0, 0.06)",
+                borderRadius: "9999px",
+                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
+                paddingTop: "0.5rem",
+                paddingBottom: "0.5rem",
+                transition: "all 350ms cubic-bezier(0.16, 1, 0.3, 1)",
+              }
+            : {
+                position: "fixed",
+                top: "0px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "100%",
+                maxWidth: "100%",
+                zIndex: 1000,
+                background: "transparent",
+                backdropFilter: "blur(0px)",
+                WebkitBackdropFilter: "blur(0px)",
+                border: "1px solid transparent",
+                borderRadius: "0px",
+                boxShadow: "none",
+                paddingTop: "1.5rem",
+                paddingBottom: "1.5rem",
+                transition: "all 350ms cubic-bezier(0.16, 1, 0.3, 1)",
+              }
+        }
       >
         <Container>
           <div className="flex h-12 items-center justify-between">

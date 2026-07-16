@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import { NavigationHandler } from "@/components/shared/navigation-handler";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -30,6 +31,7 @@ export default function RootLayout({
       className={`${plusJakartaSans.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="font-body min-h-full bg-background text-foreground flex flex-col">
+        <NavigationHandler />
         {children}
       </body>
     </html>
