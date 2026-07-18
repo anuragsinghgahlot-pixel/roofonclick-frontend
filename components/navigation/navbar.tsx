@@ -88,41 +88,41 @@ export default function Navbar() {
         style={
           isScrolled
             ? {
-                position: "fixed",
-                top: "16px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "80%",
-                maxWidth: "1280px",
-                zIndex: 1000,
-                background: "rgba(255, 255, 255, 0.85)",
-                backdropFilter: "blur(24px)",
-                WebkitBackdropFilter: "blur(24px)",
-                border: "1px solid rgba(0, 0, 0, 0.06)",
-                borderRadius: "9999px",
-                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
-                paddingTop: "0.5rem",
-                paddingBottom: "0.5rem",
-                transition: "all 350ms cubic-bezier(0.16, 1, 0.3, 1)",
-              }
+              position: "fixed",
+              top: "16px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "80%",
+              maxWidth: "1280px",
+              zIndex: 1000,
+              background: "rgba(255, 255, 255, 0.85)",
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
+              border: "1px solid rgba(0, 0, 0, 0.06)",
+              borderRadius: "9999px",
+              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
+              paddingTop: "0.5rem",
+              paddingBottom: "0.5rem",
+              transition: "all 350ms cubic-bezier(0.16, 1, 0.3, 1)",
+            }
             : {
-                position: "fixed",
-                top: "0px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "100%",
-                maxWidth: "100%",
-                zIndex: 1000,
-                background: "transparent",
-                backdropFilter: "blur(0px)",
-                WebkitBackdropFilter: "blur(0px)",
-                border: "1px solid transparent",
-                borderRadius: "0px",
-                boxShadow: "none",
-                paddingTop: "1.5rem",
-                paddingBottom: "1.5rem",
-                transition: "all 350ms cubic-bezier(0.16, 1, 0.3, 1)",
-              }
+              position: "fixed",
+              top: "0px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "100%",
+              maxWidth: "100%",
+              zIndex: 1000,
+              background: "transparent",
+              backdropFilter: "blur(0px)",
+              WebkitBackdropFilter: "blur(0px)",
+              border: "1px solid transparent",
+              borderRadius: "0px",
+              boxShadow: "none",
+              paddingTop: "1.5rem",
+              paddingBottom: "1.5rem",
+              transition: "all 350ms cubic-bezier(0.16, 1, 0.3, 1)",
+            }
         }
       >
         <Container>
@@ -130,7 +130,7 @@ export default function Navbar() {
             {/* Logo */}
             <div className="flex items-center">
               <span className="font-heading text-2xl font-extrabold text-primary tracking-tight select-none cursor-pointer">
-                StayyNest
+                RoofOnClick
               </span>
             </div>
 

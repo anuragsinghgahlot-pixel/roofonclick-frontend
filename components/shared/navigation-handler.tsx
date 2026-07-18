@@ -9,7 +9,7 @@ export function NavigationHandler() {
   React.useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      
+
       // Don't intercept clicks inside specific components like map coordinates copy, etc.
       if (target.closest('[data-no-intercept="true"]')) {
         return;
@@ -27,7 +27,7 @@ export function NavigationHandler() {
       }
 
       // If it's a Logo link or brand, route to home
-      if (text === "stayynest" && (href === "/" || href === "#" || !href)) {
+      if (text === "roofonclick" && (href === "/" || href === "#" || !href)) {
         e.preventDefault();
         e.stopPropagation();
         router.push("/");

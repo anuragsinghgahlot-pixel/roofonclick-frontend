@@ -1,12 +1,94 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Search as SearchIcon, Compass, Star, BadgeCheck, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
 
+const SEARCH_SUGGESTIONS = [
+  {
+    label: "Vijay Nagar",
+    category: "Popular Area",
+    description: "126 verified PGs available",
+    badge: "Popular"
+  },
+  {
+    label: "Palasia",
+    category: "Popular Area",
+    description: "84 premium stays nearby",
+    badge: "Trending"
+  },
+  {
+    label: "Bhawarkuan",
+    category: "Student Area",
+    description: "Near DAVV & SGSITS",
+    badge: "Students"
+  },
+  {
+    label: "IET DAVV",
+    category: "College",
+    description: "54 hostels nearby",
+    badge: "College"
+  },
+  {
+    label: "Medanta Hospital",
+    category: "Hospital",
+    description: "Premium PGs nearby",
+    badge: "Medical"
+  },
+  {
+    label: "C21 Mall",
+    category: "Landmark",
+    description: "Luxury stays nearby",
+    badge: "Lifestyle"
+  }
+];
+
 export function Hero() {
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const searchRef = React.useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  const navigateToSearch = React.useCallback((location?: string) => {
+    if (!location || !location.trim()) {
+      router.push("/search");
+    } else {
+      const slug = location
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "-");
+      router.push(`/search?location=${slug}`);
+    }
+  }, [router]);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    if (isSearchOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSearchOpen]);
+
+  const filteredSuggestions = React.useMemo(() => {
+    if (!searchQuery.trim()) return SEARCH_SUGGESTIONS;
+    const lowerQuery = searchQuery.toLowerCase();
+    return SEARCH_SUGGESTIONS.filter(
+      (item) =>
+        item.label.toLowerCase().includes(lowerQuery) ||
+        item.category.toLowerCase().includes(lowerQuery)
+    );
+  }, [searchQuery]);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -43,14 +125,17 @@ export function Hero() {
   };
 
   return (
-    <Section className="relative pt-[120px] pb-24 overflow-hidden bg-background">
-      {/* Premium backdrop abstract glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[140px] pointer-events-none -z-10 animate-pulse duration-10000" />
-      <div className="absolute bottom-[10%] right-[-10%] w-[500px] h-[500px] bg-secondary/8 rounded-full blur-[120px] pointer-events-none -z-10" />
-      <div className="absolute top-[40%] left-[45%] w-[300px] h-[300px] bg-primary/5 rounded-full blur-[90px] pointer-events-none -z-10" />
+    <Section className="relative pt-[120px] pb-24 bg-background overflow-visible">
+      {/* Decorative background wrapper to crop glowing background shapes/grid */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-20">
+        {/* Premium backdrop abstract glows */}
+        <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[140px] pointer-events-none -z-10 animate-pulse duration-10000" />
+        <div className="absolute bottom-[10%] right-[-10%] w-[500px] h-[500px] bg-secondary/8 rounded-full blur-[120px] pointer-events-none -z-10" />
+        <div className="absolute top-[40%] left-[45%] w-[300px] h-[300px] bg-primary/5 rounded-full blur-[90px] pointer-events-none -z-10" />
 
-      {/* Grid Pattern overlay for tech/premium texture */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.01)_1px,transparent_1px)] pointer-events-none -z-15" />
+        {/* Grid Pattern overlay for tech/premium texture */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.01)_1px,transparent_1px)] pointer-events-none -z-15" />
+      </div>
 
       <Container className="max-w-[1280px]">
         <motion.div
@@ -79,9 +164,9 @@ export function Hero() {
                 Find Your Perfect
               </span>
 
-              <span className="relative inline-block mt-5 leading-[1.3] text-transparent bg-clip-text bg-gradient-to-r from-secondary to-secondary/80 relative">
-                <span>कुटीर</span>
-                <span className="ml-3">360°</span>
+              <span className="relative inline-block mt-4 leading-[1.3] text-transparent bg-clip-text bg-gradient-to-r from-secondary to-secondary/80 relative">
+                <span>Roof on</span>
+                <span className="ml-3">click</span>
                 <span className="absolute bottom-2 left-0 w-full h-[4px] bg-secondary/20 rounded-full" />
               </span>
             </motion.h1>
@@ -96,24 +181,89 @@ export function Hero() {
 
             {/* Search Box Form */}
             <motion.div
-              variants={itemVariants}
-              className="w-full max-w-xl flex flex-col sm:flex-row gap-3 p-3 bg-card/75 backdrop-blur-xl border border-border/80 rounded-[28px] shadow-premium hover:shadow-2xl transition-all duration-300 hover:border-primary/20 group/search"
+              animate={{ marginBottom: isSearchOpen ? 336 : 0 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-xl"
             >
-              <div className="flex-1 flex items-center px-4 gap-3 border-b sm:border-b-0 sm:border-r border-border/60 pb-3.5 sm:pb-0 transition-colors group-hover/search:border-primary/25">
-                <MapPin className="text-secondary w-5 h-5 shrink-0 transition-transform duration-300 group-hover/search:scale-110" strokeWidth={2.5} />
-                <input
-                  type="text"
-                  className="bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-none p-0 w-full text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/50"
-                  placeholder="Where in Indore? (e.g. Vijay Nagar)"
-                />
-              </div>
-              <button
-                type="button"
-                className="bg-primary hover:bg-accent text-primary-foreground hover:text-accent-foreground px-8 py-4 rounded-[18px] font-heading text-sm font-bold tracking-wide flex items-center justify-center gap-2 hover:scale-102 active:scale-98 transition-all duration-300 cursor-pointer shadow-md shadow-primary/10 hover:shadow-accent/20"
+              <motion.div
+                ref={searchRef}
+                variants={itemVariants}
+                className="w-full flex flex-col sm:flex-row gap-3 p-3 bg-card/75 backdrop-blur-xl border border-border/80 rounded-[28px] shadow-premium hover:shadow-2xl transition-all duration-300 hover:border-primary/20 group/search relative"
               >
-                <SearchIcon className="w-4 h-4 shrink-0" strokeWidth={2.5} />
-                Explore Stays
-              </button>
+                <div className="flex-1 flex items-center px-4 gap-3 border-b sm:border-b-0 sm:border-r border-border/60 pb-3.5 sm:pb-0 transition-colors group-hover/search:border-primary/25">
+                  <MapPin className="text-secondary w-5 h-5 shrink-0 transition-transform duration-300 group-hover/search:scale-110" strokeWidth={2.5} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onFocus={() => setIsSearchOpen(true)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setIsSearchOpen(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        setIsSearchOpen(false);
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    className="bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-none p-0 w-full text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/50"
+                    placeholder="Where in Indore? (e.g. Vijay Nagar)"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigateToSearch(searchQuery)}
+                  className="bg-primary hover:bg-accent text-primary-foreground hover:text-accent-foreground px-8 py-4 rounded-[18px] font-heading text-sm font-bold tracking-wide flex items-center justify-center gap-2 hover:scale-102 active:scale-98 transition-all duration-300 cursor-pointer shadow-md shadow-primary/10 hover:shadow-accent/20"
+                >
+                  <SearchIcon className="w-4 h-4 shrink-0" strokeWidth={2.5} />
+                  Explore Stays
+                </button>
+
+                <AnimatePresence>
+                  {isSearchOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute left-0 right-0 top-full mt-2 z-[100] bg-card border border-border rounded-2xl shadow-premium backdrop-blur-xl max-h-[320px] overflow-y-auto p-2 flex flex-col gap-1 text-left"
+                    >
+                      {filteredSuggestions.length > 0 ? (
+                        filteredSuggestions.map((item) => (
+                          <div
+                            key={item.label}
+                            onClick={() => {
+                              setSearchQuery(item.label);
+                              setIsSearchOpen(false);
+                              navigateToSearch(item.label);
+                            }}
+                            className="flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-200 group/item"
+                          >
+                            <div className="flex items-center gap-3.5">
+                              <MapPin className="w-5 h-5 text-primary shrink-0 transition-transform duration-200 group-hover/item:scale-110" />
+                              <div className="flex flex-col text-left">
+                                <span className="font-body text-sm font-semibold text-primary">
+                                  {item.label}
+                                </span>
+                                <span className="font-body text-xs text-muted-foreground">
+                                  {item.description}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="font-heading text-[10px] font-extrabold uppercase tracking-widest text-primary bg-primary/10 px-2.5 py-1 rounded-full shrink-0">
+                              {item.badge}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-6 text-center text-sm font-semibold text-muted-foreground">
+                          No matches found for &ldquo;{searchQuery}&rdquo;
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             </motion.div>
           </div>
 
