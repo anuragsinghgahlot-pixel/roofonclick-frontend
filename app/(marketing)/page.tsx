@@ -1,6 +1,5 @@
 import {
   Hero,
-  Search,
   PopularAreas,
   FeaturedListings,
   Categories,
@@ -13,7 +12,6 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       <Hero />
-      <Search />
       <PopularAreas />
       <FeaturedListings />
       <Categories />
