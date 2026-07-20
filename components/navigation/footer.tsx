@@ -15,7 +15,7 @@ export function Footer() {
           {/* Brand Info Section (Spans 5 cols) */}
           <div className="md:col-span-5 flex flex-col gap-4 text-left">
             <span className="font-heading text-2xl font-extrabold text-primary tracking-tight select-none">
-              StayyNest
+              RoofOnClick
             </span>
             <p className="font-body text-sm text-muted-foreground/80 max-w-sm leading-relaxed">
               Indore&apos;s modern accommodation discovery platform helping students and working professionals find premium, verified hostels and PGs with zero brokerage hassle.
@@ -134,7 +134,7 @@ export function Footer() {
 
         {/* Bottom copyright details block */}
         <div className="pt-8 flex flex-col md:flex-row md:justify-between items-center gap-4 text-xs font-medium text-muted-foreground/80">
-          <p>&copy; {new Date().getFullYear()} StayyNest. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} RoofOnClick. All rights reserved.</p>
           <div className="flex items-center gap-1 select-none">
             <span>Made with</span>
             <span className="text-rose-500 animate-pulse text-sm">❤️</span>

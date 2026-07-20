@@ -23,7 +23,7 @@ const MOCK_TESTIMONIALS: TestimonialItem[] = [
     name: "Aman Sharma",
     occupation: "Student, IIT Indore",
     rating: 5,
-    review: "StayyNest made finding a PG near Vijay Nagar incredibly simple. The zero brokerage promise was 100% real, and the rooms were exactly as shown in the photos.",
+    review: "RoofOnClick made finding a PG near Vijay Nagar incredibly simple. The zero brokerage promise was 100% real, and the rooms were exactly as shown in the photos.",
     initials: "AS",
     avatarBg: "bg-primary/10 text-primary border-primary/20",
     location: "Vijay Nagar",

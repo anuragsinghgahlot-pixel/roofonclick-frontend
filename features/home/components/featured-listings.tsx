@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
 import { cn } from "@/lib/utils";
+import { useWishlist } from "@/providers/wishlist-provider";
 
 interface Property {
   id: string;
@@ -23,7 +24,7 @@ interface Property {
 
 const MOCK_LISTINGS: Property[] = [
   {
-    id: "elite-residency",
+    id: "p1",
     title: "Elite Residency",
     type: "Hostel",
     location: "Vijay Nagar, Indore",
@@ -36,11 +37,11 @@ const MOCK_LISTINGS: Property[] = [
     isVerified: true,
   },
   {
-    id: "skyline-stays",
+    id: "p2",
     title: "Skyline Premium Stays",
     type: "PG",
     location: "Bhawarkuan, Indore",
-    price: 6500,
+    price: 7200,
     rating: 4.6,
     reviewCount: 98,
     gender: "girls",
@@ -49,11 +50,11 @@ const MOCK_LISTINGS: Property[] = [
     isVerified: true,
   },
   {
-    id: "co-habit-suites",
+    id: "p3",
     title: "CoHabit Spaces",
     type: "Co-Living",
     location: "Palasia, Indore",
-    price: 12000,
+    price: 9500,
     rating: 4.9,
     reviewCount: 75,
     gender: "co-living",
@@ -62,11 +63,11 @@ const MOCK_LISTINGS: Property[] = [
     isVerified: true,
   },
   {
-    id: "stay-oasis",
+    id: "p4",
     title: "Oasis Student Hostel",
     type: "Hostel",
     location: "Vijay Nagar, Indore",
-    price: 7000,
+    price: 6000,
     rating: 4.4,
     reviewCount: 112,
     gender: "boys",
@@ -75,11 +76,11 @@ const MOCK_LISTINGS: Property[] = [
     isVerified: false,
   },
   {
-    id: "serene-nest",
+    id: "p5",
     title: "Serene Nest for Girls",
     type: "PG",
     location: "Geeta Bhawan, Indore",
-    price: 7500,
+    price: 8000,
     rating: 4.7,
     reviewCount: 64,
     gender: "girls",
@@ -88,11 +89,11 @@ const MOCK_LISTINGS: Property[] = [
     isVerified: true,
   },
   {
-    id: "urban-studio",
-    title: "Urban Studio Suite",
+    id: "p8",
+    title: "C21 Luxury Stay",
     type: "Studio Apartment",
     location: "LIG Colony, Indore",
-    price: 15000,
+    price: 12500,
     rating: 4.9,
     reviewCount: 42,
     gender: "co-living",
@@ -116,13 +117,7 @@ function getGenderBadge(gender: Property["gender"]): { label: string; style: str
 }
 
 export function FeaturedListings() {
-  const [favorites, setFavorites] = React.useState<string[]>([]);
-
-  const toggleFavorite = (id: string) => {
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id]
-    );
-  };
+  const { isInWishlist, toggleWishlist } = useWishlist();
 
   return (
     <Section className="bg-muted/5">
@@ -172,7 +167,7 @@ export function FeaturedListings() {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full"
         >
           {MOCK_LISTINGS.map((property) => {
-            const isFavorite = favorites.includes(property.id);
+            const isFavorite = isInWishlist(property.id);
             const genderDetails = getGenderBadge(property.gender);
 
             return (
@@ -206,17 +201,26 @@ export function FeaturedListings() {
                     {/* Wishlist button */}
                     <button
                       type="button"
+                      data-no-intercept="true"
                       onClick={(e) => {
                         e.preventDefault();
-                        toggleFavorite(property.id);
+                        e.stopPropagation();
+                        toggleWishlist(property.id);
                       }}
-                      className={cn(
-                        "absolute top-4 right-4 p-2.5 bg-card/85 backdrop-blur-sm rounded-full shadow-md transition-all duration-200 cursor-pointer hover:bg-card active:scale-90",
-                        isFavorite ? "text-accent" : "text-muted-foreground/75 hover:text-accent"
-                      )}
+                      className="absolute top-4 right-4 w-9 h-9 bg-card/85 backdrop-blur-sm rounded-full shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center hover:scale-105 active:scale-95 z-20"
                       aria-label="Add to wishlist"
                     >
-                      <Heart className={cn("w-4 h-4", isFavorite && "fill-current")} />
+                      <motion.div
+                        animate={{ scale: isFavorite ? [1, 1.25, 1] : 1 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Heart
+                          className={cn(
+                            "w-4 h-4 transition-colors duration-200",
+                            isFavorite ? "fill-rose-500 text-rose-500" : "text-muted-foreground/75 hover:text-rose-500"
+                          )}
+                        />
+                      </motion.div>
                     </button>
                   </div>
 

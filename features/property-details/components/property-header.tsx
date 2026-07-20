@@ -10,10 +10,11 @@ import {
   BadgeCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useWishlist } from "@/providers/wishlist-provider";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-export type PropertyType = "PG" | "Hostel" | "Co-Living" | "Studio" | "1 RK";
+export type PropertyType = "PG" | "Hostel" | "Co-Living" | "Studio" | "1 RK" | "Apartment";
 
 export interface PropertyHeaderProps {
   /** Property display title */
@@ -36,6 +37,8 @@ export interface PropertyHeaderProps {
   onShare?: () => void;
   /** Optional class override */
   className?: string;
+  /** The unique ID of the property to synchronize wishlist status */
+  propertyId?: string;
 }
 
 // ─── Animation ─────────────────────────────────────────────────────────────────
@@ -64,6 +67,7 @@ const TYPE_STYLES: Record<PropertyType, string> = {
   "Co-Living": "bg-violet-500/10 text-violet-500 dark:text-violet-400 border-violet-500/20 shadow-[0_2px_8px_rgba(139,92,246,0.04)]",
   Studio: "bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20 shadow-[0_2px_8px_rgba(245,158,11,0.04)]",
   "1 RK": "bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20 shadow-[0_2px_8px_rgba(244,63,94,0.04)]",
+  Apartment: "bg-purple-500/10 text-purple-500 dark:text-purple-400 border-purple-500/20 shadow-[0_2px_8px_rgba(168,85,247,0.04)]",
 };
 
 // ─── PropertyHeader ────────────────────────────────────────────────────────────
@@ -79,11 +83,27 @@ export function PropertyHeader({
   onWishlistToggle,
   onShare,
   className,
+  propertyId,
 }: PropertyHeaderProps) {
-  const [wishlisted, setWishlisted] = React.useState(isWishlisted);
+  const [localWishlisted, setLocalWishlisted] = React.useState(isWishlisted);
+  let wishlistContext: ReturnType<typeof useWishlist> | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    wishlistContext = useWishlist();
+  } catch {
+    // Fallback if not wrapped in WishlistProvider
+  }
+
+  const wishlisted = propertyId && wishlistContext
+    ? wishlistContext.isInWishlist(propertyId)
+    : localWishlisted;
 
   const handleWishlist = () => {
-    setWishlisted((prev) => !prev);
+    if (propertyId && wishlistContext) {
+      wishlistContext.toggleWishlist(propertyId);
+    } else {
+      setLocalWishlisted((prev) => !prev);
+    }
     onWishlistToggle?.();
   };
 
@@ -143,6 +163,7 @@ export function PropertyHeader({
           {/* Wishlist Button */}
           <motion.button
             type="button"
+            data-no-intercept="true"
             onClick={handleWishlist}
             whileHover={{ scale: 1.02, y: -1 }}
             whileTap={{ scale: 0.98 }}

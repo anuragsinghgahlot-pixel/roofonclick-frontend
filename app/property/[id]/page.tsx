@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Wifi,
   Wind,
@@ -14,27 +15,35 @@ import {
   ShoppingBag,
   GraduationCap,
   Activity,
+  ArrowLeft,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Check,
 } from "lucide-react";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
 import {
   PropertyHeader,
   Gallery,
+  PropertyType,
   Amenities,
   PricingCard,
   OwnerCard,
   LocationMap,
   SimilarProperties,
 } from "@/features/property-details/components";
+import Navbar from "@/components/navigation/navbar";
+import Footer from "@/components/navigation/footer";
 
-// ─── Temporary Mock Data ───────────────────────────────────────────────────────
+// ─── Fallback Mock Data ─────────────────────────────────────────────────────────
 
 const MOCK_IMAGES = [
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBBioc3bTmd4Cnx4CoLqJwDmgifaSLFft8aWGsZ1UYQ46TH6NU5Kvh-1364-pR8mPAMsMJLBgBVCHJExeY1E3cquupJrkzBWRN8eSCZtWzuOSZuJ4azGtDymccmGJ85JZw7CK-FHn0mop4-k3for8HLgyfMkTMtQqb1PtbX1VoZOAf76fnYGWgW_Cf0dQ0fEXRybxY8I08w3nAlM12D9XlRPeqbl1CYOqumHQXwjaKfoBouF-jie-kW5GNU62plTWU_RDDbdD3sdTnf",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuAOGJjlWzTSbpYdmeITEUBmfJdtmadS9Ay9SNiBmfjU5kRlTLW4jX-TSeaKJJezQdBrxBVhMu2jdr8QoNccFs51MfKdr7nqLte-WRQMvtN_q7TRDcQXgtqKn2qmFHZaRS1p9L45c-6w0GM7zAaY7c6hbyxlmi3ToaXHpSuOL4XtdGjK86KOFZBLdWNy2AajEZzDCnaY4klzoY1uHCSr9Jg3jP5telIwz-tE8CAsjnWCBZ3h0eA-wEKva_VOnkTZyaCd4tykP6RIlU-A",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuA1r2AYVVLCTOz-mmG5ZzpriCqSXko4D-XObLhN6mkIC-zUlW2TMsa6RIaQ2tWKX_4kMxr9yfqTqhaEVSUzOYJeIIYyP0rnTSbOzCX3iQDfTYG0xMq0iMLYv9UqBkM_Tc4iQycBB3tG84bTBHhM9nSA3v8HO79oFN72mYlYcjG_TUFU-j91BQ1YLTspDevHLHhBIP1SPIQ3cNyQ1TbPBQj2fEdzD2qQc3Ux2zB8QTDRqhQ3KCYBP0cv478LWmbwOt5qmOiqYc_2HQEE",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBom54qUEQA1Ay3uqpWhluPk5Kafp4lGEoInKPGdyvgUeXqfqSPIBm5RtN4QxlqygEthuU6zAikwfGj2eTq6LRoB5vb0f_g_C7fh4jjSV3NcetMB9N_qvdNuuKIPPpYgKB2rSlhh4YpNS23FUz1RaTKBnJA8bPDZawjCL-kC2sDednG6otjg9k7IBBnVIAc5MxFVnyIumh_PaV45b_S80xyeoz7hQ5DS1VIHLshDv_n1HDaDIF3HHxWmaYSOYBVMSVEZxS1v2wC7UMp",
-  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=800&q=80",
 ];
 
 const MOCK_AMENITIES = [
@@ -59,149 +68,362 @@ const MOCK_SIMILAR_PROPERTIES = [
   {
     id: "serene-oasis",
     title: "Serene Oasis PG",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAOGJjlWzTSbpYdmeITEUBmfJdtmadS9Ay9SNiBmfjU5kRlTLW4jX-TSeaKJJezQdBrxBVhMu2jdr8QoNccFs51MfKdr7nqLte-WRQMvtN_q7TRDcQXgtqKn2qmFHZaRS1p9L45c-6w0GM7zAaY7c6hbyxlmi3ToaXHpSuOL4XtdGjK86KOFZBLdWNy2AajEZzDCnaY4klzoY1uHCSr9Jg3jP5telIwz-tE8CAsjnWCBZ3h0eA-wEKva_VOnkTZyaCd4tykP6RIlU-A",
+    image: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=600&q=80",
     location: "Bhawarkuan, Indore",
     price: 7500,
     rating: 4.9,
     type: "PG",
     isVerified: true,
-    onView: () => console.log("Viewing Serene Oasis PG"),
+    onView: () => {},
   },
   {
     id: "skyline-co-living",
     title: "Skyline Co-Living",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuA1r2AYVVLCTOz-mmG5ZzpriCqSXko4D-XObLhN6mkIC-zUlW2TMsa6RIaQ2tWKX_4kMxr9yfqTqhaEVSUzOYJeIIYyP0rnTSbOzCX3iQDfTYG0xMq0iMLYv9UqBkM_Tc4iQycBB3tG84bTBHhM9nSA3v8HO79oFN72mYlYcjG_TUFU-j91BQ1YLTspDevHLHhBIP1SPIQ3cNyQ1TbPBQj2fEdzD2qQc3Ux2zB8QTDRqhQ3KCYBP0cv478LWmbwOt5qmOiqYc_2HQEE",
+    image: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80",
     location: "Palasia, Indore",
     price: 12000,
     rating: 4.7,
     type: "Co-Living",
     isVerified: false,
-    onView: () => console.log("Viewing Skyline Co-Living"),
-  },
-  {
-    id: "lig-nest-hostel",
-    title: "LIG Nest Hostels",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBom54qUEQA1Ay3uqpWhluPk5Kafp4lGEoInKPGdyvgUeXqfqSPIBm5RtN4QxlqygEthuU6zAikwfGj2eTq6LRoB5vb0f_g_C7fh4jjSV3NcetMB9N_qvdNuuKIPPpYgKB2rSlhh4YpNS23FUz1RaTKBnJA8bPDZawjCL-kC2sDednG6otjg9k7IBBnVIAc5MxFVnyIumh_PaV45b_S80xyeoz7hQ5DS1VIHLshDv_n1HDaDIF3HHxWmaYSOYBVMSVEZxS1v2wC7UMp",
-    location: "LIG Colony, Indore",
-    price: 6000,
-    rating: 4.4,
-    type: "Hostel",
-    isVerified: true,
-    onView: () => console.log("Viewing LIG Nest Hostels"),
+    onView: () => {},
   },
 ];
 
-// ─── Page Component ────────────────────────────────────────────────────────────
+import { PropertyService, Property, MediaImage, RoomConfiguration } from "@/services/property";
+
+function PropertyDetailsContent() {
+  const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const propertyId = (params?.id as string) || "";
+  const isPreviewMode = searchParams.get("preview") === "owner";
+
+  const [prevId, setPrevId] = React.useState(propertyId);
+  const [property, setProperty] = React.useState<Property | null>(() => {
+    return propertyId ? PropertyService.getPropertyById(propertyId) : null;
+  });
+
+  if (prevId !== propertyId) {
+    setPrevId(propertyId);
+    setProperty(propertyId ? PropertyService.getPropertyById(propertyId) : null);
+  }
+
+  const isOwnerView = isPreviewMode || !!property;
+  const displayImages = property?.images && property.images.length > 0
+    ? property.images.map((img: MediaImage) => img.url)
+    : (property?.coverPhoto ? [property.coverPhoto] : MOCK_IMAGES);
+
+  const displayTitle = property?.propertyName || "Elite Residency";
+  const displayType = (property?.propertyType === "Co-living" ? "Co-Living" : (property?.propertyType as unknown as PropertyType)) || "Hostel";
+  const displayAddress = property?.address 
+    ? `${property.address}, ${property.area}, ${property.city}`
+    : "Vijay Nagar, Scheme 54, Indore, MP 452010";
+
+  const displayRent = property?.startingRent || (property?.rooms?.[0]?.rent ? Number(property.rooms[0].rent) : 8500);
+  const displayDeposit = property?.rooms?.[0]?.securityDeposit ? Number(property.rooms[0].securityDeposit) : 15000;
+
+  return (
+    <div className="relative flex min-h-screen flex-col bg-background">
+      <Navbar />
+
+      <main className="flex-1" data-no-intercept="true">
+        <Section className="bg-background relative overflow-hidden text-left py-8 md:py-12">
+          {/* Ambient Background Glows */}
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
+          <div className="absolute bottom-[20%] left-0 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
+
+          <Container className="flex flex-col gap-8 md:gap-12">
+            
+            {/* Owner Preview Banner */}
+            {isOwnerView && (
+              <div className="bg-card border-2 border-primary/30 p-4.5 rounded-2xl shadow-premium flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 select-none">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <Eye className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="bg-primary text-primary-foreground font-heading text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md">
+                        Owner Preview
+                      </span>
+                      <span className="font-heading text-xs font-bold text-primary">
+                        Viewing as Property Owner
+                      </span>
+                    </div>
+                    <p className="font-body text-xs text-muted-foreground mt-0.5">
+                      Enquiry and booking actions are disabled while in Owner Preview mode.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => router.push("/owner/dashboard")}
+                  className="px-4 py-2 rounded-xl border border-border bg-card hover:bg-muted/40 text-muted-foreground hover:text-primary font-heading text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-1.5 shrink-0"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Back to Dashboard
+                </button>
+              </div>
+            )}
+
+            {/* 1. Header Information Block */}
+            <div className="flex flex-col gap-4">
+              <PropertyHeader
+                title={displayTitle}
+                type={displayType}
+                address={displayAddress}
+                rating={4.8}
+                reviewCount={24}
+                isVerified={true}
+                isWishlisted={false}
+                propertyId={propertyId}
+                onWishlistToggle={() => {}}
+                onShare={() => {}}
+              />
+            </div>
+
+            {/* 2. Photo Gallery Showcase */}
+            <Gallery images={displayImages} altPrefix={displayTitle} />
+
+            {/* 3. Main Details and Sticky Sidebar Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start relative">
+              
+              {/* Left Column (Spans 8 cols of 12) */}
+              <div className="lg:col-span-8 space-y-10 md:space-y-14">
+                
+                {/* Description & Overview */}
+                {property?.description && (
+                  <div className="flex flex-col gap-3 bg-muted/20 border border-border/60 p-6 rounded-2xl">
+                    <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
+                      About Property
+                    </span>
+                    <p className="font-body text-sm text-foreground/90 leading-relaxed">
+                      {property.description}
+                    </p>
+                    <div className="flex flex-wrap gap-4 mt-2 pt-3 border-t border-border/40 text-xs font-semibold text-muted-foreground">
+                      <span>Target Gender: <strong className="text-primary">{property.gender}</strong></span>
+                      {property.landmark && (
+                        <span>Landmark: <strong className="text-primary">{property.landmark}</strong></span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Room Configurations Section */}
+                {property?.rooms && property.rooms.length > 0 && (
+                  <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-1 text-left">
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
+                        Available Room Plans
+                      </span>
+                      <h2 className="font-heading text-2xl font-extrabold text-primary tracking-tight">
+                        Room Configurations & Pricing
+                      </h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {property.rooms.map((rm: RoomConfiguration, idx: number) => (
+                        <div key={idx} className="bg-card border border-border/80 p-5 rounded-2xl shadow-sm flex flex-col gap-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="font-heading text-sm font-extrabold text-primary block">
+                                {rm.roomType}
+                              </span>
+                              <span className="font-body text-xs text-muted-foreground">
+                                {rm.availableRooms} rooms • {rm.availability}
+                              </span>
+                            </div>
+                            <span className="font-heading text-base font-extrabold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                              ₹{rm.rent} <span className="text-[10px] font-normal text-muted-foreground">/mo</span>
+                            </span>
+                          </div>
+
+                          <div className="w-full h-px bg-border/40" />
+
+                          <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-muted-foreground">
+                            <div>Deposit: <strong className="text-primary">₹{rm.securityDeposit || "0"}</strong></div>
+                            <div>Meals: <strong className="text-primary">{rm.mealsIncluded ? "Included" : "No"}</strong></div>
+                            <div className="col-span-2">Electricity: <strong className="text-primary">{rm.electricity}</strong></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Amenities Section */}
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-col gap-1 text-left">
+                    <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
+                      Amenities & Facilities
+                    </span>
+                    <h2 className="font-heading text-2xl font-extrabold text-primary tracking-tight">
+                      Comfort & Convenience
+                    </h2>
+                  </div>
+
+                  {property?.amenities && property.amenities.length > 0 ? (
+                    <div className="flex flex-wrap gap-2.5 pt-2">
+                      {property.amenities.map((item: string) => (
+                        <div
+                          key={item}
+                          className="flex items-center gap-2 bg-card border border-border/80 px-4 py-2.5 rounded-xl text-xs font-bold text-primary shadow-sm"
+                        >
+                          <Check className="w-4 h-4 text-emerald-500" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <Amenities items={MOCK_AMENITIES} />
+                  )}
+                </div>
+
+                {/* House Rules Section */}
+                {property?.rules && (
+                  <div className="flex flex-col gap-4 bg-muted/20 border border-border/60 p-6 rounded-2xl">
+                    <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
+                      House Rules
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {[
+                        { label: "Smoking", allowed: property.rules.smokingAllowed },
+                        { label: "Drinking", allowed: property.rules.drinkingAllowed },
+                        { label: "Visitors", allowed: property.rules.visitorsAllowed },
+                        { label: "Pets", allowed: property.rules.petsAllowed },
+                        { label: "Loud Music", allowed: property.rules.loudMusicAllowed },
+                      ].map((r) => (
+                        <div key={r.label} className="flex items-center gap-2 text-xs font-semibold">
+                          {r.allowed ? (
+                            <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                          )}
+                          <span className={r.allowed ? "text-primary" : "text-muted-foreground"}>
+                            {r.label} {r.allowed ? "Allowed" : "Prohibited"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    {property.rules.gateClosingEnabled && (
+                      <div className="flex items-center gap-2 text-xs font-bold text-amber-500 pt-2 border-t border-border/40">
+                        <Clock className="w-4 h-4 shrink-0" />
+                        <span>Gate Curfew Time: {property.rules.gateClosingTime || "10:00 PM"}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Location & Map Section */}
+                <LocationMap
+                  address={displayAddress}
+                  latitude={22.7533}
+                  longitude={75.8937}
+                  nearbyPlaces={MOCK_NEARBY_PLACES}
+                />
+              </div>
+
+              {/* Right Sticky Sidebar (Spans 4 cols of 12) */}
+              <aside className="lg:col-span-4">
+                <div className="sticky top-24 space-y-6">
+                  {isOwnerView ? (
+                    /* Owner Preview Pricing Sidebar */
+                    <div className="bg-card border-2 border-primary/20 rounded-3xl p-6 shadow-premium space-y-5">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-secondary block">
+                          Owner Preview Pricing
+                        </span>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="font-heading text-3xl font-extrabold text-primary">₹{displayRent}</span>
+                          <span className="font-body text-xs text-muted-foreground">/ month</span>
+                        </div>
+                        <span className="font-body text-xs text-muted-foreground block pt-0.5">
+                          Deposit: ₹{displayDeposit} • Zero Brokerage
+                        </span>
+                      </div>
+
+                      <div className="bg-muted/40 p-3.5 rounded-xl text-center space-y-1">
+                        <span className="font-heading text-xs font-bold text-primary block">
+                          Preview Mode Enabled
+                        </span>
+                        <p className="font-body text-[11px] text-muted-foreground leading-snug">
+                          Booking & direct enquiry CTAs are disabled during owner property previews.
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => router.push("/owner/dashboard")}
+                        className="w-full bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground text-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-300 shadow-md cursor-pointer select-none"
+                      >
+                        Return to Dashboard
+                      </button>
+                    </div>
+                  ) : (
+                    <PricingCard
+                      monthlyRent={displayRent}
+                      securityDeposit={displayDeposit}
+                      brokerage={0}
+                      availability="available"
+                      includedBenefits={["High-speed Wi-Fi", "Daily housekeeping", "24/7 Power backup"]}
+                      onBookNow={() => router.push("/booking")}
+                      onContactOwner={() => router.push("/contact-owner")}
+                    />
+                  )}
+                  
+                  <OwnerCard
+                    ownerName="RoofOnClick Partner"
+                    ownerImage="https://api.dicebear.com/8.x/lorelei/svg?seed=RoofOnClick"
+                    isVerified={true}
+                    responseTime="Within 10 mins"
+                    phone="+91 98765 43210"
+                    joinedDate="Verified Property"
+                    listingsCount={1}
+                    onCall={() => {}}
+                    onMessage={() => {}}
+                  />
+                </div>
+              </aside>
+
+            </div>
+
+            {/* Similar Properties Showcase */}
+            {!isOwnerView && (
+              <div className="flex flex-col gap-8 pt-6">
+                <div className="flex flex-col gap-2 text-left">
+                  <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
+                    Explore Alternatives
+                  </span>
+                  <h2 className="font-heading text-3xl font-extrabold text-primary tracking-tight">
+                    Similar Stays
+                  </h2>
+                </div>
+                <SimilarProperties properties={MOCK_SIMILAR_PROPERTIES} />
+              </div>
+            )}
+
+          </Container>
+        </Section>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
 
 export default function PropertyDetailsPage() {
   return (
-    <Section className="bg-background relative overflow-hidden">
-      {/* Decorative ambient background glows */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="absolute bottom-[20%] left-0 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
-
-      <Container className="flex flex-col gap-8 md:gap-12 lg:gap-16">
-        
-        {/* 1. Header Information Block */}
-        <div className="flex flex-col gap-4">
-          <PropertyHeader
-            title="Elite Residency"
-            type="Hostel"
-            address="Vijay Nagar, Scheme 54, Indore, MP 452010"
-            rating={4.8}
-            reviewCount={124}
-            isVerified={true}
-            isWishlisted={false}
-            onWishlistToggle={() => console.log("Wishlist toggled")}
-            onShare={() => console.log("Share clicked")}
-          />
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="font-heading text-sm font-bold text-muted-foreground">
+            Loading Property Details...
+          </p>
         </div>
-
-        {/* 2. Photo Gallery Showcase */}
-        <Gallery images={MOCK_IMAGES} altPrefix="Elite Residency" />
-
-        {/* 3. Main Details and Sticky Sidebar Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start relative">
-          
-          {/* Left Column (Spans 8 cols of 12) */}
-          <main className="lg:col-span-8 space-y-12 md:space-y-16">
-            
-            {/* Amenities Section */}
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-2 text-left">
-                <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
-                  Premium Amenities
-                </span>
-                <h2 className="font-heading text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
-                  Comfort & Convenience
-                </h2>
-              </div>
-              <div className="pt-2 border-t border-border/40">
-                <Amenities items={MOCK_AMENITIES} />
-              </div>
-            </div>
-
-            <div className="w-full h-px bg-border/40" />
-
-            {/* Location & Map Section */}
-            <LocationMap
-              address="Vijay Nagar, Scheme 54, Indore, MP 452010"
-              latitude={22.7533}
-              longitude={75.8937}
-              nearbyPlaces={MOCK_NEARBY_PLACES}
-            />
-          </main>
-
-          {/* Right Sticky Sidebar (Spans 4 cols of 12) */}
-          <aside className="lg:col-span-4">
-            {/* Sticky bounds container */}
-            <div className="sticky top-24 space-y-6">
-              <PricingCard
-                monthlyRent={8500}
-                securityDeposit={15000}
-                brokerage={0}
-                availability="few-left"
-                includedBenefits={["High-speed Wi-Fi", "Daily housekeeping", "24/7 Power backup", "Pure drinking water"]}
-                onBookNow={() => console.log("Book Now clicked")}
-                onContactOwner={() => console.log("Contact Owner clicked")}
-              />
-              
-              <OwnerCard
-                ownerName="Rajesh Kumar"
-                ownerImage="https://api.dicebear.com/8.x/lorelei/svg?seed=Rajesh"
-                isVerified={true}
-                responseTime="Within 10 mins"
-                phone="+91 98765 43210"
-                joinedDate="July 2023"
-                listingsCount={4}
-                onCall={() => console.log("Calling Rajesh Kumar")}
-                onMessage={() => console.log("Messaging Rajesh Kumar")}
-              />
-            </div>
-          </aside>
-
-        </div>
-
-        {/* Premium visual divider line */}
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-border/80 to-transparent my-4" />
-
-        {/* 4. Similar Properties Showcase */}
-        <div className="flex flex-col gap-8">
-          <div className="flex flex-col gap-2 text-left">
-            <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
-              Explore Alternatives
-            </span>
-            <h2 className="font-heading text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
-              Similar Stays
-            </h2>
-            <p className="font-body text-sm text-muted-foreground leading-relaxed max-w-md">
-              Handpicked similar premium listings around Vijay Nagar.
-            </p>
-          </div>
-          <SimilarProperties properties={MOCK_SIMILAR_PROPERTIES} />
-        </div>
-
-      </Container>
-    </Section>
+      }
+    >
+      <PropertyDetailsContent />
+    </React.Suspense>
   );
 }

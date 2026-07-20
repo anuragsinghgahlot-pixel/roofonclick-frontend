@@ -4,10 +4,16 @@ import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Container } from "@/components/layout/container";
 import { cn } from "@/lib/utils";
+import { useWishlist } from "@/providers/wishlist-provider";
+import { Heart } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const NAV_ITEMS = ["Explore", "Areas", "For Owners"];
 
 export default function Navbar() {
+  const router = useRouter();
+  const { wishlist, saveLastBrowsingRoute } = useWishlist();
+  const wishlistCount = wishlist.length;
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [activeItem, setActiveItem] = React.useState("Explore");
   const [isOpen, setIsOpen] = React.useState(false);
@@ -68,12 +74,13 @@ export default function Navbar() {
         }
       };
 
-      drawerRef.current?.addEventListener("keydown", handleTabKey);
+      const drawerNode = drawerRef.current;
+      drawerNode?.addEventListener("keydown", handleTabKey);
 
       return () => {
         document.body.style.overflow = "";
         window.removeEventListener("keydown", handleKeyDown);
-        drawerRef.current?.removeEventListener("keydown", handleTabKey);
+        drawerNode?.removeEventListener("keydown", handleTabKey);
       };
     }
 
@@ -157,6 +164,24 @@ export default function Navbar() {
                   )}
                 </button>
               ))}
+
+              {/* Wishlist Link */}
+              <button
+                data-no-intercept="true"
+                onClick={() => {
+                  saveLastBrowsingRoute();
+                  router.push("/wishlist");
+                }}
+                className="relative flex items-center gap-1.5 font-heading text-[15px] font-semibold tracking-wide transition-colors py-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm text-muted-foreground hover:text-primary"
+              >
+                <Heart className={cn("w-4 h-4 text-rose-500", wishlistCount > 0 && "fill-rose-500")} />
+                <span>Wishlist</span>
+                {wishlistCount > 0 && (
+                  <span className="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full select-none">
+                    {wishlistCount}
+                  </span>
+                )}
+              </button>
             </nav>
 
             {/* Desktop Auth Controls */}
@@ -221,7 +246,7 @@ export default function Navbar() {
             >
               <div className="flex justify-between items-center mb-8 mt-2">
                 <span className="font-heading text-2xl font-extrabold text-primary tracking-tight select-none">
-                  StayyNest
+                  RoofOnClick
                 </span>
               </div>
 
@@ -242,6 +267,25 @@ export default function Navbar() {
                     {item}
                   </button>
                 ))}
+
+                {/* Mobile Wishlist Link */}
+                <button
+                  data-no-intercept="true"
+                  onClick={() => {
+                    saveLastBrowsingRoute();
+                    setIsOpen(false);
+                    router.push("/wishlist");
+                  }}
+                  className="text-left flex items-center gap-2 font-heading text-lg font-semibold py-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm text-muted-foreground hover:text-primary"
+                >
+                  <Heart className={cn("w-5 h-5 text-rose-500", wishlistCount > 0 && "fill-rose-500")} />
+                  <span>Wishlist</span>
+                  {wishlistCount > 0 && (
+                    <span className="bg-rose-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full select-none">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </button>
               </nav>
 
               {/* Action Buttons */}

@@ -69,7 +69,7 @@ export function Advantages() {
             Our Promise
           </span>
           <h2 className="font-heading text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
-            Why Choose StayyNest?
+            Why Choose RoofOnClick?
           </h2>
           <p className="font-body text-sm text-muted-foreground leading-relaxed max-w-md">
             Everything you need to find and lease your premium home away from home in Indore.

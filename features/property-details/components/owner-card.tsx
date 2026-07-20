@@ -57,7 +57,7 @@ export function OwnerCard({
   ownerImage,
   isVerified = false,
   responseTime,
-  phone,
+  phone: _phone,
   joinedDate,
   listingsCount,
   onCall,

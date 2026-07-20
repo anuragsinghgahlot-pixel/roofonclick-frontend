@@ -1,4 +1,4 @@
-// StayyNest Middleware placeholder
+// RoofOnClick Middleware placeholder
 // Implement request filtering, auth routing, and redirect logic here in the future.
 export function middleware() {
   // Empty placeholder

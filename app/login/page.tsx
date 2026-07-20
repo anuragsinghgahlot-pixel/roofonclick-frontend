@@ -3,8 +3,35 @@
 import * as React from "react";
 import Link from "next/link";
 import { ArrowLeft, Mail, Lock } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/providers/auth-provider";
+import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
+  const [email, setEmail] = React.useState("");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [showToast, setShowToast] = React.useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    
+    // Simulate login authentication delay (e.g. 700ms)
+    setTimeout(() => {
+      login(email);
+      setShowToast(true);
+      
+      // Short delay to let the user see the success toast
+      setTimeout(() => {
+        setIsSubmitting(false);
+        router.push("/");
+      }, 900);
+    }, 700);
+  };
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Soft background radial highlights */}
@@ -23,21 +50,29 @@ export default function LoginPage() {
 
       {/* Main card */}
       <div className="w-full max-w-md bg-card/85 backdrop-blur-md border border-border/80 p-8 sm:p-10 rounded-[28px] shadow-premium relative z-10 flex flex-col gap-6">
+        <title>Login | RoofOnClick</title>
         {/* Header */}
         <div className="flex flex-col gap-2 text-center">
           <span className="font-heading text-2xl font-extrabold text-primary tracking-tight select-none">
-            StayyNest
+            RoofOnClick
           </span>
           <h1 className="font-heading text-2xl font-extrabold text-primary tracking-tight mt-2">
             Welcome Back
           </h1>
           <p className="font-body text-xs text-muted-foreground">
-            Sign in to manage your verified Indore stay and resident settings.
+            Sign in to continue exploring verified PGs, hostels, co-living spaces, and rental properties.
           </p>
         </div>
 
+        {/* Success Toast */}
+        {showToast && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground font-heading text-xs font-extrabold uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-2 select-none">
+            <span>🎉</span> Signed in successfully!
+          </div>
+        )}
+
         {/* Demo Form */}
-        <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Email */}
           <div className="flex flex-col gap-1.5 text-left">
             <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
@@ -48,6 +83,8 @@ export default function LoginPage() {
               <input
                 type="email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
                 placeholder="you@example.com"
               />
@@ -81,9 +118,24 @@ export default function LoginPage() {
           {/* Sign In Button */}
           <button
             type="submit"
-            className="w-full bg-primary hover:bg-accent text-primary-foreground hover:text-accent-foreground py-3.5 rounded-xl font-heading text-sm font-bold tracking-wide transition-all duration-300 shadow-md cursor-pointer mt-2"
+            disabled={isSubmitting}
+            data-no-intercept="true"
+            className={cn(
+              "w-full bg-primary hover:bg-accent text-primary-foreground hover:text-accent-foreground py-3.5 rounded-xl font-heading text-sm font-bold tracking-wide transition-all duration-300 shadow-md flex items-center justify-center gap-2 mt-2 select-none",
+              isSubmitting ? "cursor-not-allowed opacity-80" : "cursor-pointer"
+            )}
           >
-            Sign In
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-primary-foreground shrink-0" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span>Signing In...</span>
+              </>
+            ) : (
+              "Sign In"
+            )}
           </button>
         </form>
 

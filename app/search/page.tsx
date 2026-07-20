@@ -1,136 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import Navbar from "@/components/navigation/navbar";
 import Footer from "@/components/navigation/footer";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
-import { MapPin, Star, ShieldCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { FilterSidebar } from "@/components/filters/filter-sidebar";
+import { SearchToolbar } from "@/components/search/search-toolbar";
+import { PropertyCard } from "@/components/cards/property-card";
 
-// Mock Properties Dataset (9 items)
-const MOCK_PROPERTIES = [
-  {
-    id: "p1",
-    name: "Elite Residency",
-    location: "Vijay Nagar",
-    price: 8500,
-    rating: 4.8,
-    verified: true,
-    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80",
-    type: "Co-Living",
-    gender: "co-living",
-    propertyTypeGroup: "PG",
-    amenities: ["WiFi", "Food", "AC", "Laundry", "Parking"],
-  },
-  {
-    id: "p2",
-    name: "Skyline Premium Stays",
-    location: "Bhawarkuan",
-    price: 7200,
-    rating: 4.5,
-    verified: true,
-    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80",
-    type: "Boys PG",
-    gender: "boys",
-    propertyTypeGroup: "PG",
-    amenities: ["WiFi", "Food", "AC", "Laundry"],
-  },
-  {
-    id: "p3",
-    name: "CoHabit Spaces",
-    location: "Palasia",
-    price: 9500,
-    rating: 4.9,
-    verified: true,
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&auto=format&fit=crop&q=80",
-    type: "Co-Living",
-    gender: "co-living",
-    propertyTypeGroup: "PG",
-    amenities: ["WiFi", "AC", "Laundry", "Parking"],
-  },
-  {
-    id: "p4",
-    name: "Oasis Student Hostel",
-    location: "Vijay Nagar",
-    price: 6000,
-    rating: 4.2,
-    verified: false,
-    image: "https://images.unsplash.com/photo-1554995207-c18c203602cb?w=600&auto=format&fit=crop&q=80",
-    type: "Hostel",
-    gender: "boys",
-    propertyTypeGroup: "Hostel",
-    amenities: ["WiFi", "Food", "Laundry"],
-  },
-  {
-    id: "p5",
-    name: "Serene Nest for Girls",
-    location: "Bhawarkuan",
-    price: 8000,
-    rating: 4.7,
-    verified: true,
-    image: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&auto=format&fit=crop&q=80",
-    type: "Girls PG",
-    gender: "girls",
-    propertyTypeGroup: "PG",
-    amenities: ["WiFi", "Food", "AC", "Laundry", "Parking"],
-  },
-  {
-    id: "p6",
-    name: "DAVV Scholar House",
-    location: "IET DAVV",
-    price: 6500,
-    rating: 4.4,
-    verified: true,
-    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&auto=format&fit=crop&q=80",
-    type: "Hostel",
-    gender: "boys",
-    propertyTypeGroup: "Hostel",
-    amenities: ["WiFi", "Food", "Laundry", "Parking"],
-  },
-  {
-    id: "p7",
-    name: "Medanta Care Suites",
-    location: "Medanta Hospital",
-    price: 11000,
-    rating: 4.9,
-    verified: true,
-    image: "https://images.unsplash.com/photo-1560185127-6a2806647f81?w=600&auto=format&fit=crop&q=80",
-    type: "Co-Living",
-    gender: "co-living",
-    propertyTypeGroup: "PG",
-    amenities: ["WiFi", "AC", "Laundry", "Parking"],
-  },
-  {
-    id: "p8",
-    name: "C21 Luxury Stay",
-    location: "C21 Mall",
-    price: 12500,
-    rating: 4.9,
-    verified: true,
-    image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600&auto=format&fit=crop&q=80",
-    type: "Co-Living",
-    gender: "co-living",
-    propertyTypeGroup: "PG",
-    amenities: ["WiFi", "Food", "AC", "Laundry", "Parking"],
-  },
-  {
-    id: "p9",
-    name: "Orchard Heights",
-    location: "Palasia",
-    price: 8800,
-    rating: 4.6,
-    verified: false,
-    image: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=600&auto=format&fit=crop&q=80",
-    type: "Girls PG",
-    gender: "girls",
-    propertyTypeGroup: "PG",
-    amenities: ["WiFi", "Food", "AC", "Laundry"],
-  },
-];
+import { MOCK_PROPERTIES } from "@/constants/mock-properties";
 
 // Helper to format slug to title case / display name
 function getDisplayTitle(slug: string): string {
@@ -146,13 +27,19 @@ function getDisplayTitle(slug: string): string {
 }
 
 function SearchPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const locationSlug = searchParams.get("location");
-  const [selectedType, setSelectedType] = React.useState<string>("All");
+  const [selectedType] = React.useState<string>("All");
   const [selectedGenders, setSelectedGenders] = React.useState<string[]>([]);
   const [selectedSidebarTypes, setSelectedSidebarTypes] = React.useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = React.useState<string | null>(null);
+  const [selectedAmenities, setSelectedAmenities] = React.useState<string[]>([]);
+  const [selectedSharing, setSelectedSharing] = React.useState<string[]>([]);
+  const [selectedSort, setSelectedSort] = React.useState<string>("Recommended");
+
+  const handleSortChange = React.useCallback((sort: string) => {
+    setSelectedSort(sort);
+  }, []);
 
   const handleGenderChange = React.useCallback((gender: string) => {
     setSelectedGenders((prev) =>
@@ -174,9 +61,43 @@ function SearchPageContent() {
     setSelectedBudget((prev) => (prev === budget ? null : budget));
   }, []);
 
-  // Filter properties based on URL slug, selected top type, selected genders, selected sidebar types AND budget range
+  const handleAmenityChange = React.useCallback((amenity: string) => {
+    setSelectedAmenities((prev) =>
+      prev.includes(amenity)
+        ? prev.filter((a) => a !== amenity)
+        : [...prev, amenity]
+    );
+  }, []);
+
+  const handleSharingChange = React.useCallback((option: string) => {
+    setSelectedSharing((prev) =>
+      prev.includes(option)
+        ? prev.filter((o) => o !== option)
+        : [...prev, option]
+    );
+  }, []);
+
+  const handleClearAll = React.useCallback(() => {
+    setSelectedGenders([]);
+    setSelectedSidebarTypes([]);
+    setSelectedBudget(null);
+    setSelectedAmenities([]);
+    setSelectedSharing([]);
+  }, []);
+
+  const hasActiveFilters = React.useMemo(() => {
+    return (
+      selectedGenders.length > 0 ||
+      selectedSidebarTypes.length > 0 ||
+      selectedBudget !== null ||
+      selectedAmenities.length > 0 ||
+      selectedSharing.length > 0
+    );
+  }, [selectedGenders, selectedSidebarTypes, selectedBudget, selectedAmenities, selectedSharing]);
+
+  // Filter properties based on URL slug, selected top type, selected genders, selected sidebar types, budget range, selected amenities AND sharing options
   const filteredProperties = React.useMemo(() => {
-    let result = MOCK_PROPERTIES;
+    let result = [...MOCK_PROPERTIES];
 
     // 1. Filter by location slug
     if (locationSlug) {
@@ -225,8 +146,33 @@ function SearchPageContent() {
       }
     }
 
+    // 6. Filter by selected amenities (AND logic)
+    if (selectedAmenities.length > 0) {
+      result = result.filter((p) =>
+        selectedAmenities.every((amenity) => p.amenities.includes(amenity))
+      );
+    }
+
+    // 7. Filter by sharing options (OR logic)
+    if (selectedSharing.length > 0) {
+      result = result.filter((p) =>
+        p.sharing.some((opt) => selectedSharing.includes(opt))
+      );
+    }
+
+    // --- SORTING (happens after filtering) ---
+    if (selectedSort === "Price: Low to High") {
+      result.sort((a, b) => a.price - b.price);
+    } else if (selectedSort === "Price: High to Low") {
+      result.sort((a, b) => b.price - a.price);
+    } else if (selectedSort === "Highest Rated") {
+      result.sort((a, b) => b.rating - a.rating);
+    } else if (selectedSort === "Newest") {
+      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
     return result;
-  }, [locationSlug, selectedType, selectedGenders, selectedSidebarTypes, selectedBudget]);
+  }, [locationSlug, selectedType, selectedGenders, selectedSidebarTypes, selectedBudget, selectedAmenities, selectedSharing, selectedSort]);
 
   const displayLocation = React.useMemo(() => {
     return locationSlug ? getDisplayTitle(locationSlug) : "All Locations";
@@ -259,26 +205,7 @@ function SearchPageContent() {
               </div>
             </div>
 
-            {/* Property Type Filter Chips */}
-            <div className="flex flex-wrap gap-2.5 mb-10 text-left" data-no-intercept="true">
-              {["All", "Boys PG", "Girls PG", "Co-Living", "Hostel"].map((type) => {
-                const isSelected = selectedType === type;
-                return (
-                  <button
-                    key={type}
-                    onClick={() => setSelectedType(type)}
-                    className={cn(
-                      "px-5 py-2.5 rounded-full text-xs font-bold tracking-wide border transition-all duration-200 cursor-pointer shadow-sm select-none",
-                      isSelected
-                        ? "bg-primary text-primary-foreground border-primary/30 font-extrabold"
-                        : "bg-card border-border/80 text-muted-foreground hover:text-foreground hover:border-border/60"
-                    )}
-                  >
-                    {type}
-                  </button>
-                );
-              })}
-            </div>
+
 
             {/* Main Content Layout: Sidebar + Grid */}
             <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -290,90 +217,34 @@ function SearchPageContent() {
                 onTypeChange={handleSidebarTypeChange}
                 selectedBudget={selectedBudget}
                 onBudgetChange={handleBudgetChange}
+                selectedAmenities={selectedAmenities}
+                onAmenityChange={handleAmenityChange}
+                selectedSharing={selectedSharing}
+                onSharingChange={handleSharingChange}
               />
 
               {/* Right Column: Grid or Empty State */}
               <div className="flex-1 w-full">
+                <SearchToolbar
+                  selectedGenders={selectedGenders}
+                  onGenderChange={handleGenderChange}
+                  selectedTypes={selectedSidebarTypes}
+                  onTypeChange={handleSidebarTypeChange}
+                  selectedBudget={selectedBudget}
+                  onBudgetChange={handleBudgetChange}
+                  selectedAmenities={selectedAmenities}
+                  onAmenityChange={handleAmenityChange}
+                  selectedSharing={selectedSharing}
+                  onSharingChange={handleSharingChange}
+                  hasActiveFilters={hasActiveFilters}
+                  onClearAll={handleClearAll}
+                  selectedSort={selectedSort}
+                  onSortChange={handleSortChange}
+                />
                 {filteredProperties.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
                     {filteredProperties.map((property) => (
-                      <div
-                        key={property.id}
-                        onClick={() => router.push(`/property/${property.id}`)}
-                        className="group bg-card border border-border/80 rounded-2xl overflow-hidden shadow-premium hover:shadow-2xl hover:scale-[1.015] hover:-translate-y-0.5 transition-all duration-250 flex flex-col cursor-pointer"
-                      >
-                        {/* Image Container */}
-                        <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
-                          <img
-                            src={property.image}
-                            alt={property.name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                          
-                          {/* Type Badge */}
-                          <span className="absolute top-3 left-3 bg-foreground/80 backdrop-blur-md text-background text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-md z-10">
-                            {property.type}
-                          </span>
-
-                          {/* Verified Badge */}
-                          {property.verified && (
-                            <span className="absolute top-3 right-3 bg-primary text-primary-foreground text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-md flex items-center gap-1 shadow-sm z-10">
-                              <ShieldCheck className="w-3.5 h-3.5" />
-                              Verified
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Content Container */}
-                        <div className="p-5 flex-1 flex flex-col justify-between text-left">
-                          <div>
-                            {/* Location and Rating Row */}
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-1 text-muted-foreground">
-                                <MapPin className="w-3.5 h-3.5 text-secondary shrink-0" />
-                                <span className="text-xs font-semibold font-body">{property.location}</span>
-                              </div>
-                              <div className="flex items-center gap-1 bg-secondary/10 px-2 py-0.5 rounded-lg">
-                                <Star className="w-3.5 h-3.5 text-secondary fill-current shrink-0" />
-                                <span className="text-xs font-bold text-primary">{property.rating}</span>
-                              </div>
-                            </div>
-
-                            {/* Property Name */}
-                            <h3 className="font-heading text-lg font-bold text-primary mb-3 group-hover:text-secondary transition-colors duration-200">
-                              {property.name}
-                            </h3>
-
-                            {/* Amenities Tags */}
-                            <div className="flex flex-wrap gap-1.5 mb-4">
-                              {property.amenities.map((amenity) => (
-                                <span
-                                  key={amenity}
-                                  className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-md"
-                                >
-                                  {amenity}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Price & Action Row */}
-                          <div className="border-t border-border/60 pt-4 flex items-center justify-between mt-auto">
-                            <div>
-                              <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground block leading-none">
-                                Starting from
-                              </span>
-                              <span className="font-heading text-lg font-extrabold text-primary">
-                                ₹{property.price.toLocaleString()}
-                                <span className="text-xs font-semibold text-muted-foreground font-body">/mo</span>
-                              </span>
-                            </div>
-                            <button className="bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground text-xs font-bold tracking-wide px-4 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md shadow-primary/10">
-                              Book Room
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                      <PropertyCard property={property} key={property.id} />
                     ))}
                   </div>
                 ) : (

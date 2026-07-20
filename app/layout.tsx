@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { NavigationHandler } from "@/components/shared/navigation-handler";
+import { WishlistProvider } from "@/providers/wishlist-provider";
+import { AuthProvider } from "@/providers/auth-provider";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -16,7 +18,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "StayyNest - Find Hostels & PGs in Indore",
+  title: "RoofOnClick - Find Hostels & PGs in Indore",
   description: "Modern accommodation discovery platform helping students and working professionals find premium hostels and PGs in Indore.",
 };
 
@@ -32,7 +34,11 @@ export default function RootLayout({
     >
       <body className="font-body min-h-full bg-background text-foreground flex flex-col">
         <NavigationHandler />
-        {children}
+        <AuthProvider>
+          <WishlistProvider>
+            {children}
+          </WishlistProvider>
+        </AuthProvider>
       </body>
     </html>
   );

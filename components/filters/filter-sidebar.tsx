@@ -8,6 +8,10 @@ interface FilterSidebarProps {
   onTypeChange: (type: string) => void;
   selectedBudget: string | null;
   onBudgetChange: (budget: string | null) => void;
+  selectedAmenities: string[];
+  onAmenityChange: (amenity: string) => void;
+  selectedSharing: string[];
+  onSharingChange: (option: string) => void;
 }
 
 export function FilterSidebar({
@@ -17,6 +21,10 @@ export function FilterSidebar({
   onTypeChange,
   selectedBudget,
   onBudgetChange,
+  selectedAmenities,
+  onAmenityChange,
+  selectedSharing,
+  onSharingChange,
 }: FilterSidebarProps) {
   return (
     <aside className="hidden md:block md:w-[240px] lg:w-[280px] shrink-0 sticky top-[100px] z-20" data-no-intercept="true">
@@ -117,25 +125,64 @@ export function FilterSidebar({
 
         <hr className="border-border/60" />
 
-        {/* Section 4: Sharing */}
+        {/* Section 4: Sharing checkboxes */}
         <div className="flex flex-col gap-3">
           <h3 className="font-heading text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
             Sharing
           </h3>
-          <div className="text-xs text-muted-foreground/60 italic px-1">
-            (Sharing selection placeholder)
+          <div className="flex flex-col gap-2.5">
+            {[
+              "Single Sharing",
+              "Double Sharing",
+              "Triple Sharing",
+              "Four Sharing",
+            ].map((option) => (
+              <label
+                key={option}
+                className="flex items-center gap-2.5 text-sm font-semibold text-primary cursor-pointer select-none"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedSharing.includes(option)}
+                  onChange={() => onSharingChange(option)}
+                  className="rounded border-border/80 text-primary focus:ring-primary w-4 h-4 cursor-pointer"
+                />
+                <span>{option}</span>
+              </label>
+            ))}
           </div>
         </div>
 
         <hr className="border-border/60" />
 
-        {/* Section 5: Amenities */}
+        {/* Section 5: Amenities checkboxes */}
         <div className="flex flex-col gap-3">
           <h3 className="font-heading text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
             Amenities
           </h3>
-          <div className="text-xs text-muted-foreground/60 italic px-1">
-            (Amenities selection placeholder)
+          <div className="flex flex-col gap-2.5">
+            {[
+              "WiFi",
+              "AC",
+              "Non-AC",
+              "Laundry",
+              "Mess Included",
+              "Room Cleaning",
+              "Washing Machine",
+            ].map((amenity) => (
+              <label
+                key={amenity}
+                className="flex items-center gap-2.5 text-sm font-semibold text-primary cursor-pointer select-none"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedAmenities.includes(amenity)}
+                  onChange={() => onAmenityChange(amenity)}
+                  className="rounded border-border/80 text-primary focus:ring-primary w-4 h-4 cursor-pointer"
+                />
+                <span>{amenity}</span>
+              </label>
+            ))}
           </div>
         </div>
       </div>

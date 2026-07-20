@@ -11,10 +11,8 @@ import {
   Check,
   Zap,
   Sparkles,
-  MapPin,
   Map,
   GraduationCap,
-  Train,
   Hospital,
   Star
 } from "lucide-react";
@@ -50,15 +48,6 @@ export function Search() {
     );
   };
 
-  // Get active client-side DOM elements dynamically to prevent detached hydration node issues
-  const activeInput = typeof document !== "undefined"
-    ? (document.querySelector('input[placeholder*="Where in Indore?"]') as HTMLInputElement)
-    : null;
-
-  const activeContainer = typeof document !== "undefined" && activeInput
-    ? (activeInput.closest('.group\\/search') as HTMLElement)
-    : null;
-
   // Filter mock suggestions based on the active query state
   const filtered = React.useMemo(() => {
     if (!query.trim()) return SUGGESTIONS;
@@ -70,33 +59,37 @@ export function Search() {
     );
   }, [query]);
 
-  // Apply styling on the parent container when dropdown opens/closes
-  React.useEffect(() => {
-    if (activeContainer) {
-      activeContainer.style.position = "relative";
-    }
-  }, [activeContainer, isOpen]);
+  const activeInput = typeof document !== "undefined"
+    ? (document.querySelector('input[placeholder*="Where in Indore?"]') as HTMLInputElement | null)
+    : null;
+  const activeContainer = activeInput?.closest('.group\\/search') as HTMLElement | null;
 
   React.useEffect(() => {
     // Dynamic event delegation on the document element to bind interaction behaviors
-    // to the search input in the Hero component dynamically.
+    const inputEl = document.querySelector('input[placeholder*="Where in Indore?"]') as HTMLInputElement | null;
+    const containerEl = inputEl?.closest('.group\\/search') as HTMLElement | null;
+
+    if (containerEl) {
+      containerEl.style.position = "relative";
+    }
+
     const handleDocumentClick = (e: MouseEvent) => {
       const target = e.target as HTMLInputElement;
-      if (target && target.matches && target.matches('input[placeholder*="Where in Indore?"]')) {
+      if (target?.matches?.('input[placeholder*="Where in Indore?"]')) {
         setIsOpen(true);
       }
     };
 
     const handleDocumentFocus = (e: FocusEvent) => {
       const target = e.target as HTMLInputElement;
-      if (target && target.matches && target.matches('input[placeholder*="Where in Indore?"]')) {
+      if (target?.matches?.('input[placeholder*="Where in Indore?"]')) {
         setIsOpen(true);
       }
     };
 
     const handleDocumentInput = (e: Event) => {
       const target = e.target as HTMLInputElement;
-      if (target && target.matches && target.matches('input[placeholder*="Where in Indore?"]')) {
+      if (target?.matches?.('input[placeholder*="Where in Indore?"]')) {
         setQuery(target.value);
         setIsOpen(true);
       }
@@ -104,7 +97,7 @@ export function Search() {
 
     const handleDocumentKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLInputElement;
-      if (target && target.matches && target.matches('input[placeholder*="Where in Indore?"]')) {
+      if (target?.matches?.('input[placeholder*="Where in Indore?"]')) {
         if (e.key === "Escape") {
           setIsOpen(false);
           target.blur();
@@ -118,28 +111,26 @@ export function Search() {
     document.addEventListener("input", handleDocumentInput);
     document.addEventListener("keydown", handleDocumentKeyDown);
 
-    // Sync initial query state
-    if (activeInput) {
-      setQuery(activeInput.value);
-    }
-
     return () => {
       document.removeEventListener("click", handleDocumentClick, true);
       document.removeEventListener("focus", handleDocumentFocus, true);
       document.removeEventListener("input", handleDocumentInput);
       document.removeEventListener("keydown", handleDocumentKeyDown);
     };
-  }, [activeInput]);
+  }, []);
 
   // Click outside to close the dropdown
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
+      const inputEl = document.querySelector('input[placeholder*="Where in Indore?"]') as HTMLInputElement | null;
+      const containerEl = inputEl?.closest('.group\\/search') as HTMLElement | null;
+
       if (
-        activeInput &&
-        activeContainer &&
-        !activeInput.contains(target) &&
-        !activeContainer.contains(target)
+        inputEl &&
+        containerEl &&
+        !inputEl.contains(target) &&
+        !containerEl.contains(target)
       ) {
         setIsOpen(false);
       }
@@ -149,7 +140,7 @@ export function Search() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [activeInput, activeContainer]);
+  }, []);
 
   return (
     <>

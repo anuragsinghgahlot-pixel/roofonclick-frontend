@@ -18,7 +18,7 @@ export function ComingSoon({ title, description }: ComingSoonProps) {
       {/* Brand logo header */}
       <div className="absolute top-8 left-8 flex items-center">
         <span className="font-heading text-xl font-extrabold text-primary tracking-tight select-none">
-          StayyNest
+          RoofOnClick
         </span>
       </div>
 
@@ -55,7 +55,7 @@ export function ComingSoon({ title, description }: ComingSoonProps) {
 
       {/* Footer copyright */}
       <div className="absolute bottom-8 text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-widest">
-        &copy; {new Date().getFullYear()} StayyNest &middot; Made with ♥ in Indore
+        &copy; {new Date().getFullYear()} RoofOnClick &middot; Made with ♥ in Indore
       </div>
     </div>
   );
