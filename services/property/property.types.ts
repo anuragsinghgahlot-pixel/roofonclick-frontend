@@ -1,11 +1,20 @@
 export interface RoomConfiguration {
-  roomType: "Single Sharing" | "Double Sharing" | "Triple Sharing" | "Four Sharing";
-  rent: number;
-  securityDeposit?: number;
+  id?: string;
+  sharingType: "Single" | "Double" | "Triple" | "Four Sharing" | "Private Suite" | string;
+  monthlyRent: number;
+  securityDeposit: number;
+  totalRooms: number;
   availableRooms: number;
-  availability: "Available Now" | "Available Next Month" | "Fully Occupied";
-  mealsIncluded: boolean;
-  electricity: "Included" | "Extra Charges";
+  gender: "Boys" | "Girls" | "Co-living" | "Any" | string;
+  attachedBathroom: boolean;
+  furnished: "Fully Furnished" | "Semi Furnished" | "Unfurnished" | string;
+
+  // Legacy/backward compatibility properties
+  roomType?: string;
+  rent?: number;
+  availability?: string;
+  mealsIncluded?: boolean;
+  electricity?: string;
 }
 
 export interface HouseRules {
@@ -51,6 +60,7 @@ export interface Property {
   landmark?: string;
   mapsLink?: string;
   rooms: RoomConfiguration[];
+  roomConfigurations?: RoomConfiguration[];
   amenities: string[];
   rules: HouseRules;
   nearby: string[];
@@ -58,6 +68,7 @@ export interface Property {
   video?: MediaVideo | null;
   coverPhoto: string;
   startingRent: number;
+  startingPrice?: number;
   status: "Published" | "Draft" | "Archived";
   views: number;
   enquiries: number;

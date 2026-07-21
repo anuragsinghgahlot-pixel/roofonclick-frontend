@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { NavigationHandler } from "@/components/shared/navigation-handler";
 import { WishlistProvider } from "@/providers/wishlist-provider";
 import { AuthProvider } from "@/providers/auth-provider";
+import { ThemeProvider } from "@/providers/theme-provider";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -30,15 +31,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="font-body min-h-full bg-background text-foreground flex flex-col">
         <NavigationHandler />
-        <AuthProvider>
-          <WishlistProvider>
-            {children}
-          </WishlistProvider>
-        </AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            <WishlistProvider>
+              {children}
+            </WishlistProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

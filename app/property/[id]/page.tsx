@@ -36,6 +36,8 @@ import {
 } from "@/features/property-details/components";
 import Navbar from "@/components/navigation/navbar";
 import Footer from "@/components/navigation/footer";
+import { calculateRoomAvailability } from "@/lib/availability-utils";
+import { cn } from "@/lib/utils";
 
 // ─── Fallback Mock Data ─────────────────────────────────────────────────────────
 
@@ -91,6 +93,9 @@ const MOCK_SIMILAR_PROPERTIES = [
 
 import { PropertyService, Property, MediaImage, RoomConfiguration } from "@/services/property";
 
+import { ScheduleVisitModal } from "@/components/enquiry/schedule-visit-modal";
+import { SendEnquiryModal } from "@/components/enquiry/send-enquiry-modal";
+
 function PropertyDetailsContent() {
   const params = useParams();
   const router = useRouter();
@@ -103,6 +108,9 @@ function PropertyDetailsContent() {
   const [property, setProperty] = React.useState<Property | null>(() => {
     return propertyId ? PropertyService.getPropertyById(propertyId) : null;
   });
+
+  const [isVisitModalOpen, setIsVisitModalOpen] = React.useState(false);
+  const [isEnquiryModalOpen, setIsEnquiryModalOpen] = React.useState(false);
 
   if (prevId !== propertyId) {
     setPrevId(propertyId);
@@ -210,44 +218,94 @@ function PropertyDetailsContent() {
                   </div>
                 )}
 
-                {/* Room Configurations Section */}
+                {/* Room Options Section */}
                 {property?.rooms && property.rooms.length > 0 && (
-                  <div className="flex flex-col gap-6">
-                    <div className="flex flex-col gap-1 text-left">
+                  <div className="flex flex-col gap-6 text-left">
+                    <div className="flex flex-col gap-1">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
-                        Available Room Plans
+                        Available Configurations
                       </span>
                       <h2 className="font-heading text-2xl font-extrabold text-primary tracking-tight">
-                        Room Configurations & Pricing
+                        Room Options
                       </h2>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {property.rooms.map((rm: RoomConfiguration, idx: number) => (
-                        <div key={idx} className="bg-card border border-border/80 p-5 rounded-2xl shadow-sm flex flex-col gap-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <span className="font-heading text-sm font-extrabold text-primary block">
-                                {rm.roomType}
-                              </span>
-                              <span className="font-body text-xs text-muted-foreground">
-                                {rm.availableRooms} rooms • {rm.availability}
-                              </span>
+                      {property.rooms.map((rm: RoomConfiguration, idx: number) => {
+                        const sharing = rm.sharingType || rm.roomType || "Single";
+                        const rent = rm.monthlyRent ?? rm.rent ?? 0;
+                        const deposit = rm.securityDeposit ?? 0;
+                        const total = rm.totalRooms ?? 1;
+                        const avail = rm.availableRooms ?? 1;
+                        const roomGender = rm.gender || "Boys";
+                        const bath = rm.attachedBathroom ? "Attached Bathroom" : "Shared Bathroom";
+                        const furnished = rm.furnished || "Fully Furnished";
+
+                        return (
+                          <div key={idx} className="bg-card border border-border/80 p-5 rounded-2xl shadow-sm flex flex-col justify-between gap-4 hover:border-primary/40 transition-all">
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-start gap-2">
+                                <div className="space-y-1">
+                                  <span className="font-heading text-base font-extrabold text-primary block">
+                                    {sharing}
+                                  </span>
+                                  {(() => {
+                                    const availability = calculateRoomAvailability(avail, total);
+                                    return (
+                                      <div className="flex items-center gap-1.5">
+                                        <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border flex items-center gap-1.5", availability.bgColor, availability.textColor, availability.borderColor)}>
+                                          <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", availability.dotColor)} />
+                                          <span>{availability.label}</span>
+                                        </span>
+                                        <span className="font-body text-[11px] font-semibold text-muted-foreground">
+                                          ({avail}/{total} Left)
+                                        </span>
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                                <span className="font-heading text-base font-extrabold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/20 shrink-0">
+                                  ₹{rent.toLocaleString()} <span className="text-[10px] font-semibold text-muted-foreground font-body">/mo</span>
+                                </span>
+                              </div>
+
+                              <div className="w-full h-px bg-border/40" />
+
+                              <div className="grid grid-cols-2 gap-2.5 text-xs font-semibold font-body text-muted-foreground">
+                                <div className="space-y-0.5">
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Deposit</span>
+                                  <span className="text-primary font-bold">₹{deposit.toLocaleString()}</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Gender</span>
+                                  <span className="text-primary font-bold">{roomGender}</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Bathroom</span>
+                                  <span className="text-primary font-bold">{bath}</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Furnished</span>
+                                  <span className="text-primary font-bold">{furnished}</span>
+                                </div>
+                              </div>
                             </div>
-                            <span className="font-heading text-base font-extrabold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
-                              ₹{rm.rent} <span className="text-[10px] font-normal text-muted-foreground">/mo</span>
-                            </span>
-                          </div>
 
-                          <div className="w-full h-px bg-border/40" />
-
-                          <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-muted-foreground">
-                            <div>Deposit: <strong className="text-primary">₹{rm.securityDeposit || "0"}</strong></div>
-                            <div>Meals: <strong className="text-primary">{rm.mealsIncluded ? "Included" : "No"}</strong></div>
-                            <div className="col-span-2">Electricity: <strong className="text-primary">{rm.electricity}</strong></div>
+                            <button
+                              type="button"
+                              data-no-intercept="true"
+                              onClick={() => {
+                                import("sonner").then(({ toast }) => {
+                                  toast.info(`Booking request initiated for ${sharing} (${displayTitle}). Our team will reach out shortly.`);
+                                });
+                              }}
+                              className="w-full mt-1 bg-primary hover:bg-accent text-primary-foreground hover:text-accent-foreground py-2.5 rounded-xl font-heading text-xs font-bold transition-all shadow-sm cursor-pointer text-center"
+                            >
+                              Book This Room
+                            </button>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -367,7 +425,9 @@ function PropertyDetailsContent() {
                       availability="available"
                       includedBenefits={["High-speed Wi-Fi", "Daily housekeeping", "24/7 Power backup"]}
                       onBookNow={() => router.push("/booking")}
-                      onContactOwner={() => router.push("/contact-owner")}
+                      onScheduleVisit={() => setIsVisitModalOpen(true)}
+                      onSendEnquiry={() => setIsEnquiryModalOpen(true)}
+                      onContactOwner={() => setIsEnquiryModalOpen(true)}
                     />
                   )}
                   
@@ -379,8 +439,8 @@ function PropertyDetailsContent() {
                     phone="+91 98765 43210"
                     joinedDate="Verified Property"
                     listingsCount={1}
-                    onCall={() => {}}
-                    onMessage={() => {}}
+                    onCall={() => setIsEnquiryModalOpen(true)}
+                    onMessage={() => setIsEnquiryModalOpen(true)}
                   />
                 </div>
               </aside>
@@ -407,6 +467,21 @@ function PropertyDetailsContent() {
       </main>
 
       <Footer />
+
+      {/* Schedule Visit & Send Enquiry Modals */}
+      <ScheduleVisitModal
+        isOpen={isVisitModalOpen}
+        onClose={() => setIsVisitModalOpen(false)}
+        propertyId={propertyId || "default"}
+        propertyName={displayTitle}
+      />
+
+      <SendEnquiryModal
+        isOpen={isEnquiryModalOpen}
+        onClose={() => setIsEnquiryModalOpen(false)}
+        propertyId={propertyId || "default"}
+        propertyName={displayTitle}
+      />
     </div>
   );
 }

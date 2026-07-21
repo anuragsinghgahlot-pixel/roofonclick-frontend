@@ -28,8 +28,12 @@ export interface PricingCardProps {
   includedBenefits: string[];
   /** Callback when "Book Now" is clicked */
   onBookNow?: () => void;
-  /** Callback when "Contact Owner" is clicked */
+  /** Callback when "Contact Owner" or "Send Enquiry" is clicked */
   onContactOwner?: () => void;
+  /** Callback when "Schedule Visit" is clicked */
+  onScheduleVisit?: () => void;
+  /** Callback when "Send Enquiry" is clicked */
+  onSendEnquiry?: () => void;
   /** Optional class override */
   className?: string;
 }
@@ -92,6 +96,8 @@ export function PricingCard({
   includedBenefits,
   onBookNow,
   onContactOwner,
+  onScheduleVisit,
+  onSendEnquiry,
   className,
 }: PricingCardProps) {
   const avail = AVAILABILITY_CONFIG[availability];
@@ -206,35 +212,51 @@ export function PricingCard({
         {/* Book Now — Primary */}
         <motion.button
           type="button"
+          data-no-intercept="true"
           onClick={onBookNow}
           disabled={isSoldOut}
           whileHover={!isSoldOut ? { scale: 1.015, y: -1 } : undefined}
           whileTap={!isSoldOut ? { scale: 0.985 } : undefined}
           transition={{ duration: 0.2, ease: PREMIUM_EASE }}
           className={cn(
-            "w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-heading text-sm font-bold tracking-wide shadow-md transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            "w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-heading text-sm font-bold tracking-wide shadow-md transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             isSoldOut
               ? "bg-muted text-muted-foreground cursor-not-allowed shadow-none border border-border/40"
               : "bg-primary text-primary-foreground hover:bg-accent hover:shadow-lg hover:shadow-primary/10 cursor-pointer border border-primary/20"
           )}
-          aria-label={isSoldOut ? "Property is sold out" : "Book this property now"}
         >
           <CalendarCheck className="w-4 h-4" />
           {isSoldOut ? "Sold Out" : "Book Now"}
         </motion.button>
 
-        {/* Contact Owner — Secondary */}
-        <motion.button
-          type="button"
-          onClick={onContactOwner}
-          whileHover={{ scale: 1.015, y: -1 }}
-          whileTap={{ scale: 0.985 }}
-          transition={{ duration: 0.2, ease: PREMIUM_EASE }}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border border-primary/25 bg-primary/5 hover:bg-primary hover:text-primary-foreground text-primary font-heading text-sm font-bold tracking-wide transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <Phone className="w-4 h-4" />
-          Contact Owner
-        </motion.button>
+        {/* Schedule Visit & Send Enquiry Grid */}
+        <div className="grid grid-cols-2 gap-2">
+          <motion.button
+            type="button"
+            data-no-intercept="true"
+            onClick={onScheduleVisit}
+            whileHover={{ scale: 1.015, y: -1 }}
+            whileTap={{ scale: 0.985 }}
+            transition={{ duration: 0.2, ease: PREMIUM_EASE }}
+            className="flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl border border-secondary/40 bg-secondary/10 hover:bg-secondary hover:text-secondary-foreground text-secondary font-heading text-xs font-bold transition-all duration-300 cursor-pointer shadow-sm"
+          >
+            <CalendarCheck className="w-3.5 h-3.5" />
+            <span>Schedule Visit</span>
+          </motion.button>
+
+          <motion.button
+            type="button"
+            data-no-intercept="true"
+            onClick={onSendEnquiry || onContactOwner}
+            whileHover={{ scale: 1.015, y: -1 }}
+            whileTap={{ scale: 0.985 }}
+            transition={{ duration: 0.2, ease: PREMIUM_EASE }}
+            className="flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl border border-primary/25 bg-primary/5 hover:bg-primary hover:text-primary-foreground text-primary font-heading text-xs font-bold transition-all duration-300 cursor-pointer shadow-sm"
+          >
+            <Phone className="w-3.5 h-3.5" />
+            <span>Send Enquiry</span>
+          </motion.button>
+        </div>
       </div>
 
       {/* ── Trust Footer / HUD ── */}

@@ -113,25 +113,44 @@ export function StepReview() {
         {/* Room Configurations Summary */}
         <div className="bg-muted/30 border border-border/60 rounded-2xl p-5 space-y-3">
           <h4 className="font-heading text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-1.5 border-b border-border/40 pb-2">
-            ₹ Pricing & Rooms
+            ₹ Pricing & Room Configurations
           </h4>
           <div className="space-y-3">
-            {(values.rooms || []).map((room: RoomConfiguration, idx: number) => (
-              <div key={idx} className="flex justify-between items-center bg-card border border-border/45 p-3 rounded-xl">
-                <div>
-                  <span className="font-heading text-xs font-bold text-primary block">{room.roomType}</span>
-                  <span className="font-body text-[10px] text-muted-foreground block">
-                    {room.availableRooms} rooms • {room.availability}
-                  </span>
+            {(values.rooms || []).map((room: RoomConfiguration, idx: number) => {
+              const sharing = room.sharingType || room.roomType || "Single";
+              const rent = room.monthlyRent ?? room.rent ?? 0;
+              const deposit = room.securityDeposit ?? 0;
+              const total = room.totalRooms ?? 1;
+              const avail = room.availableRooms ?? 1;
+              const roomGender = room.gender || "Boys";
+              const bath = room.attachedBathroom ? "Attached Bath" : "Shared Bath";
+              const furnished = room.furnished || "Fully Furnished";
+
+              return (
+                <div key={idx} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-card border border-border/45 p-3.5 rounded-xl gap-2 text-left">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-heading text-xs font-bold text-primary">{sharing}</span>
+                      <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-md">
+                        {roomGender}
+                      </span>
+                      <span className="text-[10px] font-semibold bg-muted text-muted-foreground px-2 py-0.5 rounded-md">
+                        {bath}
+                      </span>
+                    </div>
+                    <span className="font-body text-[10px] text-muted-foreground block">
+                      {avail}/{total} Rooms Available • {furnished}
+                    </span>
+                  </div>
+                  <div className="text-left sm:text-right">
+                    <span className="font-heading text-xs font-extrabold text-emerald-500 block">₹{rent.toLocaleString()} / month</span>
+                    <span className="font-body text-[9px] text-muted-foreground block">
+                      Security Deposit: ₹{deposit.toLocaleString()}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="font-heading text-xs font-extrabold text-emerald-500 block">₹{room.rent} / month</span>
-                  <span className="font-body text-[9px] text-muted-foreground block">
-                    Deposit: ₹{room.securityDeposit || "0"}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

@@ -1,10 +1,47 @@
-import { Property, PropertyWizardDraft } from "./property.types";
+import { Property, PropertyWizardDraft, RoomConfiguration } from "./property.types";
 import { STORAGE_KEYS, safeGetItem, safeSetItem, safeRemoveItem } from "./property.storage";
+
+/**
+ * Normalizes room configurations for backwards compatibility and consistency.
+ */
+function normalizeRoomConfigurations(rooms: RoomConfiguration[] = []): RoomConfiguration[] {
+  if (!Array.isArray(rooms) || rooms.length === 0) return [];
+  return rooms.map((r) => {
+    const monthlyRent = Number(r.monthlyRent ?? r.rent ?? 0);
+    const securityDeposit = Number(r.securityDeposit ?? 0);
+    const totalRooms = Number(r.totalRooms ?? r.availableRooms ?? 1);
+    const availableRooms = Number(r.availableRooms ?? 1);
+    const sharingType = r.sharingType || r.roomType || "Single";
+    const gender = r.gender || "Boys";
+    const attachedBathroom = typeof r.attachedBathroom === "boolean" ? r.attachedBathroom : true;
+    const furnished = r.furnished || "Fully Furnished";
+
+    return {
+      ...r,
+      sharingType,
+      monthlyRent,
+      securityDeposit,
+      totalRooms,
+      availableRooms,
+      gender,
+      attachedBathroom,
+      furnished,
+      // Legacy mirrors
+      roomType: (sharingType as RoomConfiguration["roomType"]),
+      rent: monthlyRent,
+    };
+  });
+}
+
+function calculateStartingPrice(rooms: RoomConfiguration[] = []): number {
+  const normalized = normalizeRoomConfigurations(rooms);
+  const rents = normalized.map((r) => r.monthlyRent).filter((r) => r > 0);
+  return rents.length > 0 ? Math.min(...rents) : 0;
+}
 
 class PropertyServiceImpl {
   /**
    * Fetch all published properties.
-   * Also checks legacy storage key for backward compatibility.
    */
   public getAllProperties(): Property[] {
     let list = safeGetItem<Property[]>(STORAGE_KEYS.PROPERTIES, []);
@@ -15,7 +52,19 @@ class PropertyServiceImpl {
         safeSetItem(STORAGE_KEYS.PROPERTIES, list);
       }
     }
-    return list;
+
+    // Ensure roomConfigurations and startingRent are normalized on read
+    return list.map((p) => {
+      const rooms = normalizeRoomConfigurations(p.rooms || p.roomConfigurations || []);
+      const startingRent = calculateStartingPrice(rooms) || p.startingRent || 0;
+      return {
+        ...p,
+        rooms,
+        roomConfigurations: rooms,
+        startingRent,
+        startingPrice: startingRent,
+      };
+    });
   }
 
   /**
@@ -33,7 +82,11 @@ class PropertyServiceImpl {
   public createProperty(data: Partial<Property>): Property {
     const properties = this.getAllProperties();
     const id = data.id || Math.random().toString(36).substring(7);
-    
+
+    const rawRooms = data.rooms || data.roomConfigurations || [];
+    const rooms = normalizeRoomConfigurations(rawRooms);
+    const startingRent = calculateStartingPrice(rooms);
+
     const newProperty: Property = {
       id,
       propertyName: data.propertyName || "Untitled Property",
@@ -45,7 +98,8 @@ class PropertyServiceImpl {
       address: data.address || "",
       landmark: data.landmark || "",
       mapsLink: data.mapsLink || "",
-      rooms: data.rooms || [],
+      rooms,
+      roomConfigurations: rooms,
       amenities: data.amenities || [],
       rules: data.rules || {},
       nearby: data.nearby || [],
@@ -55,10 +109,8 @@ class PropertyServiceImpl {
         data.images?.find((img) => img.isCover)?.url ||
         data.images?.[0]?.url ||
         "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=600&q=80",
-      startingRent:
-        data.rooms && data.rooms.length > 0
-          ? Math.min(...data.rooms.map((r) => Number(r.rent || 0)))
-          : 0,
+      startingRent,
+      startingPrice: startingRent,
       status: "Published",
       views: data.views || Math.floor(Math.random() * 45) + 12,
       enquiries: data.enquiries || Math.floor(Math.random() * 8) + 1,
@@ -82,18 +134,23 @@ class PropertyServiceImpl {
       return this.createProperty({ ...data, id });
     }
 
+    const existing = properties[index];
+    const rawRooms = data.rooms || data.roomConfigurations || existing.rooms || [];
+    const rooms = normalizeRoomConfigurations(rawRooms);
+    const startingRent = calculateStartingPrice(rooms) || existing.startingRent;
+
     const updatedProperty: Property = {
-      ...properties[index],
+      ...existing,
       ...data,
       id,
+      rooms,
+      roomConfigurations: rooms,
       coverPhoto:
         data.images?.find((img) => img.isCover)?.url ||
         data.images?.[0]?.url ||
-        properties[index].coverPhoto,
-      startingRent:
-        data.rooms && data.rooms.length > 0
-          ? Math.min(...data.rooms.map((r) => Number(r.rent || 0)))
-          : properties[index].startingRent,
+        existing.coverPhoto,
+      startingRent,
+      startingPrice: startingRent,
       updatedAt: new Date().toISOString(),
     };
 

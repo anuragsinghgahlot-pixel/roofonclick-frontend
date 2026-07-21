@@ -7,11 +7,15 @@ import { Container } from "@/components/layout/container";
 import { Section } from "@/components/shared/section";
 import Navbar from "@/components/navigation/navbar";
 import Footer from "@/components/navigation/footer";
-import { Plus, Building, Users, Calendar, BarChart3, ArrowRight, Eye, Trash2, Edit3, ExternalLink, MapPin, AlertTriangle, X } from "lucide-react";
+import { Plus, Minus, Building, Users, Calendar, BarChart3, ArrowRight, Eye, Trash2, Edit3, ExternalLink, MapPin, AlertTriangle, X, ChevronDown, Sliders } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
 import { PropertyService, Property } from "@/services/property";
+import { EnquiryService } from "@/services/enquiry";
+import { calculatePropertyAvailability, calculateRoomAvailability } from "@/lib/availability-utils";
+import { OwnerEnquiriesList } from "@/components/owner/enquiries-list";
+import { cn } from "@/lib/utils";
 
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -24,6 +28,49 @@ export default function OwnerDashboardPage() {
     return PropertyService.getAllProperties();
   });
   const [propertyToDelete, setPropertyToDelete] = React.useState<Property | null>(null);
+
+  // Collapsible availability section state per property
+  const [expandedAvailability, setExpandedAvailability] = React.useState<Record<string, boolean>>({});
+
+  const toggleAvailabilityExpand = (id: string) => {
+    setExpandedAvailability((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const handleQuickUpdateAvailability = (propertyId: string, roomIndex: number, delta: number) => {
+    const targetProperty = PropertyService.getPropertyById(propertyId);
+    if (!targetProperty || !targetProperty.rooms || !targetProperty.rooms[roomIndex]) return;
+
+    const currentRoom = targetProperty.rooms[roomIndex];
+    const total = Math.max(1, Number(currentRoom.totalRooms ?? currentRoom.availableRooms ?? 1));
+    const currentAvail = Math.max(0, Number(currentRoom.availableRooms ?? 0));
+    const newAvail = Math.max(0, Math.min(total, currentAvail + delta));
+
+    if (newAvail === currentAvail) return;
+
+    const updatedRooms = targetProperty.rooms.map((rm, idx) => {
+      if (idx === roomIndex) {
+        return {
+          ...rm,
+          availableRooms: newAvail,
+        };
+      }
+      return rm;
+    });
+
+    // Save directly to PropertyService
+    PropertyService.updateProperty(propertyId, { rooms: updatedRooms });
+
+    // Reactively refresh properties list on dashboard
+    setProperties(PropertyService.getAllProperties());
+
+    toast.success(
+      `Updated ${currentRoom.sharingType || currentRoom.roomType || "Room"} available count: ${newAvail}/${total}`,
+      { duration: 2000 }
+    );
+  };
 
   // Sync properties when pathname changes during client navigation
   if (pathnameKey !== pathname) {
@@ -50,10 +97,14 @@ export default function OwnerDashboardPage() {
     router.push("/owner/property/new?step=1");
   };
 
+  const [activeTab, setActiveTab] = React.useState<"PROPERTIES" | "ENQUIRIES">("PROPERTIES");
+  const enquiriesList = EnquiryService.getAllRequests();
+  const totalEnquiriesCount = enquiriesList.length;
+  const pendingEnquiriesCount = EnquiryService.getPendingCount();
+
   // Stat computations
   const totalListings = properties.length;
   const totalViews = properties.reduce((acc, p) => acc + Number(p.views || 0), 0);
-  const totalEnquiries = properties.reduce((acc, p) => acc + Number(p.enquiries || 0), 0);
 
   // 1. View Property Handler
   const handleView = (prop: Property) => {
@@ -120,10 +171,10 @@ export default function OwnerDashboardPage() {
             </div>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
               {[
                 { label: "Active Listings", value: totalListings.toString(), icon: Building, color: "text-primary bg-primary/10" },
-                { label: "Enquiries Received", value: totalEnquiries.toString(), icon: Users, color: "text-secondary bg-secondary/10" },
+                { label: "Enquiries & Visits", value: totalEnquiriesCount.toString(), icon: Users, color: "text-secondary bg-secondary/10" },
                 { label: "Bookings Pending", value: "0", icon: Calendar, color: "text-accent bg-accent/10" },
                 { label: "Profile Views", value: totalViews.toString(), icon: BarChart3, color: "text-muted-foreground bg-muted/70" },
               ].map((stat, idx) => {
@@ -147,6 +198,48 @@ export default function OwnerDashboardPage() {
                 );
               })}
             </div>
+
+            {/* Dashboard Section Switcher Tabs */}
+            <div className="flex flex-wrap items-center gap-3 border-b border-border/60 pb-4 mb-8">
+              <button
+                type="button"
+                data-no-intercept="true"
+                onClick={() => setActiveTab("PROPERTIES")}
+                className={cn(
+                  "px-5 py-2.5 rounded-xl font-heading text-xs font-bold transition-all cursor-pointer flex items-center gap-2",
+                  activeTab === "PROPERTIES"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-card border border-border/80 text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Building className="w-4 h-4" />
+                <span>My Listed Properties ({properties.length})</span>
+              </button>
+
+              <button
+                type="button"
+                data-no-intercept="true"
+                onClick={() => setActiveTab("ENQUIRIES")}
+                className={cn(
+                  "px-5 py-2.5 rounded-xl font-heading text-xs font-bold transition-all cursor-pointer flex items-center gap-2 relative",
+                  activeTab === "ENQUIRIES"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-card border border-border/80 text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Users className="w-4 h-4" />
+                <span>Enquiries & Visit Requests ({totalEnquiriesCount})</span>
+                {pendingEnquiriesCount > 0 && (
+                  <span className="bg-rose-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full animate-pulse">
+                    {pendingEnquiriesCount} New
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Tab 1: Properties */}
+            {activeTab === "PROPERTIES" && (
+              <>
 
             {/* Empty State vs List grid switcher */}
             {properties.length === 0 ? (
@@ -200,29 +293,40 @@ export default function OwnerDashboardPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <AnimatePresence>
-                    {properties.map((prop, idx) => (
-                      <motion.div
-                        key={prop.id}
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.96 }}
-                        transition={{ duration: 0.4, ease: PREMIUM_EASE, delay: idx * 0.05 }}
-                        className="bg-card border border-border/80 rounded-2xl overflow-hidden shadow-premium flex flex-col group"
-                      >
-                        {/* Image Banner */}
-                        <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                          <img
-                            src={prop.coverPhoto}
-                            alt={prop.propertyName}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 select-none"
-                          />
-                          <div className="absolute top-3 right-3 bg-emerald-500 text-white font-heading text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-md">
-                            {prop.status}
+                    {properties.map((prop, idx) => {
+                      const availability = calculatePropertyAvailability(prop.rooms || prop.roomConfigurations);
+
+                      return (
+                        <motion.div
+                          key={prop.id}
+                          initial={{ opacity: 0, scale: 0.96 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.96 }}
+                          transition={{ duration: 0.4, ease: PREMIUM_EASE, delay: idx * 0.05 }}
+                          className="bg-card border border-border/80 rounded-2xl overflow-hidden shadow-premium flex flex-col group"
+                        >
+                          {/* Image Banner */}
+                          <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                            <img
+                              src={prop.coverPhoto}
+                              alt={prop.propertyName}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 select-none"
+                            />
+                            {/* Availability Badge */}
+                            <div className={cn("absolute top-3 left-3 bg-card/90 backdrop-blur-md px-2.5 py-1 rounded-lg border shadow-md flex items-center gap-1.5 z-10", availability.borderColor)}>
+                              <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", availability.dotColor)} />
+                              <span className={cn("font-heading text-[9px] font-extrabold uppercase tracking-wider", availability.textColor)}>
+                                {availability.label}
+                              </span>
+                            </div>
+
+                            <div className="absolute top-3 right-3 bg-emerald-500 text-white font-heading text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-md">
+                              {prop.status}
+                            </div>
+                            <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white font-heading text-[10px] font-extrabold px-2.5 py-1 rounded-lg">
+                              {prop.propertyType}
+                            </div>
                           </div>
-                          <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white font-heading text-[10px] font-extrabold px-2.5 py-1 rounded-lg">
-                            {prop.propertyType}
-                          </div>
-                        </div>
 
                         {/* Card Info */}
                         <div className="p-5 flex-1 flex flex-col gap-4">
@@ -259,6 +363,108 @@ export default function OwnerDashboardPage() {
                             </span>
                           </div>
 
+                          {/* Quick Availability Management Collapsible */}
+                          <div className="space-y-2 border-t border-border/40 pt-3">
+                            <button
+                              type="button"
+                              data-no-intercept="true"
+                              onClick={() => toggleAvailabilityExpand(prop.id)}
+                              className="w-full py-2 px-3 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-heading text-xs font-bold flex items-center justify-between transition-all cursor-pointer select-none"
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <Sliders className="w-3.5 h-3.5 text-primary" />
+                                <span>Manage Availability</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-extrabold uppercase bg-primary/15 text-primary px-2 py-0.5 rounded-md">
+                                  {(prop.rooms || []).reduce((acc, r) => acc + (r.availableRooms || 0), 0)} Left
+                                </span>
+                                <ChevronDown
+                                  className={cn(
+                                    "w-3.5 h-3.5 text-primary transition-transform duration-200",
+                                    expandedAvailability[prop.id] && "rotate-180"
+                                  )}
+                                />
+                              </div>
+                            </button>
+
+                            {/* Expanded Inventory Controls per Room Configuration */}
+                            {expandedAvailability[prop.id] && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="space-y-2 pt-1 pb-1 overflow-hidden"
+                              >
+                                {(prop.rooms || []).map((room, roomIdx) => {
+                                  const total = Math.max(1, Number(room.totalRooms ?? room.availableRooms ?? 1));
+                                  const avail = Math.max(0, Number(room.availableRooms ?? 0));
+                                  const roomAvailability = calculateRoomAvailability(avail, total);
+
+                                  return (
+                                    <div
+                                      key={roomIdx}
+                                      className="flex items-center justify-between p-2.5 rounded-xl bg-muted/30 border border-border/50 gap-2 text-left"
+                                    >
+                                      <div className="space-y-0.5 min-w-0 flex-1">
+                                        <div className="flex items-center gap-1.5 truncate">
+                                          <span className="font-heading text-xs font-extrabold text-primary truncate">
+                                            {room.sharingType || room.roomType || "Single"}
+                                          </span>
+                                          <span className={cn("text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border shrink-0", roomAvailability.bgColor, roomAvailability.textColor, roomAvailability.borderColor)}>
+                                            {roomAvailability.label}
+                                          </span>
+                                        </div>
+                                        <span className="font-body text-[10px] text-muted-foreground block">
+                                          ₹{(room.monthlyRent ?? room.rent ?? 0).toLocaleString()}/mo
+                                        </span>
+                                      </div>
+
+                                      {/* [-] Available / Total [+] Controls */}
+                                      <div className="flex items-center gap-1 bg-card border border-border/60 p-1 rounded-xl shrink-0">
+                                        <button
+                                          type="button"
+                                          data-no-intercept="true"
+                                          disabled={avail <= 0}
+                                          onClick={() => handleQuickUpdateAvailability(prop.id, roomIdx, -1)}
+                                          className={cn(
+                                            "w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs transition-all",
+                                            avail <= 0
+                                              ? "opacity-30 cursor-not-allowed bg-muted text-muted-foreground"
+                                              : "bg-primary/10 hover:bg-rose-500 hover:text-white text-primary cursor-pointer border border-primary/20"
+                                          )}
+                                          title={avail <= 0 ? "Cannot decrease below 0" : "Decrease available rooms"}
+                                        >
+                                          <Minus className="w-3.5 h-3.5" />
+                                        </button>
+
+                                        <span className="font-heading text-xs font-extrabold text-primary px-1 min-w-[36px] text-center">
+                                          {avail} / {total}
+                                        </span>
+
+                                        <button
+                                          type="button"
+                                          data-no-intercept="true"
+                                          disabled={avail >= total}
+                                          onClick={() => handleQuickUpdateAvailability(prop.id, roomIdx, 1)}
+                                          className={cn(
+                                            "w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs transition-all",
+                                            avail >= total
+                                              ? "opacity-30 cursor-not-allowed bg-muted text-muted-foreground"
+                                              : "bg-primary/10 hover:bg-emerald-600 hover:text-white text-primary cursor-pointer border border-primary/20"
+                                          )}
+                                          title={avail >= total ? `Cannot exceed total rooms (${total})` : "Increase available rooms"}
+                                        >
+                                          <Plus className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </motion.div>
+                            )}
+                          </div>
+
                           {/* Action Buttons */}
                           <div className="grid grid-cols-3 gap-2 border-t border-border/40 pt-4 mt-auto">
                             <button
@@ -288,10 +494,18 @@ export default function OwnerDashboardPage() {
                           </div>
                         </div>
                       </motion.div>
-                    ))}
+                    );
+                  })}
                   </AnimatePresence>
                 </div>
               </div>
+            )}
+              </>
+            )}
+
+            {/* Tab 2: Enquiries & Visit Requests */}
+            {activeTab === "ENQUIRIES" && (
+              <OwnerEnquiriesList />
             )}
 
             {/* Delete Confirmation Modal */}

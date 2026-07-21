@@ -2,9 +2,15 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, User, Mail, Lock } from "lucide-react";
+import { ArrowLeft, User, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
+import { PasswordInput } from "@/components/auth/password-input";
+import {
+  PasswordStrengthMeter,
+  ConfirmPasswordMessage,
+} from "@/components/auth/password-strength-meter";
+import { evaluatePasswordStrength } from "@/lib/password-utils";
 import { cn } from "@/lib/utils";
 
 export default function SignupPage() {
@@ -12,27 +18,53 @@ export default function SignupPage() {
   const { signup } = useAuth();
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showToast, setShowToast] = React.useState(false);
+  const [formError, setFormError] = React.useState<string | null>(null);
+
+  const strength = evaluatePasswordStrength(password);
+  const isWeak = password.length > 0 && strength.level === "Weak";
+  const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
+  const isFormValid =
+    name.trim().length > 0 &&
+    email.trim().length > 0 &&
+    password.length > 0 &&
+    !isWeak &&
+    passwordsMatch;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
+    if (isWeak) {
+      setFormError("Please create a stronger password (at least Fair strength) to continue.");
+      return;
+    }
+
+    if (!passwordsMatch) {
+      setFormError("Passwords do not match. Please verify your password confirmation.");
+      return;
+    }
+
     if (isSubmitting) return;
 
     setIsSubmitting(true);
     
-    // Simulate backend creation delay (e.g. 700ms)
+    // Simulate backend creation delay
     setTimeout(() => {
       signup(name, email);
       setShowToast(true);
       
-      // Short delay to let the user see the success toast
+      // Short delay to let user see success toast
       setTimeout(() => {
         setIsSubmitting(false);
         router.push("/onboarding/role-selection");
       }, 900);
     }, 700);
   };
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Soft background radial highlights */}
@@ -50,8 +82,9 @@ export default function SignupPage() {
       </Link>
 
       {/* Main card */}
-      <div className="w-full max-w-md bg-card/85 backdrop-blur-md border border-border/80 p-8 sm:p-10 rounded-[28px] shadow-premium relative z-10 flex flex-col gap-6">
+      <div className="w-full max-w-md bg-card/85 backdrop-blur-md border border-border/80 p-8 sm:p-10 rounded-[28px] shadow-premium relative z-10 flex flex-col gap-6 my-12">
         <title>Sign Up | RoofOnClick</title>
+        
         {/* Header */}
         <div className="flex flex-col gap-2 text-center">
           <span className="font-heading text-2xl font-extrabold text-primary tracking-tight select-none">
@@ -103,21 +136,44 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {/* Password */}
-          <div className="flex flex-col gap-1.5 text-left">
-            <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-              Password
-            </label>
-            <div className="relative flex items-center">
-              <Lock className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
-              <input
-                type="password"
-                required
-                className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
-                placeholder="••••••••"
-              />
-            </div>
+          {/* Password Input & Strength Meter */}
+          <div className="space-y-1">
+            <PasswordInput
+              id="signup-password"
+              label="Password"
+              required
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setFormError(null);
+              }}
+              placeholder="••••••••"
+            />
+            <PasswordStrengthMeter password={password} showChecklist={true} />
           </div>
+
+          {/* Confirm Password Input */}
+          <div className="space-y-1">
+            <PasswordInput
+              id="signup-confirm-password"
+              label="Confirm Password"
+              required
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setFormError(null);
+              }}
+              placeholder="••••••••"
+            />
+            <ConfirmPasswordMessage password={password} confirmPassword={confirmPassword} />
+          </div>
+
+          {/* Inline Form Error */}
+          {formError && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 font-body text-xs font-semibold text-left">
+              {formError}
+            </div>
+          )}
 
           {/* Terms checkbox */}
           <div className="flex items-center gap-2 pl-1 py-1">
@@ -149,11 +205,11 @@ export default function SignupPage() {
           {/* Sign Up Button */}
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !isFormValid}
             data-no-intercept="true"
             className={cn(
               "w-full bg-primary hover:bg-accent text-primary-foreground hover:text-accent-foreground py-3.5 rounded-xl font-heading text-sm font-bold tracking-wide transition-all duration-300 shadow-md flex items-center justify-center gap-2 mt-2 select-none",
-              isSubmitting ? "cursor-not-allowed opacity-80" : "cursor-pointer"
+              (!isFormValid || isSubmitting) ? "cursor-not-allowed opacity-65" : "cursor-pointer"
             )}
           >
             {isSubmitting ? (
@@ -183,7 +239,6 @@ export default function SignupPage() {
           onClick={() => window.location.href = "/coming-soon"}
           className="w-full flex items-center justify-center gap-3 border border-border bg-background hover:bg-card py-3.5 rounded-xl font-heading text-xs font-bold text-primary tracking-wide transition-all duration-300 shadow-sm cursor-pointer"
         >
-          {/* Custom minimal Google logo */}
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

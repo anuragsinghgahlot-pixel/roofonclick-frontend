@@ -7,6 +7,12 @@ import { cn } from "@/lib/utils";
 import { useWishlist } from "@/providers/wishlist-provider";
 import { motion } from "framer-motion";
 
+import {
+  calculatePropertyAvailability,
+  calculateRoomAvailability,
+} from "@/lib/availability-utils";
+import { RoomConfiguration } from "@/services/property";
+
 export interface PropertyItem {
   id: string;
   name: string;
@@ -17,6 +23,9 @@ export interface PropertyItem {
   image: string;
   type: string;
   amenities: string[];
+  rooms?: RoomConfiguration[];
+  availableRooms?: number;
+  totalRooms?: number;
 }
 
 interface PropertyCardProps {
@@ -27,6 +36,10 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const router = useRouter();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isWishlisted = isInWishlist(property.id);
+
+  const availability = property.rooms && property.rooms.length > 0
+    ? calculatePropertyAvailability(property.rooms)
+    : calculateRoomAvailability(property.availableRooms ?? 3, property.totalRooms ?? 5);
 
   return (
     <div
@@ -113,6 +126,12 @@ export function PropertyCard({ property }: PropertyCardProps) {
         {/* Price & Action Row */}
         <div className="border-t border-border/60 pt-4 flex items-center justify-between mt-auto">
           <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className={cn("w-2 h-2 rounded-full animate-pulse", availability.dotColor)} />
+              <span className={cn("text-[10px] font-extrabold uppercase tracking-wider", availability.textColor)}>
+                {availability.label}
+              </span>
+            </div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground block leading-none">
               Starting from
             </span>

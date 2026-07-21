@@ -10,8 +10,15 @@ export function NavigationHandler() {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
 
-      // Don't intercept clicks inside specific components like map coordinates copy, etc.
-      if (target.closest('[data-no-intercept="true"]')) {
+      // Don't intercept clicks inside specific components like profile dropdown, photo uploads, forms, etc.
+      if (
+        target.closest('[data-no-intercept="true"]') ||
+        target.closest('[aria-haspopup="true"]') ||
+        target.closest('[role="menu"]') ||
+        target.closest('button[aria-expanded]') ||
+        target.closest('input[type="file"]') ||
+        target.closest('form')
+      ) {
         return;
       }
 
@@ -20,6 +27,21 @@ export function NavigationHandler() {
 
       const text = (interactiveEl.textContent || "").trim().toLowerCase();
       const href = interactiveEl.getAttribute("href");
+
+      // Don't intercept buttons without hrefs that perform action triggers
+      if (
+        interactiveEl.tagName === "BUTTON" &&
+        (!href || href === "#") &&
+        (text.includes("upload") ||
+          text.includes("photo") ||
+          text.includes("change") ||
+          text.includes("save") ||
+          text.includes("cancel") ||
+          text.includes("remove") ||
+          text.includes("edit"))
+      ) {
+        return;
+      }
 
       // 1. Let valid internal/external routes navigate naturally
       if (href && href !== "#" && !href.startsWith("javascript:") && href !== "/") {

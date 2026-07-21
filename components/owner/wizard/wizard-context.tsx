@@ -10,24 +10,41 @@ import { toast } from "sonner";
 import { PropertyService, MediaImage, Property } from "@/services/property";
 
 // Zod Schema representing all fields in the multi-step wizard
-export const roomConfigurationSchema = z.object({
-  roomType: z.enum(["Single Sharing", "Double Sharing", "Triple Sharing", "Four Sharing"]),
-  rent: z.preprocess(
-    (val) => (val === "" || val === undefined ? undefined : Number(val)),
-    z.number({ message: "Rent is required" }).min(1, "Rent must be greater than 0")
-  ),
-  securityDeposit: z.preprocess(
-    (val) => (val === "" || val === undefined ? undefined : Number(val)),
-    z.number().optional()
-  ),
-  availableRooms: z.preprocess(
-    (val) => (val === "" || val === undefined ? undefined : Number(val)),
-    z.number({ message: "Available rooms is required" }).min(1, "Must have at least 1 room")
-  ),
-  availability: z.enum(["Available Now", "Available Next Month", "Fully Occupied"]),
-  mealsIncluded: z.boolean(),
-  electricity: z.enum(["Included", "Extra Charges"]),
-});
+export const roomConfigurationSchema = z
+  .object({
+    id: z.string().optional(),
+    sharingType: z.string().min(1, "Sharing Type is required"),
+    monthlyRent: z.preprocess(
+      (val) => (val === "" || val === undefined ? undefined : Number(val)),
+      z.number({ message: "Monthly Rent is required" }).min(1, "Monthly Rent must be greater than 0")
+    ),
+    securityDeposit: z.preprocess(
+      (val) => (val === "" || val === undefined ? 0 : Number(val)),
+      z.number({ message: "Security Deposit is required" }).min(0, "Security Deposit cannot be negative")
+    ),
+    totalRooms: z.preprocess(
+      (val) => (val === "" || val === undefined ? 1 : Number(val)),
+      z.number({ message: "Total Rooms is required" }).min(1, "Total Rooms must be at least 1")
+    ),
+    availableRooms: z.preprocess(
+      (val) => (val === "" || val === undefined ? 1 : Number(val)),
+      z.number({ message: "Available Rooms is required" }).min(0, "Available Rooms cannot be negative")
+    ),
+    gender: z.enum(["Boys", "Girls", "Co-living", "Any"]),
+    attachedBathroom: z.boolean(),
+    furnished: z.enum(["Fully Furnished", "Semi Furnished", "Unfurnished"]),
+
+    // Legacy fields mapped for backward compatibility
+    roomType: z.string().optional(),
+    rent: z.number().optional(),
+    availability: z.string().optional(),
+    mealsIncluded: z.boolean().optional(),
+    electricity: z.string().optional(),
+  })
+  .refine((data) => data.availableRooms <= data.totalRooms, {
+    message: "Available Rooms cannot exceed Total Rooms",
+    path: ["availableRooms"],
+  });
 
 export const propertyWizardSchema = z.object({
   id: z.string().optional(),
@@ -44,8 +61,20 @@ export const propertyWizardSchema = z.object({
   landmark: z.string().optional(),
   mapsLink: z.string().optional(),
 
-  // Step 3: Rooms & Pricing
-  rooms: z.array(roomConfigurationSchema).min(1, "At least one room configuration is required"),
+  // Step 3: Rooms & Pricing (Repeatable configurations)
+  rooms: z
+    .array(roomConfigurationSchema)
+    .min(1, "At least one room configuration is required")
+    .refine(
+      (rooms) => {
+        const types = rooms.map((r) => (r.sharingType || r.roomType || "").trim().toLowerCase());
+        const uniqueTypes = new Set(types);
+        return types.length === uniqueTypes.size;
+      },
+      {
+        message: "Sharing Type cannot be duplicated within the same property",
+      }
+    ),
 
   // Step 4: Amenities
   amenities: z.array(z.string()).optional(),
@@ -127,12 +156,18 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
       mapsLink: "",
       rooms: [
         {
+          sharingType: "Single",
+          monthlyRent: 8500,
+          securityDeposit: 10000,
+          totalRooms: 5,
+          availableRooms: 3,
+          gender: "Boys",
+          attachedBathroom: true,
+          furnished: "Fully Furnished",
           roomType: "Single Sharing",
-          rent: 0,
-          securityDeposit: 0,
-          availableRooms: 1,
+          rent: 8500,
           availability: "Available Now",
-          mealsIncluded: false,
+          mealsIncluded: true,
           electricity: "Included",
         },
       ],
@@ -179,8 +214,24 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
           }
           return img;
         });
+
+        // Ensure room configurations are mapped properly on hydration
+        const normalizedRooms = (found.rooms || found.roomConfigurations || []).map((rm) => ({
+          sharingType: rm.sharingType || rm.roomType || "Single",
+          monthlyRent: Number(rm.monthlyRent ?? rm.rent ?? 8500),
+          securityDeposit: Number(rm.securityDeposit ?? 0),
+          totalRooms: Number(rm.totalRooms ?? rm.availableRooms ?? 1),
+          availableRooms: Number(rm.availableRooms ?? 1),
+          gender: (rm.gender && ["Boys", "Girls", "Co-living", "Any"].includes(rm.gender) ? rm.gender : "Boys") as "Boys" | "Girls" | "Co-living" | "Any",
+          attachedBathroom: typeof rm.attachedBathroom === "boolean" ? rm.attachedBathroom : true,
+          furnished: (rm.furnished && ["Fully Furnished", "Semi Furnished", "Unfurnished"].includes(rm.furnished) ? rm.furnished : "Fully Furnished") as "Fully Furnished" | "Semi Furnished" | "Unfurnished",
+          roomType: rm.roomType || rm.sharingType || "Single Sharing",
+          rent: Number(rm.rent ?? rm.monthlyRent ?? 8500),
+        }));
+
         form.reset({
           ...found,
+          rooms: normalizedRooms,
           images: restoredImgs,
         });
         hydratedIdRef.current = editPropertyId;
@@ -255,16 +306,28 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
   const step3Valid = React.useMemo(() => {
     const rooms = formValues.rooms || [];
     if (rooms.length === 0) return false;
-    return rooms.every(
-      (r) =>
-        r &&
-        r.rent !== undefined &&
-        r.rent !== null &&
-        Number(r.rent) > 0 &&
-        r.availableRooms !== undefined &&
-        r.availableRooms !== null &&
-        Number(r.availableRooms) > 0
-    );
+
+    // Check sharingType uniqueness
+    const types = rooms.map((r) => (r.sharingType || r.roomType || "").trim().toLowerCase());
+    if (new Set(types).size !== types.length) return false;
+
+    return rooms.every((r) => {
+      if (!r) return false;
+      const rent = Number(r.monthlyRent ?? r.rent ?? 0);
+      const deposit = Number(r.securityDeposit ?? 0);
+      const total = Number(r.totalRooms ?? 1);
+      const avail = Number(r.availableRooms ?? 0);
+      const sharing = (r.sharingType || r.roomType || "").trim();
+
+      return (
+        sharing.length > 0 &&
+        rent > 0 &&
+        deposit >= 0 &&
+        total >= 1 &&
+        avail >= 0 &&
+        avail <= total
+      );
+    });
   }, [formValues.rooms]);
 
   const step4Valid = true;
