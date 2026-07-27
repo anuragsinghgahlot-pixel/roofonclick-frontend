@@ -44,7 +44,7 @@ export function NavigationHandler() {
       }
 
       // 1. Let valid internal/external routes navigate naturally
-      if (href && href !== "#" && !href.startsWith("javascript:") && href !== "/") {
+      if (href && href !== "#" && !href.startsWith("javascript:")) {
         return;
       }
 

@@ -33,6 +33,7 @@ import {
   OwnerCard,
   LocationMap,
   SimilarProperties,
+  PropertyReviews,
 } from "@/features/property-details/components";
 import Navbar from "@/components/navigation/navbar";
 import Footer from "@/components/navigation/footer";
@@ -92,9 +93,16 @@ const MOCK_SIMILAR_PROPERTIES = [
 ];
 
 import { PropertyService, Property, MediaImage, RoomConfiguration } from "@/services/property";
+import { ReviewService } from "@/services/reviews";
+import { MOCK_PROPERTIES } from "@/constants/mock-properties";
 
 import { ScheduleVisitModal } from "@/components/enquiry/schedule-visit-modal";
 import { SendEnquiryModal } from "@/components/enquiry/send-enquiry-modal";
+import { BookCallModal } from "@/components/callback/book-call-modal";
+import { Breadcrumb } from "@/components/shared/breadcrumb";
+import { BackButton } from "@/components/shared/back-button";
+import { shareProperty } from "@/lib/share-utils";
+import { ShareModal } from "@/components/shared/share-modal";
 
 function PropertyDetailsContent() {
   const params = useParams();
@@ -109,8 +117,34 @@ function PropertyDetailsContent() {
     return propertyId ? PropertyService.getPropertyById(propertyId) : null;
   });
 
+  const [reviewsVersion, setReviewsVersion] = React.useState(0);
+  const ratingData = React.useMemo(() => {
+    const data = ReviewService.getRatingBreakdown(propertyId);
+    if (data.totalReviews === 0) {
+      const mockProp = MOCK_PROPERTIES.find(p => p.id === propertyId);
+      const defaultRating = mockProp?.rating || 4.5;
+      return { overallRating: defaultRating, totalReviews: 0 };
+    }
+    return data;
+  }, [propertyId, property, reviewsVersion]);
+
   const [isVisitModalOpen, setIsVisitModalOpen] = React.useState(false);
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = React.useState(false);
+  const [isBookCallModalOpen, setIsBookCallModalOpen] = React.useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
+
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const shared = await shareProperty({
+      title: property?.propertyName || "Elite Residency",
+      text: `Check out ${property?.propertyName || "this property"} on RoofOnClick!`,
+      url,
+    });
+
+    if (!shared) {
+      setIsShareModalOpen(true);
+    }
+  };
 
   if (prevId !== propertyId) {
     setPrevId(propertyId);
@@ -175,24 +209,36 @@ function PropertyDetailsContent() {
               </div>
             )}
 
+            {/* Top Navigation Row */}
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <BackButton fallbackUrl="/explore" />
+              <Breadcrumb customLabel={displayTitle} />
+            </div>
+
             {/* 1. Header Information Block */}
             <div className="flex flex-col gap-4">
               <PropertyHeader
                 title={displayTitle}
                 type={displayType}
                 address={displayAddress}
-                rating={4.8}
-                reviewCount={24}
+                rating={ratingData.overallRating}
+                reviewCount={ratingData.totalReviews}
                 isVerified={true}
                 isWishlisted={false}
                 propertyId={propertyId}
                 onWishlistToggle={() => {}}
-                onShare={() => {}}
+                onShare={handleShare}
               />
             </div>
 
             {/* 2. Photo Gallery Showcase */}
-            <Gallery images={displayImages} altPrefix={displayTitle} />
+            <Gallery
+              images={displayImages}
+              videos={[
+                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+              ]}
+              altPrefix={displayTitle}
+            />
 
             {/* 3. Main Details and Sticky Sidebar Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start relative">
@@ -380,6 +426,12 @@ function PropertyDetailsContent() {
                   longitude={75.8937}
                   nearbyPlaces={MOCK_NEARBY_PLACES}
                 />
+
+                {/* Reviews & Ratings Section */}
+                <PropertyReviews
+                  propertyId={propertyId}
+                  onReviewChange={() => setReviewsVersion((prev) => prev + 1)}
+                />
               </div>
 
               {/* Right Sticky Sidebar (Spans 4 cols of 12) */}
@@ -439,7 +491,13 @@ function PropertyDetailsContent() {
                     phone="+91 98765 43210"
                     joinedDate="Verified Property"
                     listingsCount={1}
-                    onCall={() => setIsEnquiryModalOpen(true)}
+                    onBookCall={() => setIsBookCallModalOpen(true)}
+                    onWhatsApp={() =>
+                      window.open(
+                        `https://wa.me/919876543210?text=Hi,%20I'm%20interested%20in%20${encodeURIComponent(displayTitle)}`,
+                        "_blank"
+                      )
+                    }
                     onMessage={() => setIsEnquiryModalOpen(true)}
                   />
                 </div>
@@ -468,6 +526,14 @@ function PropertyDetailsContent() {
 
       <Footer />
 
+      {/* Action Modals */}
+      <BookCallModal
+        isOpen={isBookCallModalOpen}
+        onClose={() => setIsBookCallModalOpen(false)}
+        propertyId={propertyId || "default"}
+        propertyName={displayTitle}
+      />
+
       {/* Schedule Visit & Send Enquiry Modals */}
       <ScheduleVisitModal
         isOpen={isVisitModalOpen}
@@ -481,6 +547,16 @@ function PropertyDetailsContent() {
         onClose={() => setIsEnquiryModalOpen(false)}
         propertyId={propertyId || "default"}
         propertyName={displayTitle}
+      />
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        shareData={{
+          title: displayTitle,
+          text: `Check out ${displayTitle} on RoofOnClick!`,
+          url: typeof window !== "undefined" ? window.location.href : "",
+        }}
       />
     </div>
   );

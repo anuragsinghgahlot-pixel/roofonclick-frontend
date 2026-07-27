@@ -85,14 +85,13 @@
 
   /* z-index Scale */
   --z-behind: -10;
-  --z-dropdown: 1000;
-  --z-sticky: 1100;
-  --z-navbar: 1200;
-  --z-overlay: 1300;
-  --z-modal: 1400;
-  --z-popover: 1500;
-  --z-toast: 1600;
-  --z-tooltip: 1700;
+  --z-header: 100;
+  --z-dropdown: 200;
+  --z-drawer: 300;
+  --z-backdrop: 900;
+  --z-modal: 1000;
+  --z-gallery: 1100;
+  --z-toast: 1200;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -191,14 +190,13 @@
 
   /* Map z-index scale */
   --z-behind: var(--z-behind);
+  --z-header: var(--z-header);
   --z-dropdown: var(--z-dropdown);
-  --z-sticky: var(--z-sticky);
-  --z-navbar: var(--z-navbar);
-  --z-overlay: var(--z-overlay);
+  --z-drawer: var(--z-drawer);
+  --z-backdrop: var(--z-backdrop);
   --z-modal: var(--z-modal);
-  --z-popover: var(--z-popover);
+  --z-gallery: var(--z-gallery);
   --z-toast: var(--z-toast);
-  --z-tooltip: var(--z-tooltip);
 
   /* Map container sizes */
   --container-sm: var(--container-sm);

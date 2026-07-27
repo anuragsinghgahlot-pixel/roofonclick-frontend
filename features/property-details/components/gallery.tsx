@@ -2,351 +2,557 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, ChevronLeft, ChevronRight, X, Grid2x2 } from "lucide-react";
+import {
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Grid2x2,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Play,
+  Video,
+  Image as ImageIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useGallery, MediaTab } from "@/hooks/use-gallery";
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+// Fallback image placeholder when an image fails to load
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80";
 
 export interface GalleryProps {
-  /** Array of image URLs to display. First image is the featured (large) image. */
+  /** Array of image URLs to display. */
   images: string[];
-  /** Alt text prefix for accessibility (defaults to "Property photo") */
+  /** Optional array of video URLs to display. */
+  videos?: string[];
+  /** Alt text prefix for accessibility */
   altPrefix?: string;
   /** Optional class override for the root wrapper */
   className?: string;
 }
 
-// ─── Animation Variants ────────────────────────────────────────────────────────
+// ─── Skeleton Component ────────────────────────────────────────────────────────
 
-const fadeIn = {
-  hidden: { opacity: 0 },
-  visible: (i: number) => ({
-    opacity: 1,
-    transition: { duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] as const },
-  }),
-};
-
-// ─── Skeleton Placeholder ──────────────────────────────────────────────────────
-
-function Skeleton({ className }: { className?: string }) {
+function GallerySkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "animate-pulse bg-muted/60 rounded-xl",
+        "animate-pulse bg-muted/70 rounded-xl flex items-center justify-center",
         className
       )}
-    />
+    >
+      <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
+    </div>
   );
 }
 
-// ─── Gallery Image ─────────────────────────────────────────────────────────────
+// ─── Smart Image Component with Lazy Loading & Error Fallback ──────────────────
 
-interface GalleryImageProps {
+interface SmartImageProps {
   src: string;
   alt: string;
-  index: number;
   className?: string;
-  overlay?: React.ReactNode;
+  loading?: "lazy" | "eager";
   onClick?: () => void;
+  onDoubleClick?: () => void;
 }
 
-function GalleryImage({ src, alt, index, className, overlay, onClick }: GalleryImageProps) {
+function SmartImage({ src, alt, className, loading = "lazy", onClick, onDoubleClick }: SmartImageProps) {
+  const [imageSrc, setImageSrc] = React.useState(src);
+  const [isLoaded, setIsLoaded] = React.useState(false);
+  const [hasError, setHasError] = React.useState(false);
+
   return (
-    <motion.div
-      custom={index}
-      variants={fadeIn}
-      initial="hidden"
-      animate="visible"
-      className={cn(
-        "group relative overflow-hidden cursor-pointer",
-        className
+    <div className={cn("relative w-full h-full overflow-hidden bg-muted/40", className)}>
+      {!isLoaded && !hasError && (
+        <GallerySkeleton className="absolute inset-0 z-10 rounded-none" />
       )}
-      onClick={onClick}
-    >
       <img
-        src={src}
+        src={imageSrc}
         alt={alt}
-        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-        loading={index === 0 ? "eager" : "lazy"}
+        loading={loading}
+        onLoad={() => setIsLoaded(true)}
+        onError={() => {
+          setHasError(true);
+          setIsLoaded(true);
+          setImageSrc(FALLBACK_IMAGE);
+        }}
+        onClick={onClick}
+        onDoubleClick={onDoubleClick}
+        className={cn(
+          "w-full h-full object-cover transition-all duration-500",
+          !isLoaded ? "opacity-0 scale-95" : "opacity-100 scale-100"
+        )}
       />
-      {/* Hover overlay */}
-      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300" />
-      {overlay}
-    </motion.div>
+    </div>
   );
 }
 
-// ─── Lightbox ──────────────────────────────────────────────────────────────────
+// ─── Fullscreen Lightbox Modal ──────────────────────────────────────────────────
 
-interface LightboxProps {
+export interface LightboxModalProps {
   images: string[];
-  altPrefix: string;
+  videos: string[];
+  activeTab: MediaTab;
+  setActiveTab: (tab: MediaTab) => void;
   currentIndex: number;
+  zoomLevel: number;
+  altPrefix: string;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
+  onGoTo: (index: number) => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onResetZoom: () => void;
+  onToggleZoom: () => void;
 }
 
-function Lightbox({ images, altPrefix, currentIndex, onClose, onPrev, onNext }: LightboxProps) {
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft") onPrev();
-      if (e.key === "ArrowRight") onNext();
-    };
-    window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose, onPrev, onNext]);
+export function LightboxModal({
+  images,
+  videos,
+  activeTab,
+  setActiveTab,
+  currentIndex,
+  zoomLevel,
+  altPrefix,
+  onClose,
+  onPrev,
+  onNext,
+  onGoTo,
+  onZoomIn,
+  onZoomOut,
+  onResetZoom,
+  onToggleZoom,
+}: LightboxModalProps) {
+  const currentList = activeTab === "photos" ? images : videos;
+  const isVideo = activeTab === "videos";
+
+  // Mouse wheel zoom
+  const handleWheel = (e: React.WheelEvent) => {
+    if (isVideo) return;
+    if (e.deltaY < 0) {
+      onZoomIn();
+    } else {
+      onZoomOut();
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center"
+      className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col justify-between select-none"
       onClick={onClose}
+      onWheel={handleWheel}
     >
-      {/* Close button */}
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute top-5 right-5 p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors cursor-pointer focus:outline-none z-10"
-        aria-label="Close gallery"
+      {/* ── Top Header Toolbar ── */}
+      <div
+        className="w-full flex items-center justify-between p-4 sm:p-6 z-20 bg-gradient-to-b from-black/80 to-transparent"
+        onClick={(e) => e.stopPropagation()}
       >
-        <X className="w-5 h-5" />
-      </button>
+        {/* Left: Tab switchers & counter */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => setActiveTab("photos")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                activeTab === "photos"
+                  ? "bg-white text-black shadow-md"
+                  : "text-white/70 hover:text-white"
+              )}
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>Photos ({images.length})</span>
+            </button>
+            {videos.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("videos")}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                  activeTab === "videos"
+                    ? "bg-white text-black shadow-md"
+                    : "text-white/70 hover:text-white"
+                )}
+              >
+                <Video className="w-3.5 h-3.5" />
+                <span>Videos ({videos.length})</span>
+              </button>
+            )}
+          </div>
 
-      {/* Counter */}
-      <div className="absolute top-5 left-5 text-white/70 font-heading text-sm font-bold z-10">
-        {currentIndex + 1} / {images.length}
+          <span className="text-white/70 font-heading text-xs font-bold hidden sm:inline-block">
+            {currentIndex + 1} / {currentList.length}
+          </span>
+        </div>
+
+        {/* Right: Zoom controls & Close */}
+        <div className="flex items-center gap-2">
+          {!isVideo && (
+            <div className="hidden sm:flex items-center gap-1 bg-white/10 p-1 rounded-xl backdrop-blur-md border border-white/10">
+              <button
+                type="button"
+                onClick={onZoomOut}
+                disabled={zoomLevel <= 1}
+                className="p-1.5 hover:bg-white/20 text-white rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
+                title="Zoom Out (-)"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <span className="text-white/90 font-heading text-[11px] font-bold px-2">
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={onZoomIn}
+                disabled={zoomLevel >= 3}
+                className="p-1.5 hover:bg-white/20 text-white rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
+                title="Zoom In (+)"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+              {zoomLevel > 1 && (
+                <button
+                  type="button"
+                  onClick={onResetZoom}
+                  className="p-1.5 hover:bg-white/20 text-white rounded-lg transition-colors cursor-pointer"
+                  title="Reset Zoom (0)"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
-      {/* Prev */}
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); onPrev(); }}
-        className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors cursor-pointer focus:outline-none z-10"
-        aria-label="Previous photo"
-      >
-        <ChevronLeft className="w-6 h-6" />
-      </button>
+      {/* ── Main Content Viewport ── */}
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden p-4">
+        {/* Navigation Arrow Left */}
+        {currentList.length > 1 && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPrev();
+            }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/25 backdrop-blur-md rounded-full text-white transition-all cursor-pointer z-30 shadow-lg"
+            aria-label="Previous"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+        )}
 
-      {/* Next */}
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); onNext(); }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors cursor-pointer focus:outline-none z-10"
-        aria-label="Next photo"
-      >
-        <ChevronRight className="w-6 h-6" />
-      </button>
+        {/* Navigation Arrow Right */}
+        {currentList.length > 1 && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNext();
+            }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/25 backdrop-blur-md rounded-full text-white transition-all cursor-pointer z-30 shadow-lg"
+            aria-label="Next"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        )}
 
-      {/* Image */}
-      <AnimatePresence mode="wait">
-        <motion.img
-          key={currentIndex}
-          src={images[currentIndex]}
-          alt={`${altPrefix} ${currentIndex + 1}`}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-[90vw] max-h-[85vh] object-contain rounded-2xl shadow-2xl"
-          onClick={(e) => e.stopPropagation()}
-        />
-      </AnimatePresence>
+        {/* Image / Video Display */}
+        <AnimatePresence mode="wait">
+          {!isVideo ? (
+            <motion.div
+              key={`img-${currentIndex}`}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: zoomLevel }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="max-w-[90vw] max-h-[75vh] flex items-center justify-center cursor-zoom-in"
+              onClick={(e) => e.stopPropagation()}
+              onDoubleClick={onToggleZoom}
+            >
+              <img
+                src={currentList[currentIndex] || FALLBACK_IMAGE}
+                alt={`${altPrefix} ${currentIndex + 1}`}
+                className="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl transition-transform duration-200"
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key={`vid-${currentIndex}`}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="w-full max-w-4xl aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <video
+                src={currentList[currentIndex]}
+                controls
+                autoPlay
+                className="w-full h-full object-contain"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ── Bottom Filmstrip Thumbnail Navigation ── */}
+      <div
+        className="w-full p-4 z-20 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col items-center gap-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-2 overflow-x-auto max-w-full px-4 py-2 scrollbar-hide">
+          {currentList.map((src, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => onGoTo(idx)}
+              className={cn(
+                "relative shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer",
+                idx === currentIndex
+                  ? "border-primary scale-105 shadow-md"
+                  : "border-transparent opacity-50 hover:opacity-100"
+              )}
+            >
+              {!isVideo ? (
+                <img src={src} alt="thumbnail" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-muted/40 flex items-center justify-center text-white">
+                  <Play className="w-5 h-5 fill-current" />
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
     </motion.div>
   );
 }
 
-// ─── Mobile Swipeable Gallery ──────────────────────────────────────────────────
+// ─── Main Advanced Gallery Component ─────────────────────────────────────────
 
-interface MobileGalleryProps {
-  images: string[];
-  altPrefix: string;
-  onImageClick: (i: number) => void;
-}
-
-function MobileGallery({ images, altPrefix, onImageClick }: MobileGalleryProps) {
-  const scrollRef = React.useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = React.useState(0);
-
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    const scrollLeft = scrollRef.current.scrollLeft;
-    const itemWidth = scrollRef.current.offsetWidth * 0.85;
-    setActiveIndex(Math.round(scrollLeft / itemWidth));
-  };
-
-  return (
-    <div className="md:hidden flex flex-col gap-3">
-      {/* Swipeable strip */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-1 -mx-4 px-4"
-        style={{ WebkitOverflowScrolling: "touch" }}
-      >
-        {images.map((src, i) => (
-          <motion.div
-            key={i}
-            custom={i}
-            variants={fadeIn}
-            initial="hidden"
-            animate="visible"
-            className="snap-center shrink-0 w-[85%] aspect-[4/3] rounded-xl overflow-hidden cursor-pointer group relative"
-            onClick={() => onImageClick(i)}
-          >
-            <img
-              src={src}
-              alt={`${altPrefix} ${i + 1}`}
-              className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-              loading={i === 0 ? "eager" : "lazy"}
-            />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Dot indicators */}
-      <div className="flex items-center justify-center gap-1.5">
-        {images.map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              "h-1.5 rounded-full transition-all duration-300",
-              i === activeIndex
-                ? "w-6 bg-primary"
-                : "w-1.5 bg-muted-foreground/30"
-            )}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Gallery ──────────────────────────────────────────────────────────────────
-
-export function Gallery({ images, altPrefix = "Property photo", className }: GalleryProps) {
-  const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
+export function Gallery({
+  images = [],
+  videos = [],
+  altPrefix = "Property photo",
+  className,
+}: GalleryProps) {
+  const gallery = useGallery({ images, videos });
 
   const totalPhotos = images.length;
-  const featuredImage = images[0];
+  const featuredImage = images[0] || FALLBACK_IMAGE;
   const sideImages = images.slice(1, 5);
   const extraCount = Math.max(0, totalPhotos - 5);
 
-  const openLightbox = (i: number) => setLightboxIndex(i);
-  const closeLightbox = () => setLightboxIndex(null);
-  const prevImage = () =>
-    setLightboxIndex((prev) => (prev !== null ? (prev - 1 + totalPhotos) % totalPhotos : null));
-  const nextImage = () =>
-    setLightboxIndex((prev) => (prev !== null ? (prev + 1) % totalPhotos : null));
+  // Mobile scroll reference for swipe detection
+  const mobileScrollRef = React.useRef<HTMLDivElement>(null);
+  const [mobileActiveIndex, setMobileActiveIndex] = React.useState(0);
 
-  // ── Empty / Skeleton state ──
+  const handleMobileScroll = () => {
+    if (!mobileScrollRef.current) return;
+    const scrollLeft = mobileScrollRef.current.scrollLeft;
+    const itemWidth = mobileScrollRef.current.offsetWidth * 0.85;
+    setMobileActiveIndex(Math.round(scrollLeft / itemWidth));
+  };
+
   if (!images.length) {
     return (
       <div className={cn("w-full", className)}>
-        {/* Desktop skeleton */}
-        <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-2 h-[420px] rounded-xl overflow-hidden">
-          <Skeleton className="col-span-2 row-span-2 rounded-none rounded-l-xl" />
-          <Skeleton className="rounded-none" />
-          <Skeleton className="rounded-none rounded-tr-xl" />
-          <Skeleton className="rounded-none" />
-          <Skeleton className="rounded-none rounded-br-xl" />
+        <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-2 h-[420px] rounded-2xl overflow-hidden">
+          <GallerySkeleton className="col-span-2 row-span-2 rounded-none rounded-l-2xl" />
+          <GallerySkeleton className="rounded-none" />
+          <GallerySkeleton className="rounded-none rounded-tr-2xl" />
+          <GallerySkeleton className="rounded-none" />
+          <GallerySkeleton className="rounded-none rounded-br-2xl" />
         </div>
-        {/* Mobile skeleton */}
         <div className="md:hidden flex gap-3 overflow-hidden">
-          <Skeleton className="shrink-0 w-[85%] aspect-[4/3]" />
-          <Skeleton className="shrink-0 w-[85%] aspect-[4/3]" />
+          <GallerySkeleton className="shrink-0 w-[85%] aspect-[4/3] rounded-2xl" />
+          <GallerySkeleton className="shrink-0 w-[85%] aspect-[4/3] rounded-2xl" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className={cn("w-full", className)}>
-      {/* ── Desktop Layout ── */}
-      <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-2 h-[420px] rounded-xl overflow-hidden">
-        {/* Featured Image — spans left half */}
-        <GalleryImage
-          src={featuredImage}
-          alt={`${altPrefix} — featured`}
-          index={0}
-          className="col-span-2 row-span-2 rounded-l-xl"
-          onClick={() => openLightbox(0)}
-          overlay={
-            <>
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+    <div className={cn("w-full space-y-3", className)}>
+      {/* Media Tabs Header (if videos exist) */}
+      {videos.length > 0 && (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => gallery.setActiveTab("photos")}
+            className={cn(
+              "px-3.5 py-1.5 rounded-xl font-heading text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+              gallery.activeTab === "photos"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted/50 hover:bg-muted text-muted-foreground"
+            )}
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>Photos ({images.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => gallery.setActiveTab("videos")}
+            className={cn(
+              "px-3.5 py-1.5 rounded-xl font-heading text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+              gallery.activeTab === "videos"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted/50 hover:bg-muted text-muted-foreground"
+            )}
+          >
+            <Video className="w-3.5 h-3.5" />
+            <span>Videos ({videos.length})</span>
+          </button>
+        </div>
+      )}
 
-              {/* Photo count badge */}
-              <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm border border-white/15 text-white">
-                <Camera className="w-3.5 h-3.5" />
-                <span className="text-[11px] font-bold">{totalPhotos} Photos</span>
-              </div>
+      {/* ── Desktop Grid Layout ── */}
+      <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-2.5 h-[440px] rounded-3xl overflow-hidden shadow-premium">
+        {/* Large Featured Primary Image */}
+        <div
+          className="col-span-2 row-span-2 relative group overflow-hidden cursor-pointer bg-muted"
+          onClick={() => gallery.open(0, "photos")}
+        >
+          <SmartImage
+            src={featuredImage}
+            alt={`${altPrefix} — primary`}
+            loading="eager"
+            className="group-hover:scale-105 transition-transform duration-500"
+          />
 
-              {/* View All Photos button */}
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); openLightbox(0); }}
-                className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 hover:bg-white text-primary text-xs font-heading font-bold shadow-lg transition-all duration-200 cursor-pointer active:scale-95 focus:outline-none"
-              >
-                <Grid2x2 className="w-3.5 h-3.5" />
-                View All Photos
-              </button>
-            </>
-          }
-        />
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
 
-        {/* Side Images — 2×2 grid */}
+          {/* Photo Count Badge */}
+          <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white shadow-sm">
+            <Camera className="w-3.5 h-3.5" />
+            <span className="text-[11px] font-bold">{totalPhotos} Photos</span>
+          </div>
+
+          {/* View All Photos Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              gallery.open(0, "photos");
+            }}
+            className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/95 hover:bg-white text-primary font-heading text-xs font-bold shadow-lg transition-all duration-200 cursor-pointer active:scale-95"
+          >
+            <Grid2x2 className="w-4 h-4" />
+            <span>View All Photos</span>
+          </button>
+        </div>
+
+        {/* 4 Secondary Images Grid */}
         {sideImages.map((src, i) => {
-          const isTopRight = i === 1;
-          const isBottomRight = i === 3;
           const isLast = i === sideImages.length - 1;
+          const photoIndex = i + 1;
 
           return (
-            <GalleryImage
+            <div
               key={i}
-              src={src}
-              alt={`${altPrefix} ${i + 2}`}
-              index={i + 1}
-              className={cn(
-                isTopRight && "rounded-tr-xl",
-                isBottomRight && "rounded-br-xl"
+              className="relative group overflow-hidden cursor-pointer bg-muted"
+              onClick={() => gallery.open(photoIndex, "photos")}
+            >
+              <SmartImage
+                src={src}
+                alt={`${altPrefix} ${photoIndex + 1}`}
+                className="group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300" />
+
+              {/* +X More Photos Overlay */}
+              {isLast && extraCount > 0 && (
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-white pointer-events-none space-y-0.5">
+                  <span className="font-heading text-2xl font-extrabold">+ {extraCount}</span>
+                  <span className="font-heading text-[10px] font-bold uppercase tracking-wider text-white/80">
+                    More Photos
+                  </span>
+                </div>
               )}
-              onClick={() => openLightbox(i + 1)}
-              overlay={
-                isLast && extraCount > 0 ? (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-none">
-                    <span className="font-heading text-2xl font-extrabold text-white">
-                      +{extraCount}
-                    </span>
-                  </div>
-                ) : undefined
-              }
-            />
+            </div>
           );
         })}
       </div>
 
-      {/* ── Mobile Layout ── */}
-      <MobileGallery images={images} altPrefix={altPrefix} onImageClick={openLightbox} />
+      {/* ── Mobile Swipeable Carousel ── */}
+      <div className="md:hidden space-y-2">
+        <div
+          ref={mobileScrollRef}
+          onScroll={handleMobileScroll}
+          className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 pb-1"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          {images.map((src, i) => (
+            <div
+              key={i}
+              className="snap-center shrink-0 w-[88%] aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer relative group bg-muted shadow-md"
+              onClick={() => gallery.open(i, "photos")}
+            >
+              <SmartImage
+                src={src}
+                alt={`${altPrefix} ${i + 1}`}
+                loading={i === 0 ? "eager" : "lazy"}
+              />
 
-      {/* ── Lightbox ── */}
+              {/* Counter badge on top right */}
+              <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-full font-heading text-[10px] font-extrabold tracking-wider">
+                {i + 1} / {images.length}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Mobile Dot Indicators */}
+        <div className="flex items-center justify-center gap-1.5 pt-1">
+          {images.slice(0, 8).map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300",
+                i === mobileActiveIndex ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"
+              )}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Fullscreen Lightbox Modal ── */}
       <AnimatePresence>
-        {lightboxIndex !== null && (
-          <Lightbox
+        {gallery.isFullscreen && (
+          <LightboxModal
             images={images}
+            videos={videos}
+            activeTab={gallery.activeTab}
+            setActiveTab={gallery.setActiveTab}
+            currentIndex={gallery.currentIndex}
+            zoomLevel={gallery.zoomLevel}
             altPrefix={altPrefix}
-            currentIndex={lightboxIndex}
-            onClose={closeLightbox}
-            onPrev={prevImage}
-            onNext={nextImage}
+            onClose={gallery.close}
+            onPrev={gallery.prev}
+            onNext={gallery.next}
+            onGoTo={gallery.goTo}
+            onZoomIn={gallery.zoomIn}
+            onZoomOut={gallery.zoomOut}
+            onResetZoom={gallery.resetZoom}
+            onToggleZoom={gallery.toggleZoom}
           />
         )}
       </AnimatePresence>

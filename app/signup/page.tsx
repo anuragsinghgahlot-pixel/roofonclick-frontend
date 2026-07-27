@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, User, Mail } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth, UserRole } from "@/providers/auth-provider";
 import { PasswordInput } from "@/components/auth/password-input";
 import {
   PasswordStrengthMeter,
@@ -18,6 +18,9 @@ export default function SignupPage() {
   const { signup } = useAuth();
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
+  const [phoneNumber, setPhoneNumber] = React.useState("");
+  const [gender, setGender] = React.useState("");
+  const [selectedRole, setSelectedRole] = React.useState<UserRole>("buyer");
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -27,9 +30,15 @@ export default function SignupPage() {
   const strength = evaluatePasswordStrength(password);
   const isWeak = password.length > 0 && strength.level === "Weak";
   const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
+  
+  const isPhoneValid = /^\d{10}$/.test(phoneNumber);
+  const isGenderValid = gender !== "";
+  
   const isFormValid =
     name.trim().length > 0 &&
     email.trim().length > 0 &&
+    isPhoneValid &&
+    isGenderValid &&
     password.length > 0 &&
     !isWeak &&
     passwordsMatch;
@@ -37,6 +46,16 @@ export default function SignupPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
+
+    if (!isPhoneValid) {
+      setFormError("Phone number must be exactly 10 digits and numeric only.");
+      return;
+    }
+
+    if (!isGenderValid) {
+      setFormError("Please select your gender.");
+      return;
+    }
 
     if (isWeak) {
       setFormError("Please create a stronger password (at least Fair strength) to continue.");
@@ -54,13 +73,17 @@ export default function SignupPage() {
     
     // Simulate backend creation delay
     setTimeout(() => {
-      signup(name, email);
+      signup(name, email, phoneNumber, gender, selectedRole);
       setShowToast(true);
       
       // Short delay to let user see success toast
       setTimeout(() => {
         setIsSubmitting(false);
-        router.push("/onboarding/role-selection");
+        if (selectedRole === "buyer") {
+          router.push("/");
+        } else {
+          router.push("/owner/dashboard");
+        }
       }, 900);
     }, 700);
   };
@@ -133,6 +156,74 @@ export default function SignupPage() {
                 className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
                 placeholder="you@example.com"
               />
+            </div>
+          </div>
+
+          {/* Phone Number */}
+          <div className="flex flex-col gap-1.5 text-left">
+            <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
+              Phone Number
+            </label>
+            <div className="relative flex items-center">
+              <Phone className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
+              <input
+                type="tel"
+                required
+                value={phoneNumber}
+                onChange={(e) => {
+                  setPhoneNumber(e.target.value.replace(/[^0-9]/g, "").slice(0, 10));
+                  setFormError(null);
+                }}
+                className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
+                placeholder="10-digit number"
+              />
+            </div>
+          </div>
+
+          {/* Gender */}
+          <div className="flex flex-col gap-1.5 text-left">
+            <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
+              Gender
+            </label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 text-sm">👤</span>
+              <select
+                required
+                value={gender}
+                onChange={(e) => {
+                  setGender(e.target.value);
+                  setFormError(null);
+                }}
+                className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-8 py-3 text-sm font-semibold font-body text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
+              >
+                <option value="" disabled>Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Role */}
+          <div className="flex flex-col gap-1.5 text-left">
+            <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
+              Account Role
+            </label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 text-sm">💼</span>
+              <select
+                required
+                value={selectedRole}
+                onChange={(e) => {
+                  setSelectedRole(e.target.value as any);
+                  setFormError(null);
+                }}
+                className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-8 py-3 text-sm font-semibold font-body text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
+              >
+                <option value="buyer">Buyer (Looking for a Stay)</option>
+                <option value="owner">Owner (List Property)</option>
+              </select>
             </div>
           </div>
 

@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import { ShieldCheck, MapPin, Star, Heart } from "lucide-react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { ShieldCheck, MapPin, Star, Heart, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWishlist } from "@/providers/wishlist-provider";
 import { motion } from "framer-motion";
@@ -11,6 +11,8 @@ import {
   calculatePropertyAvailability,
   calculateRoomAvailability,
 } from "@/lib/availability-utils";
+import { shareProperty } from "@/lib/share-utils";
+import { ShareModal } from "@/components/shared/share-modal";
 import { RoomConfiguration } from "@/services/property";
 
 export interface PropertyItem {
@@ -34,16 +36,25 @@ interface PropertyCardProps {
 
 export function PropertyCard({ property }: PropertyCardProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isWishlisted = isInWishlist(property.id);
+  const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
 
   const availability = property.rooms && property.rooms.length > 0
     ? calculatePropertyAvailability(property.rooms)
     : calculateRoomAvailability(property.availableRooms ?? 3, property.totalRooms ?? 5);
 
+  const handleCardClick = () => {
+    const search = searchParams?.toString();
+    const currentRoute = `${pathname}${search ? `?${search}` : ""}`;
+    router.push(`/property/${property.id}?sourceRoute=${encodeURIComponent(currentRoute)}`);
+  };
+
   return (
     <div
-      onClick={() => router.push(`/property/${property.id}`)}
+      onClick={handleCardClick}
       className="group bg-card border border-border/80 rounded-2xl overflow-hidden shadow-premium hover:shadow-2xl hover:scale-[1.015] hover:-translate-y-0.5 transition-all duration-250 flex flex-col cursor-pointer"
     >
       {/* Image Container */}
@@ -67,27 +78,52 @@ export function PropertyCard({ property }: PropertyCardProps) {
           </span>
         )}
 
-        {/* Wishlist Toggle Button */}
-        <button
-          data-no-intercept="true"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleWishlist(property.id);
-          }}
-          className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-card/90 backdrop-blur-md border border-border/40 shadow-premium flex items-center justify-center hover:scale-105 active:scale-95 transition-transform duration-150 z-20 cursor-pointer"
-        >
-          <motion.div
-            animate={{ scale: isWishlisted ? [1, 1.25, 1] : 1 }}
-            transition={{ duration: 0.2 }}
+        {/* Action Overlay: Share + Wishlist */}
+        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 z-20">
+          <button
+            type="button"
+            data-no-intercept="true"
+            onClick={async (e) => {
+              e.stopPropagation();
+              const url = typeof window !== "undefined" ? `${window.location.origin}/property/${property.id}` : "";
+              const shared = await shareProperty({
+                title: property.name,
+                text: `Check out ${property.name} on RoofOnClick!`,
+                url,
+              });
+              if (!shared) {
+                setIsShareModalOpen(true);
+              }
+            }}
+            className="w-9 h-9 rounded-full bg-card/90 backdrop-blur-md border border-border/40 shadow-premium flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-150 cursor-pointer text-muted-foreground hover:text-primary"
+            title="Share property"
           >
-            <Heart
-              className={cn(
-                "w-4.5 h-4.5 transition-colors duration-200",
-                isWishlisted ? "fill-rose-500 text-rose-500" : "text-muted-foreground/80 hover:text-rose-500"
-              )}
-            />
-          </motion.div>
-        </button>
+            <Share2 className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            data-no-intercept="true"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleWishlist(property.id);
+            }}
+            className="w-9 h-9 rounded-full bg-card/90 backdrop-blur-md border border-border/40 shadow-premium flex items-center justify-center hover:scale-105 active:scale-95 transition-transform duration-150 cursor-pointer"
+            title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          >
+            <motion.div
+              animate={{ scale: isWishlisted ? [1, 1.25, 1] : 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Heart
+                className={cn(
+                  "w-4.5 h-4.5 transition-colors duration-200",
+                  isWishlisted ? "fill-rose-500 text-rose-500" : "text-muted-foreground/80 hover:text-rose-500"
+                )}
+              />
+            </motion.div>
+          </button>
+        </div>
       </div>
 
       {/* Content Container */}
@@ -145,6 +181,16 @@ export function PropertyCard({ property }: PropertyCardProps) {
           </button>
         </div>
       </div>
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        shareData={{
+          title: property.name,
+          text: `Find verified rooms and PG accommodation at ${property.name}`,
+          url: typeof window !== "undefined" ? `${window.location.origin}/property/${property.id}` : "",
+        }}
+      />
     </div>
   );
 }

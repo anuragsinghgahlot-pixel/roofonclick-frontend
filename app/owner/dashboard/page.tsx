@@ -7,14 +7,18 @@ import { Container } from "@/components/layout/container";
 import { Section } from "@/components/shared/section";
 import Navbar from "@/components/navigation/navbar";
 import Footer from "@/components/navigation/footer";
-import { Plus, Minus, Building, Users, Calendar, BarChart3, ArrowRight, Eye, Trash2, Edit3, ExternalLink, MapPin, AlertTriangle, X, ChevronDown, Sliders } from "lucide-react";
+import { Plus, Minus, Building, Users, Calendar, BarChart3, ArrowRight, Eye, Trash2, Edit3, ExternalLink, MapPin, AlertTriangle, X, ChevronDown, Sliders, PhoneCall, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
 import { PropertyService, Property } from "@/services/property";
 import { EnquiryService } from "@/services/enquiry";
+import { CallbackService } from "@/services/callback/callback.service";
 import { calculatePropertyAvailability, calculateRoomAvailability } from "@/lib/availability-utils";
 import { OwnerEnquiriesList } from "@/components/owner/enquiries-list";
+import { OwnerCallbackList } from "@/components/owner/callback-list";
+import { OwnerReviewsList } from "@/components/owner/reviews-list";
+import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils";
 
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
@@ -97,10 +101,14 @@ export default function OwnerDashboardPage() {
     router.push("/owner/property/new?step=1");
   };
 
-  const [activeTab, setActiveTab] = React.useState<"PROPERTIES" | "ENQUIRIES">("PROPERTIES");
+  const [activeTab, setActiveTab] = React.useState<"PROPERTIES" | "ENQUIRIES" | "CALLBACKS" | "REVIEWS">("PROPERTIES");
   const enquiriesList = EnquiryService.getAllRequests();
   const totalEnquiriesCount = enquiriesList.length;
   const pendingEnquiriesCount = EnquiryService.getPendingCount();
+
+  const callbacksList = CallbackService.getAllRequests();
+  const totalCallbacksCount = callbacksList.length;
+  const pendingCallbacksCount = CallbackService.getPendingCount();
 
   // Stat computations
   const totalListings = properties.length;
@@ -108,12 +116,12 @@ export default function OwnerDashboardPage() {
 
   // 1. View Property Handler
   const handleView = (prop: Property) => {
-    router.push(`/property/${prop.id}?preview=owner`);
+    router.push(`/property/${prop.id}?preview=owner&sourceRoute=${encodeURIComponent(pathname)}`);
   };
 
   // 2. Edit Property Handler
   const handleEdit = (prop: Property) => {
-    router.push(`/owner/property/edit/${prop.id}?step=1`);
+    router.push(`/owner/property/edit/${prop.id}?step=1&sourceRoute=${encodeURIComponent(pathname)}`);
   };
 
   // 3. Delete Property Handler & Confirmation
@@ -235,6 +243,41 @@ export default function OwnerDashboardPage() {
                   </span>
                 )}
               </button>
+
+              <button
+                type="button"
+                data-no-intercept="true"
+                onClick={() => setActiveTab("CALLBACKS")}
+                className={cn(
+                  "px-5 py-2.5 rounded-xl font-heading text-xs font-bold transition-all cursor-pointer flex items-center gap-2 relative",
+                  activeTab === "CALLBACKS"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-card border border-border/80 text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <PhoneCall className="w-4 h-4" />
+                <span>Callback Requests ({totalCallbacksCount})</span>
+                {pendingCallbacksCount > 0 && (
+                  <span className="bg-amber-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full animate-pulse">
+                    {pendingCallbacksCount} New
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                data-no-intercept="true"
+                onClick={() => setActiveTab("REVIEWS")}
+                className={cn(
+                  "px-5 py-2.5 rounded-xl font-heading text-xs font-bold transition-all cursor-pointer flex items-center gap-2 relative",
+                  activeTab === "REVIEWS"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-card border border-border/80 text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>Reviews & Ratings</span>
+              </button>
             </div>
 
             {/* Tab 1: Properties */}
@@ -243,42 +286,19 @@ export default function OwnerDashboardPage() {
 
             {/* Empty State vs List grid switcher */}
             {properties.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3, ease: PREMIUM_EASE }}
-                className="bg-card border border-border/80 rounded-3xl p-8 sm:p-10 shadow-premium flex flex-col lg:flex-row items-center gap-10 max-w-4xl mx-auto"
-              >
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[32px] bg-primary/5 border border-primary/10 flex items-center justify-center text-primary shrink-0 shadow-sm text-5xl select-none">
-                  🏢
-                </div>
-
-                <div className="flex-1 flex flex-col gap-4 text-center lg:text-left items-center lg:items-start">
-                  <div className="space-y-1">
-                    <h3 className="font-heading text-xl font-extrabold text-primary">No properties listed yet</h3>
-                    <p className="font-body text-sm text-muted-foreground leading-relaxed">
-                      List your first hostel or PG accommodation in Indore to start receiving verified leads and digital bookings on RoofOnClick.
-                    </p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto mt-2">
-                    <button
-                      data-no-intercept="true"
-                      onClick={handleAddProperty}
-                      className="w-full sm:w-auto bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground text-xs font-bold uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md shadow-primary/10 flex items-center justify-center gap-1.5"
-                    >
-                      Create Listing
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      data-no-intercept="true"
-                      onClick={() => router.push("/")}
-                      className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 text-muted-foreground hover:text-primary text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center"
-                    >
-                      View Homepage
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
+              <EmptyState
+                emoji="🏢"
+                title="No Properties Listed Yet"
+                description="List your hostel or PG accommodation to start receiving verified buyer leads and digital bookings."
+                primaryAction={{
+                  label: "Create First Listing",
+                  onClick: handleAddProperty,
+                }}
+                secondaryAction={{
+                  label: "Return to Homepage",
+                  href: "/",
+                }}
+              />
             ) : (
               /* Published Listings Section */
               <div className="space-y-6 text-left">
@@ -506,6 +526,16 @@ export default function OwnerDashboardPage() {
             {/* Tab 2: Enquiries & Visit Requests */}
             {activeTab === "ENQUIRIES" && (
               <OwnerEnquiriesList />
+            )}
+
+            {/* Tab 3: Callback Requests */}
+            {activeTab === "CALLBACKS" && (
+              <OwnerCallbackList />
+            )}
+
+            {/* Tab 4: Reviews & Ratings */}
+            {activeTab === "REVIEWS" && (
+              <OwnerReviewsList />
             )}
 
             {/* Delete Confirmation Modal */}

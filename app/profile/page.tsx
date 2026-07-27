@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Container } from "@/components/layout/container";
@@ -28,7 +27,6 @@ import {
   Shield,
   Trash2,
   AlertCircle,
-  ArrowLeft,
   Sparkles,
   Camera,
 } from "lucide-react";
@@ -38,9 +36,10 @@ import {
   ConfirmPasswordMessage,
 } from "@/components/auth/password-strength-meter";
 import { evaluatePasswordStrength } from "@/lib/password-utils";
+import { Breadcrumb } from "@/components/shared/breadcrumb";
+import { BackButton } from "@/components/shared/back-button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 
 export default function ProfilePage() {
@@ -53,7 +52,7 @@ export default function ProfilePage() {
   // Personal Info Edit State
   const [isEditing, setIsEditing] = React.useState(false);
   const [fullName, setFullName] = React.useState(user?.name || "");
-  const [phoneNumber, setPhoneNumber] = React.useState(user?.phone || "+91 98765 43210");
+  const [phoneNumber, setPhoneNumber] = React.useState(user?.phone || user?.phoneNumber || "");
   const [dob, setDob] = React.useState(user?.dob || "1998-08-15");
   const [gender, setGender] = React.useState(user?.gender || "Prefer not to say");
 
@@ -182,7 +181,7 @@ export default function ProfilePage() {
 
   const handleStartEdit = () => {
     setFullName(user?.name || "");
-    setPhoneNumber(user?.phone || "+91 98765 43210");
+    setPhoneNumber(user?.phone || user?.phoneNumber || "");
     setDob(user?.dob || "1998-08-15");
     setGender(user?.gender || "Prefer not to say");
     setIsEditing(true);
@@ -190,7 +189,7 @@ export default function ProfilePage() {
 
   const handleCancelEdit = () => {
     setFullName(user?.name || "");
-    setPhoneNumber(user?.phone || "+91 98765 43210");
+    setPhoneNumber(user?.phone || user?.phoneNumber || "");
     setDob(user?.dob || "1998-08-15");
     setGender(user?.gender || "Prefer not to say");
     setIsEditing(false);
@@ -201,6 +200,7 @@ export default function ProfilePage() {
     updateUser({
       name: fullName.trim(),
       phone: phoneNumber.trim(),
+      phoneNumber: phoneNumber.trim(),
       dob: dob,
       gender: gender,
     });
@@ -251,18 +251,15 @@ export default function ProfilePage() {
 
       <main className="flex-1 py-8 sm:py-12">
         <Container className="max-w-6xl mx-auto space-y-8">
-          {/* Top Breadcrumb & Page Header */}
+          {/* Top Navigation Row */}
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <BackButton fallbackUrl={isOwner ? "/owner/dashboard" : "/"} />
+            <Breadcrumb />
+          </div>
+
+          {/* Page Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-6">
             <div className="space-y-1 text-left">
-              <div className="flex items-center gap-2">
-                <Link
-                  href={isOwner ? "/owner/dashboard" : "/"}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold font-heading text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>{isOwner ? "Owner Dashboard" : "Back to Home"}</span>
-                </Link>
-              </div>
               <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
                 My Profile
               </h1>
@@ -532,7 +529,7 @@ export default function ProfilePage() {
                         />
                       ) : (
                         <div className="w-full bg-muted/30 border border-border/40 rounded-xl px-3.5 py-2.5 text-sm font-semibold font-body text-foreground flex items-center justify-between">
-                          <span>{user?.phone || phoneNumber}</span>
+                          <span>{user?.phone || user?.phoneNumber || phoneNumber || "Not provided"}</span>
                           <span className="text-[10px] font-extrabold uppercase text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                             Verified
                           </span>

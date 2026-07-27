@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
@@ -26,13 +25,13 @@ import {
   Info,
   LogOut,
   Edit3,
-  ArrowLeft,
   ChevronRight,
   ShieldCheck,
 } from "lucide-react";
+import { Breadcrumb } from "@/components/shared/breadcrumb";
+import { BackButton } from "@/components/shared/back-button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 
 interface NotificationSettings {
@@ -107,18 +106,15 @@ export default function SettingsPage() {
 
       <main className="flex-1 py-8 sm:py-12">
         <Container className="max-w-4xl mx-auto space-y-8">
+          {/* Top Navigation Row */}
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <BackButton fallbackUrl={isOwner ? "/owner/dashboard" : "/profile"} />
+            <Breadcrumb />
+          </div>
+
           {/* Page Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-6">
             <div className="space-y-1 text-left">
-              <div className="flex items-center gap-2">
-                <Link
-                  href={isOwner ? "/owner/dashboard" : "/profile"}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold font-heading text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>{isOwner ? "Owner Dashboard" : "My Profile"}</span>
-                </Link>
-              </div>
               <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
                 Account Settings
               </h1>

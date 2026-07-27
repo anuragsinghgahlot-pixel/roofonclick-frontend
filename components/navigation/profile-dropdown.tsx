@@ -91,23 +91,31 @@ export function ProfileAvatar({
   );
 }
 
+import { CallbackService, CALLBACK_UPDATED_EVENT } from "@/services/callback/callback.service";
+
 export function NotificationsButton() {
+  const getCombinedCount = React.useCallback(() => {
+    return EnquiryService.getPendingCount() + CallbackService.getPendingCount();
+  }, []);
+
   const [unreadCount, setUnreadCount] = React.useState<number>(() => {
-    return EnquiryService.getPendingCount();
+    return EnquiryService.getPendingCount() + CallbackService.getPendingCount();
   });
 
   React.useEffect(() => {
     const updateCount = () => {
-      setUnreadCount(EnquiryService.getPendingCount());
+      setUnreadCount(getCombinedCount());
     };
     updateCount();
     window.addEventListener("focus", updateCount);
+    window.addEventListener(CALLBACK_UPDATED_EVENT, updateCount);
     const interval = setInterval(updateCount, 2000);
     return () => {
       window.removeEventListener("focus", updateCount);
+      window.removeEventListener(CALLBACK_UPDATED_EVENT, updateCount);
       clearInterval(interval);
     };
-  }, []);
+  }, [getCombinedCount]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();

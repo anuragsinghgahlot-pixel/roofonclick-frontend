@@ -98,7 +98,7 @@ export default function LoginPage() {
                 Password
               </label>
               <a
-                href="/coming-soon"
+                href="/auth/forgot-password"
                 className="font-body text-[11px] font-bold text-secondary hover:underline"
               >
                 Forgot Password?

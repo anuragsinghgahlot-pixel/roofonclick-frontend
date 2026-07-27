@@ -50,6 +50,9 @@ function PropertyCardSkeleton() {
   );
 }
 
+import { Breadcrumb } from "@/components/shared/breadcrumb";
+import { BackButton } from "@/components/shared/back-button";
+import { EmptyState } from "@/components/shared/empty-state";
 export function WishlistPage() {
   const router = useRouter();
   const { wishlist, getLastBrowsingRoute } = useWishlist();
@@ -79,6 +82,12 @@ export function WishlistPage() {
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
           <Container>
+            {/* Top Navigation Row */}
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <BackButton fallbackUrl={getLastBrowsingRoute()} />
+              <Breadcrumb />
+            </div>
+
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-border/80 pb-6 mb-10 text-left">
               <div>
@@ -110,22 +119,15 @@ export function WishlistPage() {
                 ))}
               </div>
             ) : (
-              <div className="py-20 text-center flex flex-col items-center justify-center gap-6 bg-card border border-border/80 rounded-2xl shadow-premium max-w-2xl mx-auto px-6">
-                <span className="text-6xl animate-pulse select-none">❤️</span>
-                <div className="space-y-2">
-                  <h3 className="font-heading text-xl font-bold text-primary">Your Wishlist is Empty</h3>
-                  <p className="font-body text-sm text-muted-foreground max-w-sm mx-auto">
-                    Save properties to quickly find them later.
-                  </p>
-                </div>
-                <button
-                  data-no-intercept="true"
-                  onClick={() => router.push(getLastBrowsingRoute())}
-                  className="bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground text-xs font-bold uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md shadow-primary/10 select-none"
-                >
-                  Explore Properties
-                </button>
-              </div>
+              <EmptyState
+                emoji="❤️"
+                title="Your Wishlist is Empty"
+                description="Explore verified PGs, hostels, and co-living spaces to save your favorite properties for later."
+                primaryAction={{
+                  label: "Explore Properties",
+                  onClick: () => router.push(getLastBrowsingRoute()),
+                }}
+              />
             )}
           </Container>
         </Section>

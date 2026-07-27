@@ -10,6 +10,9 @@ import { Section } from "@/components/shared/section";
 import { FilterSidebar } from "@/components/filters/filter-sidebar";
 import { SearchToolbar } from "@/components/search/search-toolbar";
 import { PropertyCard } from "@/components/cards/property-card";
+import { Breadcrumb } from "@/components/shared/breadcrumb";
+import { BackButton } from "@/components/shared/back-button";
+import { EmptyState } from "@/components/shared/empty-state";
 
 import { MOCK_PROPERTIES } from "@/constants/mock-properties";
 
@@ -188,6 +191,12 @@ function SearchPageContent() {
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
           <Container>
+            {/* Top Navigation Row */}
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <BackButton fallbackUrl="/" />
+              <Breadcrumb />
+            </div>
+
             {/* Search Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-border/80 pb-6 mb-8 text-left">
               <div>
@@ -204,8 +213,6 @@ function SearchPageContent() {
                 </span>
               </div>
             </div>
-
-
 
             {/* Main Content Layout: Sidebar + Grid */}
             <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -248,13 +255,19 @@ function SearchPageContent() {
                     ))}
                   </div>
                 ) : (
-                  <div className="py-20 text-center flex flex-col items-center justify-center gap-4 bg-card border border-border/80 rounded-2xl shadow-premium">
-                    <span className="text-5xl">🏢</span>
-                    <h3 className="font-heading text-xl font-bold text-primary">No properties found</h3>
-                    <p className="font-body text-sm text-muted-foreground max-w-md">
-                      We couldn&apos;t find any matching stays in &ldquo;{displayLocation}&rdquo; under the &ldquo;{selectedType}&rdquo; filter.
-                    </p>
-                  </div>
+                  <EmptyState
+                    emoji="🔍"
+                    title="No Matching Stays Found"
+                    description={`We couldn't find any accommodation in "${displayLocation}" matching your selected filters.`}
+                    primaryAction={{
+                      label: "Clear All Filters",
+                      onClick: handleClearAll,
+                    }}
+                    secondaryAction={{
+                      label: "Browse All Locations",
+                      href: "/search",
+                    }}
+                  />
                 )}
               </div>
             </div>

@@ -8,6 +8,7 @@ export interface User {
   name?: string;
   email?: string;
   phone?: string;
+  phoneNumber?: string;
   dob?: string;
   gender?: string;
   role?: UserRole;
@@ -22,7 +23,7 @@ interface AuthContextType {
   user: User | null;
   role: UserRole | null;
   setRole: (role: UserRole) => void;
-  signup: (name: string, email: string) => void;
+  signup: (name: string, email: string, phoneNumber?: string, gender?: string, role?: UserRole) => void;
   login: (email: string) => void;
   logout: () => void;
   updateUser: (updatedFields: Partial<User>) => void;
@@ -55,13 +56,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return null;
   });
 
-  const signup = React.useCallback((name: string, email: string) => {
-    const newUser: User = { name, email, role: role || undefined };
+  const signup = React.useCallback((name: string, email: string, phoneNumber?: string, gender?: string, userRole?: UserRole) => {
+    const targetRole = userRole || role || undefined;
+    const newUser: User = { 
+      name, 
+      email, 
+      phone: phoneNumber, 
+      phoneNumber, 
+      gender, 
+      role: targetRole 
+    };
     setUser(newUser);
+    if (targetRole) {
+      setRoleState(targetRole);
+    }
     if (typeof window !== "undefined") {
       const json = JSON.stringify(newUser);
       localStorage.setItem("auth_user", json);
       sessionStorage.setItem("auth_user", json);
+      if (targetRole) {
+        localStorage.setItem("auth_role", targetRole);
+        sessionStorage.setItem("auth_role", targetRole);
+      }
     }
   }, [role]);
 

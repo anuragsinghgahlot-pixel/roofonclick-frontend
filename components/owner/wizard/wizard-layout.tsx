@@ -8,6 +8,7 @@ import { Section } from "@/components/shared/section";
 import { useWizard } from "./wizard-context";
 import { ProgressTimeline } from "./progress-timeline";
 import { NavigationButtons } from "./navigation-buttons";
+import { BackButton } from "@/components/shared/back-button";
 
 export function WizardLayout({ children }: { children: React.ReactNode }) {
   const { currentStep, handleReset } = useWizard();
@@ -32,6 +33,11 @@ export function WizardLayout({ children }: { children: React.ReactNode }) {
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
           <Container className="max-w-2xl mx-auto">
+            {/* Top Navigation Row */}
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <BackButton fallbackUrl="/owner/dashboard" />
+            </div>
+
             {/* Header section with timeline */}
             <div className="mb-8">
               <div className="flex justify-between items-end mb-4">

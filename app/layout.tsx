@@ -4,6 +4,8 @@ import { NavigationHandler } from "@/components/shared/navigation-handler";
 import { WishlistProvider } from "@/providers/wishlist-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { NavigationProvider } from "@/providers/navigation-provider";
+import { Suspense } from "react";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -39,7 +41,11 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <WishlistProvider>
-              {children}
+              <Suspense fallback={null}>
+                <NavigationProvider>
+                  {children}
+                </NavigationProvider>
+              </Suspense>
             </WishlistProvider>
           </AuthProvider>
         </ThemeProvider>

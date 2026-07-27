@@ -29,9 +29,11 @@ export interface OwnerCardProps {
   joinedDate: string;
   /** Number of listings managed by this owner on StayyNest */
   listingsCount: number;
-  /** Call Owner click handler */
-  onCall?: () => void;
-  /** Message/Chat click handler */
+  /** Book a Call click handler */
+  onBookCall?: () => void;
+  /** WhatsApp click handler */
+  onWhatsApp?: () => void;
+  /** Message/Enquiry click handler */
   onMessage?: () => void;
   /** Optional class override for container */
   className?: string;
@@ -60,7 +62,8 @@ export function OwnerCard({
   phone: _phone,
   joinedDate,
   listingsCount,
-  onCall,
+  onBookCall,
+  onWhatsApp,
   onMessage,
   className,
 }: OwnerCardProps) {
@@ -155,32 +158,46 @@ export function OwnerCard({
       </div>
 
       {/* ── Action CTAs ── */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Call Owner - Primary */}
+      <div className="flex flex-col gap-2.5">
+        {/* Book a Call - Primary */}
         <motion.button
           type="button"
-          onClick={onCall}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
+          onClick={onBookCall}
+          whileHover={{ scale: 1.015 }}
+          whileTap={{ scale: 0.98 }}
           transition={{ duration: 0.2 }}
-          className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-accent py-3.5 rounded-xl font-heading text-sm font-bold tracking-wide shadow-md transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-accent py-3.5 rounded-xl font-heading text-sm font-bold tracking-wide shadow-md transition-colors duration-200 cursor-pointer"
         >
           <Phone className="w-4 h-4" />
-          Call Owner
+          <span>Book a Call</span>
         </motion.button>
 
-        {/* Message - Secondary */}
-        <motion.button
-          type="button"
-          onClick={onMessage}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          transition={{ duration: 0.2 }}
-          className="flex-1 flex items-center justify-center gap-2 border border-primary/30 bg-primary/5 hover:bg-primary hover:text-primary-foreground text-primary py-3.5 rounded-xl font-heading text-sm font-bold tracking-wide transition-all duration-300 cursor-pointer shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <MessageSquare className="w-4 h-4" />
-          Message
-        </motion.button>
+        {/* Secondary CTAs: WhatsApp & Send Enquiry */}
+        <div className="grid grid-cols-2 gap-2">
+          <motion.button
+            type="button"
+            onClick={onWhatsApp}
+            whileHover={{ scale: 1.015 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center justify-center gap-1.5 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-600 hover:text-white text-emerald-600 py-3 rounded-xl font-heading text-xs font-bold transition-all duration-200 cursor-pointer shadow-sm"
+          >
+            <span className="text-sm">💬</span>
+            <span>WhatsApp</span>
+          </motion.button>
+
+          <motion.button
+            type="button"
+            onClick={onMessage}
+            whileHover={{ scale: 1.015 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center justify-center gap-1.5 border border-primary/30 bg-primary/5 hover:bg-primary hover:text-primary-foreground text-primary py-3 rounded-xl font-heading text-xs font-bold transition-all duration-200 cursor-pointer shadow-sm"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>Send Enquiry</span>
+          </motion.button>
+        </div>
       </div>
     </motion.div>
   );
