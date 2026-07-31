@@ -8,6 +8,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { ReviewService, Review } from "@/services/reviews";
 import { LightboxModal } from "./gallery";
 import { MediaTab } from "@/hooks/use-gallery";
+import { Modal } from "@/components/shared/modal";
 import { cn } from "@/lib/utils";
 
 interface PropertyReviewsProps {
@@ -558,252 +559,237 @@ export function PropertyReviews({ propertyId, onReviewChange }: PropertyReviewsP
       </div>
 
       {/* 4. Write Review Popup Dialog Overlay */}
-      <AnimatePresence>
-        {isWriteModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Blurred Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+      <Modal
+        isOpen={isWriteModalOpen}
+        onClose={() => setIsWriteModalOpen(false)}
+        variant="large"
+        className="max-w-[1100px]"
+        title={
+          <div>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-secondary block mb-0.5">
+              Share Your Experience
+            </span>
+            <h3 className="font-heading text-lg sm:text-xl font-extrabold text-primary leading-snug">
+              Write a Review
+            </h3>
+          </div>
+        }
+        footer={
+          <div className="flex items-center justify-end gap-3 max-w-xs sm:max-w-sm ml-auto">
+            <button
+              type="button"
               onClick={() => setIsWriteModalOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            />
-
-            {/* Modal Box */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              transition={{ duration: 0.5, ease: PREMIUM_EASE }}
-              className="bg-card border border-border/80 w-full max-w-lg rounded-[28px] shadow-2xl p-6 sm:p-8 z-10 overflow-hidden max-h-[90vh] flex flex-col relative text-left"
+              className="flex-1 py-2.5 px-4 rounded-xl border border-border bg-card hover:bg-muted/40 text-muted-foreground hover:text-primary font-heading text-xs font-bold transition-all cursor-pointer text-center select-none"
             >
-              {/* Close Button */}
-              <button
-                onClick={() => setIsWriteModalOpen(false)}
-                className="w-8 h-8 absolute top-4 right-4 rounded-full border border-border bg-card hover:bg-muted/50 text-muted-foreground hover:text-primary flex items-center justify-center transition-all cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              Cancel
+            </button>
 
-              <div className="mb-5">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-secondary block mb-1">
-                  Share Your Experience
-                </span>
-                <h3 className="font-heading text-xl font-extrabold text-primary">
-                  Write a Review
-                </h3>
+            <button
+              type="submit"
+              form="write-review-form"
+              disabled={isSubmitting}
+              className="flex-1 py-2.5 px-5 bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground font-heading text-xs font-bold transition-all duration-300 shadow-md cursor-pointer select-none disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                  <span>Submitting...</span>
+                </>
+              ) : (
+                <span>Submit Review</span>
+              )}
+            </button>
+          </div>
+        }
+      >
+        {/* Form Content Body Grid */}
+        <form id="write-review-form" onSubmit={handleSubmitReview} className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          
+          {/* Left Column: Rating, Dates, Title */}
+          <div className="space-y-5">
+            {/* Star selection rating */}
+            <div className="space-y-1.5">
+              <span className="font-heading text-xs font-bold text-primary block">
+                Rating <strong className="text-rose-500">*</strong>
+              </span>
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setFormRating(star)}
+                    onMouseEnter={() => setFormHoverRating(star)}
+                    onMouseLeave={() => setFormHoverRating(0)}
+                    className="p-1 cursor-pointer transition-transform hover:scale-110"
+                  >
+                    <Star
+                      className={cn(
+                        "w-7 h-7 shrink-0",
+                        star <= (formHoverRating || formRating)
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-muted-foreground/30"
+                      )}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Stay Date Selection */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
+                  Stay Date <strong className="text-rose-500">*</strong>
+                </label>
+                <div className="relative">
+                  <select
+                    value={formStayDate}
+                    onChange={(e) => setFormStayDate(e.target.value)}
+                    className="w-full bg-background border border-border/80 rounded-xl px-3.5 py-2.5 text-xs font-body text-foreground focus:outline-none focus:border-primary shadow-xs"
+                  >
+                    {stayDateOptions.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* Form Content Scrollable */}
-              <form onSubmit={handleSubmitReview} className="flex-1 overflow-y-auto pr-1 space-y-5 py-1">
-                
-                {/* Star selection rating */}
-                <div className="space-y-1.5">
-                  <span className="font-heading text-xs font-bold text-primary block">
-                    Rating <strong className="text-rose-500">*</strong>
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setFormRating(star)}
-                        onMouseEnter={() => setFormHoverRating(star)}
-                        onMouseLeave={() => setFormHoverRating(0)}
-                        className="p-1 cursor-pointer transition-transform hover:scale-110"
-                      >
-                        <Star
-                          className={cn(
-                            "w-7 h-7 shrink-0",
-                            star <= (formHoverRating || formRating)
-                              ? "fill-amber-400 text-amber-400"
-                              : "text-muted-foreground/30"
-                          )}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Stay Date Selection */}
-                  <div className="space-y-1.5 text-left">
-                    <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-                      Stay Date <strong className="text-rose-500">*</strong>
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={formStayDate}
-                        onChange={(e) => setFormStayDate(e.target.value)}
-                        className="w-full bg-background border border-border/80 rounded-xl px-3.5 py-2.5 text-xs font-body text-foreground focus:outline-none focus:border-primary shadow-xs"
-                      >
-                        {stayDateOptions.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Recommendation Selection */}
-                  <div className="space-y-1.5 text-left">
-                    <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-                      Recommend Property? <strong className="text-rose-500">*</strong>
-                    </label>
-                    <div className="flex border border-border/80 rounded-xl p-1 bg-muted/20 select-none">
-                      <button
-                        type="button"
-                        onClick={() => setFormRecommend(true)}
-                        className={cn(
-                          "flex-1 py-1.5 text-[10px] uppercase font-bold font-heading rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1",
-                          formRecommend
-                            ? "bg-card text-blue-600 border border-border/50 shadow-sm"
-                            : "text-muted-foreground hover:text-primary"
-                        )}
-                      >
-                        <ThumbsUp className="w-3 h-3 text-blue-500" />
-                        <span>Yes</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormRecommend(false)}
-                        className={cn(
-                          "flex-1 py-1.5 text-[10px] uppercase font-bold font-heading rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1",
-                          !formRecommend
-                            ? "bg-card text-rose-600 border border-border/50 shadow-sm"
-                            : "text-muted-foreground hover:text-primary"
-                        )}
-                      >
-                        <ThumbsDown className="w-3 h-3 text-rose-500" />
-                        <span>No</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Review Title */}
-                <div className="space-y-1.5">
-                  <label className="font-heading text-xs font-bold text-primary block" htmlFor="title">
-                    Title <strong className="text-rose-500">*</strong>
-                  </label>
-                  <input
-                    id="title"
-                    type="text"
-                    required
-                    placeholder="Summarize your experience (e.g. Clean rooms, great food)..."
-                    value={formTitle}
-                    onChange={(e) => setFormTitle(e.target.value)}
-                    className="w-full bg-background border border-border/80 rounded-xl px-4 py-2.5 text-xs font-body text-foreground focus:outline-none focus:border-primary shadow-xs"
-                  />
-                </div>
-
-                {/* Review text area */}
-                <div className="space-y-1.5">
-                  <label className="font-heading text-xs font-bold text-primary block" htmlFor="review">
-                    Review Text <strong className="text-rose-500">*</strong>
-                  </label>
-                  <textarea
-                    id="review"
-                    rows={4}
-                    maxLength={1000}
-                    placeholder="Describe your stay experience in detail (minimum 20 characters, maximum 1000)..."
-                    value={formText}
-                    onChange={(e) => setFormText(e.target.value)}
-                    className="w-full bg-background border border-border/80 rounded-xl px-4 py-3 text-xs font-body text-foreground focus:outline-none focus:border-primary shadow-xs resize-none"
-                  />
-                  <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground">
-                    <span>Min 20, Max 1000 characters.</span>
-                    <span className={cn(formText.length >= 20 && formText.length <= 1000 ? "text-emerald-500" : "text-rose-500")}>
-                      {formText.length} / 1000 characters
-                    </span>
-                  </div>
-                </div>
-
-                {/* Image Attachments */}
-                <div className="space-y-2">
-                  <span className="font-heading text-xs font-bold text-primary block">
-                    Upload Photos (Optional, Maximum 5)
-                  </span>
-                  
-                  {/* Image input trigger */}
-                  <div className="flex items-center gap-3">
-                    <label className={cn(
-                      "flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-dashed border-border/80 bg-background hover:bg-muted/30 text-muted-foreground hover:text-primary font-heading text-xs font-bold cursor-pointer select-none transition-all",
-                      formImages.length >= 5 && "opacity-50 cursor-not-allowed pointer-events-none"
-                    )}>
-                      <Upload className="w-4 h-4 shrink-0 text-secondary" />
-                      <span>Choose Images</span>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/jpeg, image/png, image/webp"
-                        disabled={formImages.length >= 5}
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                    </label>
-                    <span className="text-[10px] font-semibold text-muted-foreground">
-                      Uploaded: {formImages.length}/5 • Max 2MB each
-                    </span>
-                  </div>
-
-                  {/* Attachment previews grid */}
-                  {formImages.length > 0 && (
-                    <div className="grid grid-cols-5 gap-2.5 pt-2">
-                      {formImages.map((imgBase64, index) => (
-                        <div
-                          key={index}
-                          className="relative w-full aspect-square rounded-xl overflow-hidden border border-border group"
-                        >
-                          <img
-                            src={imgBase64}
-                            alt="Upload preview"
-                            className="w-full h-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeFormImage(index)}
-                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-rose-500 text-white flex items-center justify-center transition-colors cursor-pointer"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Action CTA triggers */}
-                <div className="pt-2 border-t border-border/40 flex items-center gap-3">
+              {/* Recommendation Selection */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
+                  Recommend Property? <strong className="text-rose-500">*</strong>
+                </label>
+                <div className="flex items-center gap-2 pt-0.5">
                   <button
                     type="button"
-                    onClick={() => setIsWriteModalOpen(false)}
-                    className="flex-1 py-3 rounded-xl border border-border bg-card hover:bg-muted/40 text-muted-foreground hover:text-primary font-heading text-xs font-bold transition-all cursor-pointer text-center select-none"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 py-3 bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground font-heading text-xs font-bold transition-all duration-300 shadow-md cursor-pointer select-none disabled:opacity-50 flex items-center justify-center gap-1.5"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                        <span>Submitting...</span>
-                      </>
-                    ) : (
-                      <span>Submit Review</span>
+                    onClick={() => setFormRecommend(true)}
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-xl border text-xs font-heading font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                      formRecommend === true
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "bg-muted/30 border-border/80 text-muted-foreground hover:text-foreground"
                     )}
+                  >
+                    <ThumbsUp className="w-3.5 h-3.5" />
+                    <span>YES</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormRecommend(false)}
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-xl border text-xs font-heading font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                      formRecommend === false
+                        ? "bg-rose-500 text-white border-rose-500 shadow-sm"
+                        : "bg-muted/30 border-border/80 text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <ThumbsDown className="w-3.5 h-3.5" />
+                    <span>NO</span>
                   </button>
                 </div>
+              </div>
+            </div>
 
-              </form>
-            </motion.div>
+            {/* Review Title Input */}
+            <div className="space-y-1.5 text-left">
+              <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
+                Title <strong className="text-rose-500">*</strong>
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Summarize your experience (e.g. Clean rooms, great food)..."
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+                className="w-full bg-background border border-border/80 rounded-xl px-3.5 py-2.5 text-xs font-body text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary shadow-xs"
+              />
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+
+          {/* Right Column: Review Text & Photo Uploads */}
+          <div className="space-y-5">
+            {/* Review Body Textarea */}
+            <div className="space-y-1.5 text-left">
+              <div className="flex justify-between items-center px-1">
+                <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider">
+                  Review Text <strong className="text-rose-500">*</strong>
+                </label>
+              </div>
+              <textarea
+                required
+                rows={5}
+                minLength={20}
+                maxLength={1000}
+                placeholder="Describe your stay experience in detail (minimum 20 characters, maximum 1000)..."
+                value={formText}
+                onChange={(e) => setFormText(e.target.value)}
+                className="w-full bg-background border border-border/80 rounded-xl p-3.5 text-xs font-body text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary shadow-xs resize-none"
+              />
+              <div className="flex justify-between items-center text-[10px] text-muted-foreground px-1 pt-0.5">
+                <span>Min 20, Max 1000 characters.</span>
+                <span className={cn(formText.length < 20 && formText.length > 0 ? "text-rose-500 font-bold" : "")}>
+                  {formText.length} / 1000 characters
+                </span>
+              </div>
+            </div>
+
+            {/* Image Upload Field */}
+            <div className="space-y-2 text-left">
+              <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider block pl-1">
+                Upload Photos <span className="text-muted-foreground font-normal lowercase">(Optional, Maximum 5)</span>
+              </label>
+
+              <div className="flex items-center gap-3">
+                <label className={cn(
+                  "px-4 py-2 rounded-xl border border-dashed text-xs font-heading font-bold flex items-center gap-2 cursor-pointer transition-all shadow-xs select-none",
+                  formImages.length >= 5
+                    ? "bg-muted/20 border-border text-muted-foreground/40 cursor-not-allowed"
+                    : "bg-muted/40 hover:bg-muted border-primary/40 text-primary"
+                )}>
+                  <Upload className="w-4 h-4" />
+                  <span>Choose Images</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    disabled={formImages.length >= 5}
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+                <span className="text-[10px] font-semibold text-muted-foreground">
+                  Uploaded: {formImages.length}/5 • Max 2MB each
+                </span>
+              </div>
+
+              {/* Attachment previews grid */}
+              {formImages.length > 0 && (
+                <div className="grid grid-cols-5 gap-2.5 pt-2">
+                  {formImages.map((imgBase64, index) => (
+                    <div
+                      key={index}
+                      className="relative w-full aspect-square rounded-xl overflow-hidden border border-border group"
+                    >
+                      <img
+                        src={imgBase64}
+                        alt="Upload preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeFormImage(index)}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-rose-500 text-white flex items-center justify-center transition-colors cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </form>
+      </Modal>
 
       {/* 5. Fullscreen Lightbox Modal (Reuses existing gallery component) */}
       <AnimatePresence>

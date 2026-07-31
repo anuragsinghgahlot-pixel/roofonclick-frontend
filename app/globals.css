@@ -189,14 +189,14 @@
   --transition-slow: var(--transition-slow);
 
   /* Map z-index scale */
-  --z-behind: var(--z-behind);
-  --z-header: var(--z-header);
-  --z-dropdown: var(--z-dropdown);
-  --z-drawer: var(--z-drawer);
-  --z-backdrop: var(--z-backdrop);
-  --z-modal: var(--z-modal);
-  --z-gallery: var(--z-gallery);
-  --z-toast: var(--z-toast);
+  --z-index-behind: var(--z-behind);
+  --z-index-header: var(--z-header);
+  --z-index-dropdown: var(--z-dropdown);
+  --z-index-drawer: var(--z-drawer);
+  --z-index-backdrop: var(--z-backdrop);
+  --z-index-modal: var(--z-modal);
+  --z-index-gallery: var(--z-gallery);
+  --z-index-toast: var(--z-toast);
 
   /* Map container sizes */
   --container-sm: var(--container-sm);

@@ -165,8 +165,8 @@ export function Hero() {
               </span>
 
               <span className="relative inline-block mt-4 leading-[1.3] text-transparent bg-clip-text bg-gradient-to-r from-secondary to-secondary/80 relative">
-                <span>Roof on</span>
-                <span className="ml-3">click</span>
+                <span>Roof On</span>
+                <span className="ml-3">Click</span>
                 <span className="absolute bottom-2 left-0 w-full h-[4px] bg-secondary/20 rounded-full" />
               </span>
             </motion.h1>
@@ -293,13 +293,13 @@ export function Hero() {
               initial={{ opacity: 0, x: 20, y: -10 }}
               animate={{ opacity: 1, x: 0, y: 0 }}
               transition={{ delay: 0.8, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute -top-4 -right-4 bg-card/85 backdrop-blur-md border border-border/80 px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 select-none hover:shadow-2xl transition-all duration-300 hover:border-primary/20"
+              className="absolute top-2 right-2 sm:-top-4 sm:-right-4 bg-card/85 backdrop-blur-md border border-border/80 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-xl flex items-center gap-2 select-none hover:shadow-2xl transition-all duration-300 hover:border-primary/20 z-20"
             >
-              <div className="w-7 h-7 rounded-lg bg-secondary/10 flex items-center justify-center">
-                <Star className="w-4 h-4 text-secondary fill-current" />
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-secondary/10 flex items-center justify-center">
+                <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-secondary fill-current" />
               </div>
               <div className="flex flex-col text-left">
-                <span className="text-xs font-bold text-primary">4.9 Star Rating</span>
+                <span className="text-[11px] sm:text-xs font-bold text-primary">4.9 Star Rating</span>
                 <span className="text-[9px] text-muted-foreground font-semibold">Indore&apos;s Top Rated</span>
               </div>
             </motion.div>
@@ -309,13 +309,13 @@ export function Hero() {
               initial={{ opacity: 0, x: -20, y: 10 }}
               animate={{ opacity: 1, x: 0, y: 0 }}
               transition={{ delay: 1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute -bottom-4 -left-4 bg-card/85 backdrop-blur-md border border-border/80 px-4.5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 select-none hover:shadow-2xl transition-all duration-300 hover:border-primary/20"
+              className="absolute bottom-2 left-2 sm:-bottom-4 sm:-left-4 bg-card/85 backdrop-blur-md border border-border/80 px-3.5 sm:px-4.5 py-2.5 sm:py-3 rounded-2xl shadow-xl flex items-center gap-2.5 select-none hover:shadow-2xl transition-all duration-300 hover:border-primary/20 z-20"
             >
-              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center border border-accent/20">
-                <BadgeCheck className="w-4.5 h-4.5 text-accent" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-accent/10 flex items-center justify-center border border-accent/20">
+                <BadgeCheck className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-accent" />
               </div>
               <div className="flex flex-col text-left">
-                <span className="text-xs font-extrabold text-primary">100% Physical Audited</span>
+                <span className="text-[11px] sm:text-xs font-extrabold text-primary">100% Physical Audited</span>
                 <span className="text-[9px] text-muted-foreground font-semibold">Safe & Verified Hosts</span>
               </div>
             </motion.div>

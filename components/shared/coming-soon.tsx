@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Compass, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import Navbar from "@/components/navigation/navbar";
 
 interface ComingSoonProps {
   title: string;
@@ -11,19 +12,14 @@ interface ComingSoonProps {
 
 export function ComingSoon({ title, description }: ComingSoonProps) {
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 pt-24 text-center relative overflow-hidden">
+      <Navbar />
+
       {/* Premium ambient glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Brand logo header */}
-      <div className="absolute top-8 left-8 flex items-center">
-        <span className="font-heading text-xl font-extrabold text-primary tracking-tight select-none">
-          RoofOnClick
-        </span>
-      </div>
-
       {/* Main content block */}
-      <div className="max-w-md flex flex-col items-center gap-6 relative z-10">
+      <div className="max-w-md flex flex-col items-center gap-6 relative z-10 my-auto">
         {/* Animated Icon badge */}
         <div className="w-16 h-16 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center text-primary shadow-sm">
           <Compass className="w-8 h-8 animate-spin-slow" />
@@ -54,7 +50,7 @@ export function ComingSoon({ title, description }: ComingSoonProps) {
       </div>
 
       {/* Footer copyright */}
-      <div className="absolute bottom-8 text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-widest">
+      <div className="pb-6 text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-widest">
         &copy; {new Date().getFullYear()} RoofOnClick &middot; Made with ♥ in Indore
       </div>
     </div>

@@ -11,6 +11,7 @@ import {
   ConfirmPasswordMessage,
 } from "@/components/auth/password-strength-meter";
 import { evaluatePasswordStrength } from "@/lib/password-utils";
+import Navbar from "@/components/navigation/navbar";
 import { cn } from "@/lib/utils";
 
 export default function SignupPage() {
@@ -89,20 +90,12 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 pt-24 relative overflow-hidden">
+      <Navbar />
       {/* Soft background radial highlights */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse" />
 
-      {/* Back to Home Button */}
-      <Link
-        href="/"
-        data-no-intercept="true"
-        className="absolute top-8 left-8 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border/80 bg-card hover:bg-muted/40 text-muted-foreground hover:text-primary font-heading text-xs font-bold transition-all duration-300 shadow-sm"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Home
-      </Link>
 
       {/* Main card */}
       <div className="w-full max-w-md bg-card/85 backdrop-blur-md border border-border/80 p-8 sm:p-10 rounded-[28px] shadow-premium relative z-10 flex flex-col gap-6 my-12">

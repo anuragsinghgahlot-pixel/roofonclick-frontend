@@ -21,7 +21,10 @@ export function BackButton({
   const router = useRouter();
   const { sourceRoute } = useNavigation();
 
-  const handleBack = () => {
+  const handleBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     if (sourceRoute) {
       router.push(sourceRoute);
     } else if (typeof window !== "undefined" && window.history.length > 1) {
@@ -40,13 +43,15 @@ export function BackButton({
       whileTap={{ scale: 0.96 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-card border border-border/80 text-muted-foreground hover:text-primary hover:border-border font-heading text-xs font-bold transition-all shadow-xs cursor-pointer select-none",
+        "inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-card border border-border/80 text-muted-foreground hover:text-primary hover:border-border font-heading text-xs font-bold transition-all shadow-xs cursor-pointer select-none shrink-0",
         className
       )}
       aria-label={label}
     >
-      <ArrowLeft className="w-4 h-4 text-secondary shrink-0" />
+      <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-secondary shrink-0" />
       <span>{label}</span>
     </motion.button>
   );
 }
+
+export default BackButton;

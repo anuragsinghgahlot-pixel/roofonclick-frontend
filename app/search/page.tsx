@@ -13,6 +13,7 @@ import { PropertyCard } from "@/components/cards/property-card";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { BackButton } from "@/components/shared/back-button";
 import { EmptyState } from "@/components/shared/empty-state";
+import { PageHeader } from "@/components/shared/page-header";
 
 import { MOCK_PROPERTIES } from "@/constants/mock-properties";
 
@@ -185,34 +186,27 @@ function SearchPageContent() {
     <div className="relative flex min-h-screen flex-col bg-background">
       <Navbar />
       <main className="flex-1 flex flex-col">
-        <Section className="bg-muted/10 py-12 relative overflow-hidden">
+        <Section className="bg-muted/10 pt-24 pb-8 sm:pb-12 relative overflow-hidden">
           {/* Decorative ambient background glows */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
           <Container>
-            {/* Top Navigation Row */}
-            <div className="flex items-center justify-between gap-4 mb-6">
-              <BackButton fallbackUrl="/" />
-              <Breadcrumb />
-            </div>
-
-            {/* Search Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-border/80 pb-6 mb-8 text-left">
-              <div>
-                <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-primary tracking-tight mb-2">
-                  Search Results
-                </h1>
-                <p className="font-body text-base text-muted-foreground flex items-center gap-1.5">
+            {/* Standardized Page Header */}
+            <PageHeader
+              title="Search Results"
+              subtitle={
+                <span className="flex items-center gap-1.5">
                   Showing stays in <span className="font-semibold text-secondary flex items-center gap-1">📍 {displayLocation}</span>
-                </p>
-              </div>
-              <div className="mt-4 md:mt-0">
-                <span className="font-body text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-3 py-1.5 rounded-lg">
+                </span>
+              }
+              badge={
+                <span className="font-body text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg">
                   {filteredProperties.length} Stays Found
                 </span>
-              </div>
-            </div>
+              }
+              backFallbackUrl="/"
+            />
 
             {/* Main Content Layout: Sidebar + Grid */}
             <div className="flex flex-col md:flex-row gap-8 items-start">

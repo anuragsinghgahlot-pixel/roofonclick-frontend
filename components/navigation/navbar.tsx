@@ -7,9 +7,10 @@ import { Container } from "@/components/layout/container";
 import { cn } from "@/lib/utils";
 import { useWishlist } from "@/providers/wishlist-provider";
 import { useAuth } from "@/providers/auth-provider";
-import { Heart, User as UserIcon, Calendar, Settings, LogOut, Building, LayoutDashboard } from "lucide-react";
+import { Heart, User as UserIcon, Calendar, Settings, LogOut, Building, LayoutDashboard, X } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { ProfileDropdown, NotificationsButton, ProfileAvatar } from "./profile-dropdown";
+import { Portal } from "@/components/shared/portal";
 import { toast } from "sonner";
 
 const NAV_ITEMS = ["Explore", "Areas", "For Owners"];
@@ -26,6 +27,11 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
   const drawerRef = React.useRef<HTMLDivElement>(null);
   const hamburgerRef = React.useRef<HTMLButtonElement>(null);
+
+  // Close mobile menu on route change
+  React.useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
 
   // Monitor scroll position to apply sticky effects
   React.useEffect(() => {
@@ -45,6 +51,7 @@ export default function Navbar() {
     if (!isOpen) return;
 
     // Lock body scrolling
+    const originalStyle = window.getComputedStyle(document.body).overflow;
     document.body.style.overflow = "hidden";
 
     // Close on Escape key press
@@ -61,11 +68,13 @@ export default function Navbar() {
       'a[href], button:not([disabled]), input, textarea, select, [tabindex]:not([tabindex="-1"])'
     ) as NodeListOf<HTMLElement>;
 
+    let handleTabKey: ((e: KeyboardEvent) => void) | null = null;
+
     if (focusableElements && focusableElements.length > 0) {
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
 
-      const handleTabKey = (e: KeyboardEvent) => {
+      handleTabKey = (e: KeyboardEvent) => {
         if (e.key !== "Tab") return;
 
         if (e.shiftKey) {
@@ -83,16 +92,14 @@ export default function Navbar() {
 
       const drawerNode = drawerRef.current;
       drawerNode?.addEventListener("keydown", handleTabKey);
-
-      return () => {
-        document.body.style.overflow = "";
-        window.removeEventListener("keydown", handleKeyDown);
-        drawerNode?.removeEventListener("keydown", handleTabKey);
-      };
     }
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = originalStyle;
+      window.removeEventListener("keydown", handleKeyDown);
+      if (handleTabKey && drawerRef.current) {
+        drawerRef.current.removeEventListener("keydown", handleTabKey);
+      }
     };
   }, [isOpen]);
 
@@ -132,7 +139,7 @@ export default function Navbar() {
               transform: "translateX(-50%)",
               width: "80%",
               maxWidth: "1280px",
-              zIndex: 1000,
+              zIndex: 100,
               background: "rgba(255, 255, 255, 0.85)",
               backdropFilter: "blur(24px)",
               WebkitBackdropFilter: "blur(24px)",
@@ -150,7 +157,7 @@ export default function Navbar() {
               transform: "translateX(-50%)",
               width: "100%",
               maxWidth: "100%",
-              zIndex: 1000,
+              zIndex: 100,
               background: "transparent",
               backdropFilter: "blur(0px)",
               WebkitBackdropFilter: "blur(0px)",
@@ -167,7 +174,7 @@ export default function Navbar() {
           <div className="flex h-12 items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center">
-              <span className="font-heading text-2xl font-extrabold text-primary tracking-tight select-none cursor-pointer">
+              <span className="font-heading text-xl sm:text-2xl font-extrabold text-primary tracking-tight select-none cursor-pointer">
                 RoofOnClick
               </span>
             </Link>
@@ -243,8 +250,14 @@ export default function Navbar() {
             {/* Mobile Hamburger Toggle Button */}
             <button
               ref={hamburgerRef}
-              onClick={() => setIsOpen(!isOpen)}
-              className="relative z-50 p-2 md:hidden flex flex-col justify-center items-center gap-1.5 w-10 h-10 rounded-full hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+              type="button"
+              data-no-intercept="true"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsOpen(!isOpen);
+              }}
+              className="relative z-50 p-2 md:hidden flex flex-col justify-center items-center gap-1.5 w-10 h-10 rounded-full hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer select-none shrink-0"
               aria-label={isOpen ? "Close Menu" : "Open Menu"}
               aria-expanded={isOpen}
             >
@@ -268,17 +281,17 @@ export default function Navbar() {
         </Container>
       </header>
 
-      {/* Mobile Slide-Over Drawer Navigation */}
+      {/* Mobile Slide-Over Drawer Navigation in Portal */}
       <AnimatePresence>
         {isOpen && (
-          <>
+          <Portal>
             {/* Backdrop Scrim */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-overlay bg-black/40 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-backdrop bg-black/60 backdrop-blur-sm md:hidden"
             />
 
             {/* Drawer Panel */}
@@ -288,14 +301,27 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 30 }}
-              className="fixed top-0 right-0 bottom-0 z-modal w-[300px] bg-background p-6 shadow-premium border-l border-border flex flex-col md:hidden overflow-y-auto"
+              className="fixed top-0 right-0 bottom-0 z-modal w-[80vw] sm:w-[320px] max-w-[340px] bg-background p-6 shadow-2xl border-l border-border flex flex-col md:hidden overflow-y-auto"
             >
-              <div className="flex justify-between items-center mb-6 mt-2">
-                <Link href="/" onClick={() => setIsOpen(false)}>
-                  <span className="font-heading text-2xl font-extrabold text-primary tracking-tight select-none">
+              <div className="flex justify-between items-center mb-6 mt-1">
+                <Link href="/" onClick={() => setIsOpen(false)} data-no-intercept="true">
+                  <span className="font-heading text-xl sm:text-2xl font-extrabold text-primary tracking-tight select-none">
                     RoofOnClick
                   </span>
                 </Link>
+                <button
+                  type="button"
+                  data-no-intercept="true"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsOpen(false);
+                  }}
+                  className="p-2.5 rounded-xl bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                  aria-label="Close menu"
+                >
+                  <X className="w-4.5 h-4.5" />
+                </button>
               </div>
 
               {/* Navigation Items */}
@@ -305,8 +331,8 @@ export default function Navbar() {
                     key={item}
                     onClick={() => handleNavItemClick(item)}
                     className={cn(
-                      "text-left font-heading text-base font-semibold py-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm cursor-pointer",
-                      activeItem === item ? "text-primary" : "text-muted-foreground"
+                      "text-left font-heading text-base font-semibold py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm cursor-pointer",
+                      activeItem === item ? "text-primary" : "text-muted-foreground hover:text-primary"
                     )}
                   >
                     {item}
@@ -321,7 +347,7 @@ export default function Navbar() {
                     setIsOpen(false);
                     router.push("/wishlist");
                   }}
-                  className="text-left flex items-center gap-2 font-heading text-base font-semibold py-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm text-muted-foreground hover:text-primary cursor-pointer"
+                  className="text-left flex items-center gap-2 font-heading text-base font-semibold py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm text-muted-foreground hover:text-primary cursor-pointer"
                 >
                   <Heart className={cn("w-4.5 h-4.5 text-rose-500", wishlistCount > 0 && "fill-rose-500")} />
                   <span>Wishlist</span>
@@ -375,7 +401,7 @@ export default function Navbar() {
                         <button
                           onClick={() => {
                             setIsOpen(false);
-                            router.push("/owner/dashboard");
+                            router.push("/owner/properties");
                           }}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
                         >
@@ -480,10 +506,9 @@ export default function Navbar() {
                 </div>
               )}
             </motion.div>
-          </>
+          </Portal>
         )}
       </AnimatePresence>
     </>
   );
 }
-

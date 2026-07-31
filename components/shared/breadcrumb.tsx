@@ -20,7 +20,7 @@ export function Breadcrumb({ customLabel, className }: BreadcrumbProps) {
     <nav
       aria-label="Breadcrumb navigation"
       className={cn(
-        "flex items-center gap-1.5 flex-wrap font-body text-xs text-muted-foreground",
+        "hidden md:flex items-center gap-1.5 font-body text-xs text-muted-foreground max-w-[260px] md:max-w-[380px] lg:max-w-[500px] overflow-hidden truncate",
         className
       )}
     >
@@ -35,7 +35,7 @@ export function Breadcrumb({ customLabel, className }: BreadcrumbProps) {
 
             {item.isCurrent ? (
               <span
-                className="font-semibold text-primary truncate max-w-[200px] sm:max-w-[300px]"
+                className="font-semibold text-primary truncate max-w-[120px] sm:max-w-[220px]"
                 aria-current="page"
               >
                 {item.label}
@@ -43,6 +43,7 @@ export function Breadcrumb({ customLabel, className }: BreadcrumbProps) {
             ) : (
               <Link
                 href={item.href}
+                data-no-intercept="true"
                 className="hover:text-primary transition-colors flex items-center gap-1 font-medium"
               >
                 {isFirst && <Home className="w-3.5 h-3.5 text-secondary shrink-0" />}

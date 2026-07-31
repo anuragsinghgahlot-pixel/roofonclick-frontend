@@ -53,6 +53,7 @@ function PropertyCardSkeleton() {
 import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { BackButton } from "@/components/shared/back-button";
 import { EmptyState } from "@/components/shared/empty-state";
+import { PageHeader } from "@/components/shared/page-header";
 export function WishlistPage() {
   const router = useRouter();
   const { wishlist, getLastBrowsingRoute } = useWishlist();
@@ -76,34 +77,23 @@ export function WishlistPage() {
       <Navbar />
 
       <main className="flex-1">
-        <Section className="bg-muted/10 py-12 relative overflow-hidden">
+        <Section className="bg-muted/10 pt-24 pb-12 relative overflow-hidden">
           {/* Ambient background decorative elements */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
           <Container>
-            {/* Top Navigation Row */}
-            <div className="flex items-center justify-between gap-4 mb-6">
-              <BackButton fallbackUrl={getLastBrowsingRoute()} />
-              <Breadcrumb />
-            </div>
-
-            {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-border/80 pb-6 mb-10 text-left">
-              <div>
-                <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary block mb-1">
-                  Your Saved Properties
-                </span>
-                <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-primary tracking-tight flex items-center gap-2">
-                  <span>❤️</span> Wishlist
-                </h1>
-              </div>
-              <div className="mt-4 md:mt-0">
+            {/* Standardized Page Header */}
+            <PageHeader
+              title="❤️ Wishlist"
+              subtitle="Your Saved Properties"
+              badge={
                 <span className="font-body text-xs font-extrabold uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 px-4 py-2 rounded-xl">
                   {isLoading ? "Loading..." : `${savedProperties.length} Saved Properties`}
                 </span>
-              </div>
-            </div>
+              }
+              backFallbackUrl={getLastBrowsingRoute()}
+            />
 
             {/* Properties Grid, Loading skeletons, or Empty State */}
             {isLoading ? (

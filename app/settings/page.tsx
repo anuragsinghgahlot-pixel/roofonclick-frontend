@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { BackButton } from "@/components/shared/back-button";
+import { PageHeader } from "@/components/shared/page-header";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
@@ -106,30 +107,23 @@ export default function SettingsPage() {
 
       <main className="flex-1 py-8 sm:py-12">
         <Container className="max-w-4xl mx-auto space-y-8">
-          {/* Top Navigation Row */}
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <BackButton fallbackUrl={isOwner ? "/owner/dashboard" : "/profile"} />
-            <Breadcrumb />
-          </div>
-
-          {/* Page Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-6">
-            <div className="space-y-1 text-left">
-              <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-                Account Settings
-              </h1>
-            </div>
-
-            <button
-              type="button"
-              data-no-intercept="true"
-              onClick={handleLogout}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 text-rose-500 font-heading text-xs font-bold transition-all cursor-pointer shadow-sm shrink-0 self-start sm:self-auto"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Logout</span>
-            </button>
-          </div>
+          {/* Standardized Page Header */}
+          <PageHeader
+            title="Account Settings"
+            subtitle="Configure preferences, notification options, and system theme."
+            badge={
+              <button
+                type="button"
+                data-no-intercept="true"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 text-rose-500 font-heading text-xs font-bold transition-all cursor-pointer shadow-sm shrink-0"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
+            }
+            backFallbackUrl={isOwner ? "/owner/dashboard" : "/profile"}
+          />
 
           <div className="space-y-6">
             

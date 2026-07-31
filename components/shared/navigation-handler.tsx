@@ -10,11 +10,13 @@ export function NavigationHandler() {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
 
-      // Don't intercept clicks inside specific components like profile dropdown, photo uploads, forms, etc.
+      // Don't intercept clicks inside specific components like modal/drawer portals, buttons without hrefs, etc.
       if (
         target.closest('[data-no-intercept="true"]') ||
         target.closest('[aria-haspopup="true"]') ||
         target.closest('[role="menu"]') ||
+        target.closest('[role="dialog"]') ||
+        target.closest('button[aria-label]') ||
         target.closest('button[aria-expanded]') ||
         target.closest('input[type="file"]') ||
         target.closest('form')
@@ -28,18 +30,8 @@ export function NavigationHandler() {
       const text = (interactiveEl.textContent || "").trim().toLowerCase();
       const href = interactiveEl.getAttribute("href");
 
-      // Don't intercept buttons without hrefs that perform action triggers
-      if (
-        interactiveEl.tagName === "BUTTON" &&
-        (!href || href === "#") &&
-        (text.includes("upload") ||
-          text.includes("photo") ||
-          text.includes("change") ||
-          text.includes("save") ||
-          text.includes("cancel") ||
-          text.includes("remove") ||
-          text.includes("edit"))
-      ) {
+      // Don't intercept buttons that do not have a valid navigational href
+      if (interactiveEl.tagName === "BUTTON" && (!href || href === "#" || href === "")) {
         return;
       }
 
@@ -134,8 +126,8 @@ export function NavigationHandler() {
         return;
       }
 
-      // 11. Fallback for other clicks
-      router.push("/coming-soon");
+      // 11. Fallback: Do not navigate on unhandled interactive elements
+      return;
     };
 
     document.addEventListener("click", handleClick, true);

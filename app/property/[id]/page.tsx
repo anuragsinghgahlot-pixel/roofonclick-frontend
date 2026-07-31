@@ -170,7 +170,7 @@ function PropertyDetailsContent() {
       <Navbar />
 
       <main className="flex-1" data-no-intercept="true">
-        <Section className="bg-background relative overflow-hidden text-left py-8 md:py-12">
+        <Section className="bg-background relative overflow-hidden text-left pt-24 pb-8 md:pb-12">
           {/* Ambient Background Glows */}
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute bottom-[20%] left-0 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
