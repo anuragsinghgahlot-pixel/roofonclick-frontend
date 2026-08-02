@@ -31,10 +31,10 @@ export default function SignupPage() {
   const strength = evaluatePasswordStrength(password);
   const isWeak = password.length > 0 && strength.level === "Weak";
   const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
-  
+
   const isPhoneValid = /^\d{10}$/.test(phoneNumber);
   const isGenderValid = gender !== "";
-  
+
   const isFormValid =
     name.trim().length > 0 &&
     email.trim().length > 0 &&
@@ -71,12 +71,12 @@ export default function SignupPage() {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
-    
+
     // Simulate backend creation delay
     setTimeout(() => {
       signup(name, email, phoneNumber, gender, selectedRole);
       setShowToast(true);
-      
+
       // Short delay to let user see success toast
       setTimeout(() => {
         setIsSubmitting(false);
@@ -100,7 +100,7 @@ export default function SignupPage() {
       {/* Main card */}
       <div className="w-full max-w-md bg-card/85 backdrop-blur-md border border-border/80 p-8 sm:p-10 rounded-[28px] shadow-premium relative z-10 flex flex-col gap-6 my-12">
         <title>Sign Up | RoofOnClick</title>
-        
+
         {/* Header */}
         <div className="flex flex-col gap-2 text-center">
           <span className="font-heading text-2xl font-extrabold text-primary tracking-tight select-none">
@@ -129,7 +129,7 @@ export default function SignupPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
-                placeholder="John Doe"
+                placeholder="Your Name"
               />
             </div>
           </div>
@@ -147,7 +147,7 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
-                placeholder="you@example.com"
+                placeholder="your@example.com"
               />
             </div>
           </div>

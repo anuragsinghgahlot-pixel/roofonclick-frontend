@@ -52,13 +52,7 @@ export function NavigationHandler() {
       e.preventDefault();
       e.stopPropagation();
 
-      // 2. View Details / property click
-      if (text.includes("view details")) {
-        router.push("/property/elite-residency");
-        return;
-      }
-
-      // 3. Explore Properties
+      // 2. Explore Properties
       if (text.includes("explore properties") || text === "explore") {
         router.push("/explore");
         return;

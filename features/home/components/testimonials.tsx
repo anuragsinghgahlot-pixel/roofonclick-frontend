@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Star, Quote } from "lucide-react";
+import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
 
@@ -82,16 +82,59 @@ const MOCK_TESTIMONIALS: TestimonialItem[] = [
 
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 
+function TestimonialCard({ t }: { t: TestimonialItem }) {
+  return (
+    <div className="flex flex-col gap-5 p-6 sm:p-7 rounded-[24px] bg-card/65 backdrop-blur-md border border-border/80 hover:border-border hover:shadow-xl transition-all duration-300 cursor-default relative overflow-hidden h-full">
+      <div className="absolute inset-0 bg-gradient-to-br from-card/[0.03] to-transparent pointer-events-none" />
+      {/* Rating & Quote */}
+      <div className="flex items-start justify-between relative z-10">
+        <div className="flex items-center gap-0.5">
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <Star
+              key={idx}
+              className={`w-3.5 h-3.5 ${idx < t.rating ? "text-secondary fill-current" : "text-muted-foreground/30"}`}
+            />
+          ))}
+        </div>
+        <Quote className="w-6 h-6 text-secondary/20 shrink-0" />
+      </div>
+      {/* Review */}
+      <p className="font-body text-sm text-foreground/80 leading-relaxed flex-1 relative z-10">
+        &ldquo;{t.review}&rdquo;
+      </p>
+      {/* Divider */}
+      <div className="h-px w-full bg-border/60 relative z-10" />
+      {/* Reviewer */}
+      <div className="flex items-center gap-3.5 relative z-10">
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-heading text-xs font-extrabold border shrink-0 ${t.avatarBg}`}>
+          {t.initials}
+        </div>
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <span className="font-heading text-sm font-bold text-primary truncate">{t.name}</span>
+          <span className="font-body text-[11px] text-muted-foreground truncate">{t.occupation}</span>
+          <span className="font-body text-[10px] text-muted-foreground/75 truncate">📍 {t.location}, Indore</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Testimonials() {
+  const [activeIndex, setActiveIndex] = React.useState(0);
+  const total = MOCK_TESTIMONIALS.length;
+
+  const prev = () => setActiveIndex((i) => (i - 1 + total) % total);
+  const next = () => setActiveIndex((i) => (i + 1) % total);
+
   return (
     <Section className="bg-muted/5">
       <Container>
-        {/* Header Block */}
-        <div className="flex flex-col gap-2 mb-12 text-center items-center">
+        {/* Header */}
+        <div className="flex flex-col gap-2 mb-8 sm:mb-12 text-center items-center">
           <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
             Real Experiences
           </span>
-          <h2 className="font-heading text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
+          <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
             What Our Residents Say
           </h2>
           <p className="font-body text-sm text-muted-foreground leading-relaxed max-w-md">
@@ -99,16 +142,64 @@ export function Testimonials() {
           </p>
         </div>
 
-        {/* Testimonials Grid */}
+        {/* Mobile: single-card carousel */}
+        <div className="sm:hidden relative">
+          <div className="overflow-hidden rounded-[24px]">
+            <motion.div
+              key={activeIndex}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.35, ease: PREMIUM_EASE }}
+            >
+              <TestimonialCard t={MOCK_TESTIMONIALS[activeIndex]} />
+            </motion.div>
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center justify-between mt-5">
+            <button
+              type="button"
+              onClick={prev}
+              aria-label="Previous review"
+              className="w-11 h-11 rounded-full border border-border/80 bg-card flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-all duration-200 active:scale-90 shadow-sm"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            {/* Dots */}
+            <div className="flex items-center gap-2">
+              {MOCK_TESTIMONIALS.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setActiveIndex(idx)}
+                  aria-label={`Go to review ${idx + 1}`}
+                  className={`rounded-full transition-all duration-300 ${
+                    idx === activeIndex ? "w-5 h-2 bg-primary" : "w-2 h-2 bg-border hover:bg-primary/40"
+                  }`}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={next}
+              aria-label="Next review"
+              className="w-11 h-11 rounded-full border border-border/80 bg-card flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-all duration-200 active:scale-90 shadow-sm"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* sm+: Grid layout */}
         <motion.div
-          variants={{
-            hidden: {},
-            visible: { transition: { staggerChildren: 0.08 } },
-          }}
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full"
+          className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full"
         >
           {MOCK_TESTIMONIALS.map((t) => (
             <motion.div
@@ -119,54 +210,8 @@ export function Testimonials() {
               }}
               whileHover={{ y: -5, scale: 1.015 }}
               transition={{ duration: 0.28, ease: PREMIUM_EASE }}
-              className="group flex flex-col gap-5 p-7 rounded-[24px] bg-card/65 backdrop-blur-md border border-border/80 hover:border-border hover:shadow-xl transition-all duration-300 cursor-default relative overflow-hidden"
             >
-              {/* Glassmorphism subtle overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-card/[0.03] to-transparent pointer-events-none" />
-
-              {/* Rating stars & Quote */}
-              <div className="flex items-start justify-between relative z-10">
-                <div className="flex items-center gap-0.5">
-                  {Array.from({ length: 5 }).map((_, idx) => (
-                    <Star
-                      key={idx}
-                      className={`w-3.5 h-3.5 ${
-                        idx < t.rating ? "text-secondary fill-current" : "text-muted-foreground/30"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <Quote className="w-6 h-6 text-secondary/20 shrink-0" />
-              </div>
-
-              {/* Review text */}
-              <p className="font-body text-sm text-foreground/80 leading-relaxed flex-1 relative z-10">
-                &ldquo;{t.review}&rdquo;
-              </p>
-
-              {/* Divider */}
-              <div className="h-px w-full bg-border/60 relative z-10" />
-
-              {/* Reviewer Meta details */}
-              <div className="flex items-center gap-3.5 relative z-10">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-heading text-xs font-extrabold border shrink-0 ${t.avatarBg}`}
-                >
-                  {t.initials}
-                </div>
-
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="font-heading text-sm font-bold text-primary truncate">
-                    {t.name}
-                  </span>
-                  <span className="font-body text-[11px] text-muted-foreground truncate">
-                    {t.occupation}
-                  </span>
-                  <span className="font-body text-[10px] text-muted-foreground/75 truncate">
-                    📍 {t.location}, Indore
-                  </span>
-                </div>
-              </div>
+              <TestimonialCard t={t} />
             </motion.div>
           ))}
         </motion.div>

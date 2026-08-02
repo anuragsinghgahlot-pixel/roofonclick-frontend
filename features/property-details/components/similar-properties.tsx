@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Star, BadgeCheck, ArrowRight, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -69,7 +70,7 @@ export function SimilarProperties({ properties, className }: SimilarPropertiesPr
       whileInView="visible"
       viewport={{ once: true, margin: "-100px" }}
       className={cn(
-        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full",
+        "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full",
         className
       )}
     >
@@ -167,14 +168,13 @@ export function SimilarProperties({ properties, className }: SimilarPropertiesPr
                   </div>
 
                   {/* View Details Button */}
-                  <button
-                    type="button"
-                    onClick={property.onView}
+                  <Link
+                    href={`/property/${property.id}`}
                     className="inline-flex items-center gap-1 bg-primary text-primary-foreground hover:bg-accent px-5 py-2.5 rounded-xl text-xs font-semibold active:scale-95 transition-all duration-200 cursor-pointer shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     View Details
                     <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  </Link>
 
                 </div>
               </div>

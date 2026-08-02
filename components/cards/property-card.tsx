@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { ShieldCheck, MapPin, Star, Heart, Share2 } from "lucide-react";
+import { ShieldCheck, MapPin, Star, Heart, Share2, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWishlist } from "@/providers/wishlist-provider";
+import { useCompare } from "@/providers/compare-provider";
 import { motion } from "framer-motion";
 
 import {
@@ -14,6 +15,8 @@ import {
 import { shareProperty } from "@/lib/share-utils";
 import { ShareModal } from "@/components/shared/share-modal";
 import { RoomConfiguration } from "@/services/property";
+
+import { useAuth } from "@/providers/auth-provider";
 
 export interface PropertyItem {
   id: string;
@@ -38,8 +41,12 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { user, role } = useAuth();
+  const isOwner = user !== null && (user.role === "owner" || role === "owner");
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { isInCompare, toggleCompare } = useCompare();
   const isWishlisted = isInWishlist(property.id);
+  const isCompared = isInCompare(property.id);
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
 
   const availability = property.rooms && property.rooms.length > 0
@@ -78,8 +85,26 @@ export function PropertyCard({ property }: PropertyCardProps) {
           </span>
         )}
 
-        {/* Action Overlay: Share + Wishlist */}
+        {/* Action Overlay: Compare + Share + Wishlist */}
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 z-20">
+          <button
+            type="button"
+            data-no-intercept="true"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleCompare(property.id);
+            }}
+            className={cn(
+              "w-9 h-9 rounded-full backdrop-blur-md border border-border/40 shadow-premium flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-150 cursor-pointer",
+              isCompared
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card/90 text-muted-foreground hover:text-primary"
+            )}
+            title={isCompared ? "Remove from Compare" : "Add to Compare"}
+          >
+            <Scale className="w-4 h-4" />
+          </button>
+
           <button
             type="button"
             data-no-intercept="true"
@@ -101,28 +126,30 @@ export function PropertyCard({ property }: PropertyCardProps) {
             <Share2 className="w-4 h-4" />
           </button>
 
-          <button
-            type="button"
-            data-no-intercept="true"
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleWishlist(property.id);
-            }}
-            className="w-9 h-9 rounded-full bg-card/90 backdrop-blur-md border border-border/40 shadow-premium flex items-center justify-center hover:scale-105 active:scale-95 transition-transform duration-150 cursor-pointer"
-            title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-          >
-            <motion.div
-              animate={{ scale: isWishlisted ? [1, 1.25, 1] : 1 }}
-              transition={{ duration: 0.2 }}
+          {!isOwner && (
+            <button
+              type="button"
+              data-no-intercept="true"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleWishlist(property.id);
+              }}
+              className="w-9 h-9 rounded-full bg-card/90 backdrop-blur-md border border-border/40 shadow-premium flex items-center justify-center hover:scale-105 active:scale-95 transition-transform duration-150 cursor-pointer"
+              title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
             >
-              <Heart
-                className={cn(
-                  "w-4.5 h-4.5 transition-colors duration-200",
-                  isWishlisted ? "fill-rose-500 text-rose-500" : "text-muted-foreground/80 hover:text-rose-500"
-                )}
-              />
-            </motion.div>
-          </button>
+              <motion.div
+                animate={{ scale: isWishlisted ? [1, 1.25, 1] : 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Heart
+                  className={cn(
+                    "w-4.5 h-4.5 transition-colors duration-200",
+                    isWishlisted ? "fill-rose-500 text-rose-500" : "text-muted-foreground/80 hover:text-rose-500"
+                  )}
+                />
+              </motion.div>
+            </button>
+          )}
         </div>
       </div>
 
@@ -176,8 +203,15 @@ export function PropertyCard({ property }: PropertyCardProps) {
               <span className="text-xs font-semibold text-muted-foreground font-body">/mo</span>
             </span>
           </div>
-          <button className="bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground text-xs font-bold tracking-wide px-4 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md shadow-primary/10">
-            Book Room
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCardClick();
+            }}
+            className="bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground text-xs font-bold tracking-wide px-4 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md shadow-primary/10"
+          >
+            View Details
           </button>
         </div>
       </div>

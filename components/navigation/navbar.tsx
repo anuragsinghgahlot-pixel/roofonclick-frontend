@@ -7,7 +7,7 @@ import { Container } from "@/components/layout/container";
 import { cn } from "@/lib/utils";
 import { useWishlist } from "@/providers/wishlist-provider";
 import { useAuth } from "@/providers/auth-provider";
-import { Heart, User as UserIcon, Calendar, Settings, LogOut, Building, LayoutDashboard, X } from "lucide-react";
+import { Heart, User as UserIcon, Calendar, Settings, LogOut, Building, LayoutDashboard, X, Plus } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { ProfileDropdown, NotificationsButton, ProfileAvatar } from "./profile-dropdown";
 import { Portal } from "@/components/shared/portal";
@@ -130,45 +130,12 @@ export default function Navbar() {
   return (
     <>
       <header
-        style={
+        className={cn(
+          "fixed top-0 left-1/2 -translate-x-1/2 z-[100] transition-all duration-350 ease-out",
           isScrolled
-            ? {
-              position: "fixed",
-              top: "16px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "80%",
-              maxWidth: "1280px",
-              zIndex: 100,
-              background: "rgba(255, 255, 255, 0.85)",
-              backdropFilter: "blur(24px)",
-              WebkitBackdropFilter: "blur(24px)",
-              border: "1px solid rgba(0, 0, 0, 0.06)",
-              borderRadius: "9999px",
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
-              paddingTop: "0.5rem",
-              paddingBottom: "0.5rem",
-              transition: "all 350ms cubic-bezier(0.16, 1, 0.3, 1)",
-            }
-            : {
-              position: "fixed",
-              top: "0px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "100%",
-              maxWidth: "100%",
-              zIndex: 100,
-              background: "transparent",
-              backdropFilter: "blur(0px)",
-              WebkitBackdropFilter: "blur(0px)",
-              border: "1px solid transparent",
-              borderRadius: "0px",
-              boxShadow: "none",
-              paddingTop: "1.5rem",
-              paddingBottom: "1.5rem",
-              transition: "all 350ms cubic-bezier(0.16, 1, 0.3, 1)",
-            }
-        }
+            ? "top-4 w-[90%] md:w-[80%] max-w-7xl bg-background/85 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-full shadow-lg py-2"
+            : "w-full bg-background/80 md:bg-transparent backdrop-blur-md md:backdrop-blur-none border-b border-border/40 md:border-b-0 py-3 md:py-6"
+        )}
       >
         <Container>
           <div className="flex h-12 items-center justify-between">
@@ -280,6 +247,9 @@ export default function Navbar() {
           </div>
         </Container>
       </header>
+
+      {/* Structural layout spacer reserving height for fixed navbar */}
+      <div className="h-[var(--navbar-height)] w-full shrink-0 pointer-events-none" aria-hidden="true" />
 
       {/* Mobile Slide-Over Drawer Navigation in Portal */}
       <AnimatePresence>
@@ -407,6 +377,17 @@ export default function Navbar() {
                         >
                           <Building className="w-4 h-4 text-secondary shrink-0" />
                           <span>My Properties</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setIsOpen(false);
+                            router.push("/owner/property/new");
+                          }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
+                        >
+                          <Plus className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span>Add Property</span>
                         </button>
 
                         <button

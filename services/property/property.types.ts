@@ -72,6 +72,8 @@ export interface Property {
   status: "Published" | "Draft" | "Archived";
   views: number;
   enquiries: number;
+  ownerId?: string;
+  ownerEmail?: string;
   createdAt?: string;
   updatedAt?: string;
 }

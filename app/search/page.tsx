@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { Bookmark } from "lucide-react";
 import Navbar from "@/components/navigation/navbar";
 import Footer from "@/components/navigation/footer";
 import { Container } from "@/components/shared/container";
@@ -14,6 +15,9 @@ import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { BackButton } from "@/components/shared/back-button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { SaveSearchModal } from "@/components/saved-searches/save-search-modal";
+import { SearchHistoryService } from "@/services/search-history";
+import { RecommendedSection } from "@/components/recommendations/recommended-section";
 
 import { MOCK_PROPERTIES } from "@/constants/mock-properties";
 
@@ -34,12 +38,25 @@ function SearchPageContent() {
   const searchParams = useSearchParams();
   const locationSlug = searchParams.get("location");
   const [selectedType] = React.useState<string>("All");
+  const [isSaveModalOpen, setIsSaveModalOpen] = React.useState(false);
   const [selectedGenders, setSelectedGenders] = React.useState<string[]>([]);
   const [selectedSidebarTypes, setSelectedSidebarTypes] = React.useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = React.useState<string | null>(null);
   const [selectedAmenities, setSelectedAmenities] = React.useState<string[]>([]);
   const [selectedSharing, setSelectedSharing] = React.useState<string[]>([]);
   const [selectedSort, setSelectedSort] = React.useState<string>("Recommended");
+
+  React.useEffect(() => {
+    const displayLoc = locationSlug ? getDisplayTitle(locationSlug) : "Indore";
+    const summary = `${selectedGenders[0] || "All"} ${selectedSidebarTypes[0] || "Stays"} in ${displayLoc}`;
+    SearchHistoryService.addRecentSearch({
+      querySummary: summary,
+      location: displayLoc,
+      propertyType: selectedSidebarTypes[0],
+      gender: selectedGenders[0],
+      sharingType: selectedSharing[0],
+    });
+  }, [locationSlug, selectedGenders, selectedSidebarTypes, selectedSharing]);
 
   const handleSortChange = React.useCallback((sort: string) => {
     setSelectedSort(sort);
@@ -201,9 +218,20 @@ function SearchPageContent() {
                 </span>
               }
               badge={
-                <span className="font-body text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg">
-                  {filteredProperties.length} Stays Found
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-body text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg">
+                    {filteredProperties.length} Stays Found
+                  </span>
+                  <button
+                    type="button"
+                    data-no-intercept="true"
+                    onClick={() => setIsSaveModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 hover:bg-primary hover:text-primary-foreground text-primary font-heading text-xs font-bold px-3 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer select-none active:scale-95"
+                  >
+                    <Bookmark className="w-3.5 h-3.5" />
+                    <span>Save Search</span>
+                  </button>
+                </div>
               }
               backFallbackUrl="/"
             />
@@ -267,22 +295,44 @@ function SearchPageContent() {
             </div>
           </Container>
         </Section>
+
+        {/* Location-Aware Contextual Recommendation Section */}
+        <RecommendedSection
+          location={locationSlug ? getDisplayTitle(locationSlug) : undefined}
+          propertyType={selectedSidebarTypes[0]}
+        />
       </main>
+
+      <SaveSearchModal
+        isOpen={isSaveModalOpen}
+        onClose={() => setIsSaveModalOpen(false)}
+        filters={{
+          location: locationSlug || undefined,
+          propertyType: selectedSidebarTypes[0],
+          gender: selectedGenders[0],
+          sharingType: selectedSharing[0],
+          amenities: selectedAmenities,
+        }}
+      />
+
       <Footer />
     </div>
   );
 }
+
+import { SearchPageSkeleton } from "@/components/shared/skeletons";
 
 export default function SearchResultsPage() {
   return (
     <Suspense fallback={
       <div className="relative flex min-h-screen flex-col bg-background">
         <Navbar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse flex flex-col items-center gap-3">
-            <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-            <span className="font-body text-sm font-semibold text-muted-foreground">Loading Search Results...</span>
-          </div>
+        <main className="flex-1" data-no-intercept="true">
+          <Section className="bg-background relative overflow-hidden text-left pt-6 pb-20">
+            <Container className="space-y-8">
+              <SearchPageSkeleton />
+            </Container>
+          </Section>
         </main>
         <Footer />
       </div>

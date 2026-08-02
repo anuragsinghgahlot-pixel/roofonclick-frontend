@@ -26,14 +26,14 @@ export function NavigationButtons() {
     : "Next";
 
   return (
-    <div className="flex items-center justify-between border-t border-border/60 pt-6 mt-6">
+    <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-border/60 pt-5 sm:pt-6 mt-5 sm:mt-6">
       {/* Previous Button */}
       <button
         type="button"
         disabled={isFirstStep}
         onClick={handlePrev}
         className={cn(
-          "px-5 py-3 rounded-xl border border-border text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-200 select-none",
+          "w-full sm:w-auto px-5 py-3 rounded-xl border border-border text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-200 select-none min-h-[44px]",
           isFirstStep
             ? "bg-muted/20 text-muted-foreground/30 border-muted/10 cursor-not-allowed"
             : "bg-card hover:bg-muted/40 text-muted-foreground hover:text-primary cursor-pointer"
@@ -49,7 +49,7 @@ export function NavigationButtons() {
         onClick={handleNextClick}
         disabled={!isStepValid}
         className={cn(
-          "px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-300 shadow-md select-none",
+          "w-full sm:w-auto px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-300 shadow-md select-none min-h-[44px]",
           isStepValid
             ? "bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground cursor-pointer shadow-primary/10"
             : "bg-muted text-muted-foreground/50 cursor-not-allowed shadow-none"

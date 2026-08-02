@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { showToast } from "@/lib/toast";
 
 export type UserRole = "buyer" | "owner";
 
 export interface User {
+  id?: string;
   name?: string;
   email?: string;
   phone?: string;
@@ -79,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         sessionStorage.setItem("auth_role", targetRole);
       }
     }
+    showToast.success("Account Created", `Welcome to RoofOnClick, ${name}!`);
   }, [role]);
 
   const login = React.useCallback((email: string) => {
@@ -113,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const json = JSON.stringify(loggedInUser);
       localStorage.setItem("auth_user", json);
       sessionStorage.setItem("auth_user", json);
+      showToast.success("Logged In Successfully", `Welcome back, ${loggedInUser.name}!`);
     }
   }, []);
 
@@ -125,6 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       sessionStorage.removeItem("auth_user");
       sessionStorage.removeItem("auth_role");
     }
+    showToast.info("Logged Out", "You have been logged out securely.");
   }, []);
 
   const setRole = React.useCallback((newRole: UserRole) => {

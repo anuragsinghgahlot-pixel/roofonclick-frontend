@@ -173,14 +173,14 @@ export function OwnerCard({
         </motion.button>
 
         {/* Secondary CTAs: WhatsApp & Send Enquiry */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <motion.button
             type="button"
             onClick={onWhatsApp}
             whileHover={{ scale: 1.015 }}
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="flex items-center justify-center gap-1.5 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-600 hover:text-white text-emerald-600 py-3 rounded-xl font-heading text-xs font-bold transition-all duration-200 cursor-pointer shadow-sm"
+            className="flex items-center justify-center gap-1.5 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-600 hover:text-white text-emerald-600 py-3 px-3 rounded-xl font-heading text-xs font-bold transition-all duration-200 cursor-pointer shadow-sm min-h-[44px]"
           >
             <span className="text-sm">💬</span>
             <span>WhatsApp</span>
@@ -192,7 +192,7 @@ export function OwnerCard({
             whileHover={{ scale: 1.015 }}
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="flex items-center justify-center gap-1.5 border border-primary/30 bg-primary/5 hover:bg-primary hover:text-primary-foreground text-primary py-3 rounded-xl font-heading text-xs font-bold transition-all duration-200 cursor-pointer shadow-sm"
+            className="flex items-center justify-center gap-1.5 border border-primary/30 bg-primary/5 hover:bg-primary hover:text-primary-foreground text-primary py-3 px-3 rounded-xl font-heading text-xs font-bold transition-all duration-200 cursor-pointer shadow-sm min-h-[44px]"
           >
             <MessageSquare className="w-3.5 h-3.5" />
             <span>Send Enquiry</span>

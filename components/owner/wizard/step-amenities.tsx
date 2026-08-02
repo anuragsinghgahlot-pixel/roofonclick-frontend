@@ -152,7 +152,7 @@ export function StepAmenities() {
           </h3>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="flex flex-wrap gap-2.5">
           {[
             { key: "smokingAllowed", label: "Smoking Allowed", emoji: "🚬", val: smokingAllowed },
             { key: "drinkingAllowed", label: "Drinking Allowed", emoji: "🍺", val: drinkingAllowed },
@@ -167,7 +167,7 @@ export function StepAmenities() {
                 type="button"
                 onClick={() => handleToggleRule(rule.key, rule.val)}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-3 rounded-xl border text-[11px] font-bold uppercase tracking-wider transition-all duration-300 hover:scale-[1.02] active:scale-95 cursor-pointer shadow-sm select-none justify-center",
+                  "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-bold uppercase tracking-wider transition-all duration-300 hover:scale-[1.02] active:scale-95 cursor-pointer shadow-sm select-none min-h-[44px]",
                   isSelected
                     ? "bg-primary/10 border-primary text-primary shadow-[0_3px_10px_rgba(34,197,94,0.06)]"
                     : "bg-card border-border/80 text-muted-foreground hover:text-foreground hover:border-primary"

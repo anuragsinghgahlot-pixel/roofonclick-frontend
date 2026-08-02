@@ -85,7 +85,7 @@ export function StepRoomsPricing() {
   return (
     <div className="flex flex-col gap-6 text-left">
       {/* Top Header Row */}
-      <div className="flex justify-between items-center border-b border-border/60 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-3">
         <div>
           <span className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1 block">
             Room Configurations & Pricing
@@ -98,10 +98,10 @@ export function StepRoomsPricing() {
           type="button"
           data-no-intercept="true"
           onClick={handleAddConfiguration}
-          className="flex items-center gap-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground text-xs font-bold px-4 py-2.5 rounded-xl transition-all duration-300 shadow-sm cursor-pointer border border-primary/20 shrink-0"
+          className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground text-xs font-bold px-4 py-3 rounded-xl transition-all duration-300 shadow-sm cursor-pointer border border-primary/20 shrink-0 min-h-[44px]"
         >
           <Plus className="w-4 h-4" />
-          <span>Add Another Room Configuration</span>
+          <span>Add Room Config</span>
         </button>
       </div>
 

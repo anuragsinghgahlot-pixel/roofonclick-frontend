@@ -26,8 +26,16 @@ const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 export default function OwnerDashboardPage() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, role, logout } = useAuth();
   const [pathnameKey, setPathnameKey] = React.useState(pathname);
+
+  const currentRole = user?.role || role;
+
+  React.useEffect(() => {
+    if (user && currentRole === "buyer") {
+      router.replace("/");
+    }
+  }, [user, currentRole, router]);
   const [properties, setProperties] = React.useState<Property[]>(() => {
     return PropertyService.getAllProperties();
   });
@@ -139,52 +147,54 @@ export default function OwnerDashboardPage() {
       <Navbar />
 
       <main className="flex-1" data-no-intercept="true">
-        <Section className="bg-muted/10 py-12 relative overflow-hidden text-left">
+        <Section className="bg-muted/10 pt-8 sm:py-12 relative overflow-hidden text-left">
           {/* Background glows */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
           <Container>
             {/* Header / Welcome Row */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-border/80 pb-6 mb-10">
-              <div>
-                <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary block mb-1">
-                  Management Center
-                </span>
-                <h1 className="font-heading text-3xl font-extrabold text-primary tracking-tight">
-                  Owner Dashboard
-                </h1>
-                <p className="font-body text-sm text-muted-foreground mt-1">
-                  Welcome back, <span className="font-semibold text-primary">{user?.name || user?.email || "Partner"}</span>. Here is how your properties are performing.
-                </p>
-              </div>
+            <div className="flex flex-col gap-4 border-b border-border/80 pb-6 mb-8 sm:mb-10">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div>
+                  <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary block mb-1">
+                    Management Center
+                  </span>
+                  <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
+                    Owner Dashboard
+                  </h1>
+                  <p className="font-body text-sm text-muted-foreground mt-1">
+                    Welcome back, <span className="font-semibold text-primary">{user?.name || user?.email || "Partner"}</span>.
+                  </p>
+                </div>
 
-              <div className="flex items-center gap-3 mt-4 md:mt-0">
-                <button
-                  data-no-intercept="true"
-                  onClick={handleLogout}
-                  className="px-5 py-2.5 rounded-xl border border-border bg-card hover:bg-muted/40 text-muted-foreground hover:text-primary text-xs font-bold transition-all duration-200 cursor-pointer"
-                >
-                  Logout
-                </button>
-                <button
-                  data-no-intercept="true"
-                  onClick={handleAddProperty}
-                  className="bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground text-xs font-bold tracking-wide px-5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md flex items-center gap-1.5"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Property
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    data-no-intercept="true"
+                    onClick={handleLogout}
+                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border bg-card hover:bg-muted/40 text-muted-foreground hover:text-primary text-xs font-bold transition-all duration-200 cursor-pointer min-h-[44px]"
+                  >
+                    Logout
+                  </button>
+                  <button
+                    data-no-intercept="true"
+                    onClick={handleAddProperty}
+                    className="flex-1 sm:flex-none bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground text-xs font-bold tracking-wide px-4 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md flex items-center justify-center gap-1.5 min-h-[44px]"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Property
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            {/* Quick Stats Grid — 2-col on mobile, 4-col on lg+ */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-10">
               {[
-                { label: "Active Listings", value: totalListings.toString(), icon: Building, color: "text-primary bg-primary/10" },
-                { label: "Enquiries & Visits", value: totalEnquiriesCount.toString(), icon: Users, color: "text-secondary bg-secondary/10" },
-                { label: "Bookings Pending", value: "0", icon: Calendar, color: "text-accent bg-accent/10" },
-                { label: "Profile Views", value: totalViews.toString(), icon: BarChart3, color: "text-muted-foreground bg-muted/70" },
+                { label: "Listings", value: totalListings.toString(), icon: Building, color: "text-primary bg-primary/10" },
+                { label: "Enquiries", value: totalEnquiriesCount.toString(), icon: Users, color: "text-secondary bg-secondary/10" },
+                { label: "Pending", value: "0", icon: Calendar, color: "text-accent bg-accent/10" },
+                { label: "Views", value: totalViews.toString(), icon: BarChart3, color: "text-muted-foreground bg-muted/70" },
               ].map((stat, idx) => {
                 const Icon = stat.icon;
                 return (
@@ -193,91 +203,53 @@ export default function OwnerDashboardPage() {
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: idx * 0.08, ease: PREMIUM_EASE }}
-                    className="bg-card border border-border/80 rounded-2xl p-6 shadow-premium flex items-center justify-between"
+                    className="bg-card border border-border/80 rounded-2xl p-4 sm:p-6 shadow-premium flex items-center justify-between gap-2"
                   >
-                    <div className="space-y-1">
-                      <span className="text-xs font-semibold text-muted-foreground block">{stat.label}</span>
-                      <span className="font-heading text-2xl font-extrabold text-primary">{stat.value}</span>
+                    <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                      <span className="text-[10px] sm:text-xs font-semibold text-muted-foreground block truncate">{stat.label}</span>
+                      <span className="font-heading text-xl sm:text-2xl font-extrabold text-primary">{stat.value}</span>
                     </div>
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color} shrink-0`}>
-                      <Icon className="w-5 h-5" />
+                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ${stat.color} shrink-0`}>
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                   </motion.div>
                 );
               })}
             </div>
 
-            {/* Dashboard Section Switcher Tabs */}
-            <div className="flex flex-wrap items-center gap-3 border-b border-border/60 pb-4 mb-8">
-              <button
-                type="button"
-                data-no-intercept="true"
-                onClick={() => setActiveTab("PROPERTIES")}
-                className={cn(
-                  "px-5 py-2.5 rounded-xl font-heading text-xs font-bold transition-all cursor-pointer flex items-center gap-2",
-                  activeTab === "PROPERTIES"
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-card border border-border/80 text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Building className="w-4 h-4" />
-                <span>My Listed Properties ({properties.length})</span>
-              </button>
-
-              <button
-                type="button"
-                data-no-intercept="true"
-                onClick={() => setActiveTab("ENQUIRIES")}
-                className={cn(
-                  "px-5 py-2.5 rounded-xl font-heading text-xs font-bold transition-all cursor-pointer flex items-center gap-2 relative",
-                  activeTab === "ENQUIRIES"
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-card border border-border/80 text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Users className="w-4 h-4" />
-                <span>Enquiries & Visit Requests ({totalEnquiriesCount})</span>
-                {pendingEnquiriesCount > 0 && (
-                  <span className="bg-rose-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full animate-pulse">
-                    {pendingEnquiriesCount} New
-                  </span>
-                )}
-              </button>
-
-              <button
-                type="button"
-                data-no-intercept="true"
-                onClick={() => setActiveTab("CALLBACKS")}
-                className={cn(
-                  "px-5 py-2.5 rounded-xl font-heading text-xs font-bold transition-all cursor-pointer flex items-center gap-2 relative",
-                  activeTab === "CALLBACKS"
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-card border border-border/80 text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <PhoneCall className="w-4 h-4" />
-                <span>Callback Requests ({totalCallbacksCount})</span>
-                {pendingCallbacksCount > 0 && (
-                  <span className="bg-amber-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full animate-pulse">
-                    {pendingCallbacksCount} New
-                  </span>
-                )}
-              </button>
-
-              <button
-                type="button"
-                data-no-intercept="true"
-                onClick={() => setActiveTab("REVIEWS")}
-                className={cn(
-                  "px-5 py-2.5 rounded-xl font-heading text-xs font-bold transition-all cursor-pointer flex items-center gap-2 relative",
-                  activeTab === "REVIEWS"
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-card border border-border/80 text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span>Reviews & Ratings</span>
-              </button>
+            {/* Dashboard Section Switcher Tabs — horizontal scroll on mobile */}
+            <div className="flex items-center gap-2 border-b border-border/60 pb-4 mb-6 sm:mb-8 overflow-x-auto scrollbar-none">
+              {([
+                { id: "PROPERTIES", icon: Building, label: "Properties", count: properties.length, badge: null },
+                { id: "ENQUIRIES", icon: Users, label: "Enquiries", count: totalEnquiriesCount, badge: pendingEnquiriesCount > 0 ? pendingEnquiriesCount : null },
+                { id: "CALLBACKS", icon: PhoneCall, label: "Callbacks", count: totalCallbacksCount, badge: pendingCallbacksCount > 0 ? pendingCallbacksCount : null },
+                { id: "REVIEWS", icon: MessageSquare, label: "Reviews", count: null, badge: null },
+              ] as const).map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    data-no-intercept="true"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "shrink-0 px-3 sm:px-5 py-2.5 rounded-xl font-heading text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 relative min-h-[44px] whitespace-nowrap",
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "bg-card border border-border/80 text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span>{tab.label}{tab.count !== null ? ` (${tab.count})` : ""}</span>
+                    {tab.badge !== null && (
+                      <span className="bg-rose-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full animate-pulse">
+                        {tab.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Tab 1: Properties */}
@@ -301,17 +273,17 @@ export default function OwnerDashboardPage() {
               />
             ) : (
               /* Published Listings Section */
-              <div className="space-y-6 text-left">
-                <div className="flex justify-between items-center border-b border-border/60 pb-3 mb-6">
-                  <h2 className="font-heading text-xl font-extrabold text-primary">
+              <div className="space-y-4 sm:space-y-6 text-left">
+                <div className="flex justify-between items-center border-b border-border/60 pb-3 mb-4 sm:mb-6">
+                  <h2 className="font-heading text-lg sm:text-xl font-extrabold text-primary">
                     Your Properties
                   </h2>
                   <span className="text-xs font-semibold text-muted-foreground">
-                    Showing {properties.length} Listings
+                    {properties.length} Listings
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   <AnimatePresence>
                     {properties.map((prop, idx) => {
                       const availability = calculatePropertyAvailability(prop.rooms || prop.roomConfigurations);
@@ -485,31 +457,31 @@ export default function OwnerDashboardPage() {
                             )}
                           </div>
 
-                          {/* Action Buttons */}
-                          <div className="grid grid-cols-3 gap-2 border-t border-border/40 pt-4 mt-auto">
+                          {/* Action Buttons — 44px touch targets */}
+                          <div className="grid grid-cols-3 gap-2 border-t border-border/40 pt-3 sm:pt-4 mt-auto">
                             <button
                               data-no-intercept="true"
                               onClick={() => handleView(prop)}
-                              className="px-2.5 py-2 rounded-xl border border-border bg-card hover:bg-muted/40 text-muted-foreground hover:text-primary text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-all duration-200 cursor-pointer"
+                              className="py-3 rounded-xl border border-border bg-card hover:bg-muted/40 text-muted-foreground hover:text-primary text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-all duration-200 cursor-pointer min-h-[44px]"
                             >
                               <ExternalLink className="w-3 h-3" />
-                              View
+                              <span className="hidden sm:inline">View</span>
                             </button>
                             <button
                               data-no-intercept="true"
                               onClick={() => handleEdit(prop)}
-                              className="px-2.5 py-2 rounded-xl border border-border bg-card hover:bg-muted/40 text-muted-foreground hover:text-primary text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-all duration-200 cursor-pointer"
+                              className="py-3 rounded-xl border border-border bg-card hover:bg-muted/40 text-muted-foreground hover:text-primary text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-all duration-200 cursor-pointer min-h-[44px]"
                             >
                               <Edit3 className="w-3 h-3" />
-                              Edit
+                              <span className="hidden sm:inline">Edit</span>
                             </button>
                             <button
                               data-no-intercept="true"
                               onClick={() => setPropertyToDelete(prop)}
-                              className="px-2.5 py-2 rounded-xl border border-border bg-card hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-all duration-200 cursor-pointer"
+                              className="py-3 rounded-xl border border-border bg-card hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-all duration-200 cursor-pointer min-h-[44px]"
                             >
                               <Trash2 className="w-3 h-3" />
-                              Delete
+                              <span className="hidden sm:inline">Delete</span>
                             </button>
                           </div>
                         </div>

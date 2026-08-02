@@ -20,12 +20,12 @@ export default function LoginPage() {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
-    
+
     // Simulate login authentication delay (e.g. 700ms)
     setTimeout(() => {
       login(email);
       setShowToast(true);
-      
+
       // Short delay to let the user see the success toast
       setTimeout(() => {
         setIsSubmitting(false);
@@ -79,7 +79,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
-                placeholder="you@example.com"
+                placeholder="your@example.com"
               />
             </div>
           </div>

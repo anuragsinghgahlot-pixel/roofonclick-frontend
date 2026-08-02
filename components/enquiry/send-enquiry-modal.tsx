@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, User, Phone, X, CheckCircle, Send } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { EnquiryService } from "@/services/enquiry";
-import { toast } from "sonner";
+import { showToast } from "@/lib/toast";
 
 interface SendEnquiryModalProps {
   isOpen: boolean;
@@ -76,7 +76,7 @@ export function SendEnquiryModal({
     });
 
     setIsSubmitted(true);
-    toast.success("Enquiry sent successfully to the property owner!");
+    showToast.success("Enquiry Sent!", `Your message has been delivered to the owner of ${propertyName}.`);
   };
 
   return (

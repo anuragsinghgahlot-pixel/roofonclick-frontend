@@ -5,6 +5,7 @@ import { WishlistProvider } from "@/providers/wishlist-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { NavigationProvider } from "@/providers/navigation-provider";
+import { SmoothScrollProvider } from "@/providers/smooth-scroll-provider";
 import { Suspense } from "react";
 import "./globals.css";
 
@@ -25,6 +26,11 @@ export const metadata: Metadata = {
   description: "Modern accommodation discovery platform helping students and working professionals find premium hostels and PGs in Indore.",
 };
 
+import { AIAssistantWidget } from "@/components/ai/ai-assistant-widget";
+import { Toaster } from "@/components/ui/toaster";
+import { CompareProvider } from "@/providers/compare-provider";
+import { CompareBar } from "@/components/compare/compare-bar";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,18 +40,25 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${plusJakartaSans.variable} ${inter.variable} h-full antialiased`}
+      className={`${plusJakartaSans.variable} ${inter.variable} min-h-screen antialiased`}
     >
-      <body className="font-body min-h-full bg-background text-foreground flex flex-col">
+      <body className="font-body min-h-screen bg-background text-foreground flex flex-col">
         <NavigationHandler />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <WishlistProvider>
-              <Suspense fallback={null}>
-                <NavigationProvider>
-                  {children}
-                </NavigationProvider>
-              </Suspense>
+              <CompareProvider>
+                <SmoothScrollProvider>
+                  <Suspense fallback={null}>
+                    <NavigationProvider>
+                      {children}
+                      <AIAssistantWidget />
+                      <CompareBar />
+                      <Toaster />
+                    </NavigationProvider>
+                  </Suspense>
+                </SmoothScrollProvider>
+              </CompareProvider>
             </WishlistProvider>
           </AuthProvider>
         </ThemeProvider>

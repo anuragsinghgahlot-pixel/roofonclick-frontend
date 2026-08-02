@@ -29,6 +29,7 @@ import {
   AlertCircle,
   Sparkles,
   Camera,
+  Bookmark,
 } from "lucide-react";
 import { PasswordInput } from "@/components/auth/password-input";
 import {
@@ -39,6 +40,7 @@ import { evaluatePasswordStrength } from "@/lib/password-utils";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { BackButton } from "@/components/shared/back-button";
 import { PageHeader } from "@/components/shared/page-header";
+import { RecentlyViewedSection } from "@/components/property/recently-viewed-section";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
@@ -453,6 +455,28 @@ export default function ProfilePage() {
                   </span>
                 </div>
               </div>
+
+              {/* Quick Navigation Links for Buyers */}
+              {!isOwner && (
+                <div className="w-full border-t border-border/60 pt-4 space-y-2 text-left">
+                  <span className="font-heading text-[10px] font-extrabold uppercase tracking-widest text-secondary block mb-1">
+                    Buyer Navigation
+                  </span>
+
+                  <button
+                    type="button"
+                    data-no-intercept="true"
+                    onClick={() => router.push("/saved-searches")}
+                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-muted/30 hover:bg-muted/60 border border-border/60 text-xs font-heading font-bold text-primary transition-all cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Bookmark className="w-4 h-4 text-emerald-500" />
+                      <span>Saved Searches</span>
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-body">View →</span>
+                  </button>
+                </div>
+              )}
             </motion.div>
 
             {/* Right Main Column Sections */}
@@ -793,6 +817,17 @@ export default function ProfilePage() {
                   </form>
                 )}
               </motion.div>
+
+              {/* Recently Viewed Properties Section (Buyer Only) */}
+              {!isOwner && (
+                <div id="recently-viewed">
+                  <RecentlyViewedSection
+                    title="Your Viewing History"
+                    subtitle="Properties you inspected recently while browsing RoofOnClick."
+                    showEmptyState={true}
+                  />
+                </div>
+              )}
 
               {/* 5. Verification Section */}
               <motion.div

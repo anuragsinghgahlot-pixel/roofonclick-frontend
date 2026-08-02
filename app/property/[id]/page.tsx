@@ -37,6 +37,9 @@ import {
 } from "@/features/property-details/components";
 import Navbar from "@/components/navigation/navbar";
 import Footer from "@/components/navigation/footer";
+import { RecentlyViewedService } from "@/services/recently-viewed";
+import { RecentlyViewedSection } from "@/components/property/recently-viewed-section";
+import { ReviewsSection } from "@/components/review/reviews-section";
 import { calculateRoomAvailability } from "@/lib/availability-utils";
 import { cn } from "@/lib/utils";
 
@@ -60,12 +63,7 @@ const MOCK_AMENITIES = [
   { icon: Sparkles, title: "Daily Cleaning", isAvailable: true },
 ];
 
-const MOCK_NEARBY_PLACES = [
-  { name: "Vijay Nagar Metro Station", type: "Transit", distance: "450m", icon: Train },
-  { name: "C21 Mall", type: "Shopping & Dining", distance: "800m", icon: ShoppingBag },
-  { name: "IET DAVV College", type: "Education", distance: "3.2 km", icon: GraduationCap },
-  { name: "Medanta Hospital", type: "Healthcare", distance: "1.5 km", icon: Activity },
-];
+
 
 const MOCK_SIMILAR_PROPERTIES = [
   {
@@ -103,8 +101,10 @@ import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { BackButton } from "@/components/shared/back-button";
 import { shareProperty } from "@/lib/share-utils";
 import { ShareModal } from "@/components/shared/share-modal";
+import { useAuth } from "@/providers/auth-provider";
 
 function PropertyDetailsContent() {
+  const { user, role } = useAuth();
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -132,6 +132,7 @@ function PropertyDetailsContent() {
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = React.useState(false);
   const [isBookCallModalOpen, setIsBookCallModalOpen] = React.useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
+  const [selectedRoomType, setSelectedRoomType] = React.useState<string>("Single Room");
 
   const handleShare = async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -151,7 +152,8 @@ function PropertyDetailsContent() {
     setProperty(propertyId ? PropertyService.getPropertyById(propertyId) : null);
   }
 
-  const isOwnerView = isPreviewMode || !!property;
+  const isUserOwner = user !== null && (user.role === "owner" || role === "owner");
+  const isOwnerView = isUserOwner || isPreviewMode;
   const displayImages = property?.images && property.images.length > 0
     ? property.images.map((img: MediaImage) => img.url)
     : (property?.coverPhoto ? [property.coverPhoto] : MOCK_IMAGES);
@@ -165,12 +167,18 @@ function PropertyDetailsContent() {
   const displayRent = property?.startingRent || (property?.rooms?.[0]?.rent ? Number(property.rooms[0].rent) : 8500);
   const displayDeposit = property?.rooms?.[0]?.securityDeposit ? Number(property.rooms[0].securityDeposit) : 15000;
 
+  React.useEffect(() => {
+    if (property && !isOwnerView) {
+      RecentlyViewedService.addRecentlyViewed(property);
+    }
+  }, [property, isOwnerView]);
+
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
       <Navbar />
 
       <main className="flex-1" data-no-intercept="true">
-        <Section className="bg-background relative overflow-hidden text-left pt-24 pb-8 md:pb-12">
+        <Section className="bg-background relative overflow-hidden text-left pt-24 pb-28 lg:pb-12">
           {/* Ambient Background Glows */}
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute bottom-[20%] left-0 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
@@ -228,6 +236,7 @@ function PropertyDetailsContent() {
                 propertyId={propertyId}
                 onWishlistToggle={() => {}}
                 onShare={handleShare}
+                hideWishlist={isOwnerView}
               />
             </div>
 
@@ -287,8 +296,18 @@ function PropertyDetailsContent() {
                         const bath = rm.attachedBathroom ? "Attached Bathroom" : "Shared Bathroom";
                         const furnished = rm.furnished || "Fully Furnished";
 
+                        const isSelected = selectedRoomType === sharing;
                         return (
-                          <div key={idx} className="bg-card border border-border/80 p-5 rounded-2xl shadow-sm flex flex-col justify-between gap-4 hover:border-primary/40 transition-all">
+                          <div
+                            key={idx}
+                            onClick={() => setSelectedRoomType(sharing)}
+                            className={cn(
+                              "bg-card border p-5 rounded-2xl shadow-sm flex flex-col justify-between gap-4 transition-all cursor-pointer select-none",
+                              isSelected
+                                ? "border-primary ring-2 ring-primary/30 bg-primary/5"
+                                : "border-border/80 hover:border-primary/40"
+                            )}
+                          >
                             <div className="space-y-3">
                               <div className="flex justify-between items-start gap-2">
                                 <div className="space-y-1">
@@ -336,19 +355,6 @@ function PropertyDetailsContent() {
                                 </div>
                               </div>
                             </div>
-
-                            <button
-                              type="button"
-                              data-no-intercept="true"
-                              onClick={() => {
-                                import("sonner").then(({ toast }) => {
-                                  toast.info(`Booking request initiated for ${sharing} (${displayTitle}). Our team will reach out shortly.`);
-                                });
-                              }}
-                              className="w-full mt-1 bg-primary hover:bg-accent text-primary-foreground hover:text-accent-foreground py-2.5 rounded-xl font-heading text-xs font-bold transition-all shadow-sm cursor-pointer text-center"
-                            >
-                              Book This Room
-                            </button>
                           </div>
                         );
                       })}
@@ -368,14 +374,14 @@ function PropertyDetailsContent() {
                   </div>
 
                   {property?.amenities && property.amenities.length > 0 ? (
-                    <div className="flex flex-wrap gap-2.5 pt-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pt-2">
                       {property.amenities.map((item: string) => (
                         <div
                           key={item}
-                          className="flex items-center gap-2 bg-card border border-border/80 px-4 py-2.5 rounded-xl text-xs font-bold text-primary shadow-sm"
+                          className="flex items-center gap-2 bg-card border border-border/80 px-3.5 py-2.5 rounded-xl text-xs font-bold text-primary shadow-sm"
                         >
-                          <Check className="w-4 h-4 text-emerald-500" />
-                          <span>{item}</span>
+                          <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span className="truncate">{item}</span>
                         </div>
                       ))}
                     </div>
@@ -424,14 +430,10 @@ function PropertyDetailsContent() {
                   address={displayAddress}
                   latitude={22.7533}
                   longitude={75.8937}
-                  nearbyPlaces={MOCK_NEARBY_PLACES}
                 />
 
-                {/* Reviews & Ratings Section */}
-                <PropertyReviews
-                  propertyId={propertyId}
-                  onReviewChange={() => setReviewsVersion((prev) => prev + 1)}
-                />
+                {/* Advanced Review & Rating System */}
+                <ReviewsSection propertyId={property?.id || propertyId} />
               </div>
 
               {/* Right Sticky Sidebar (Spans 4 cols of 12) */}
@@ -470,36 +472,42 @@ function PropertyDetailsContent() {
                       </button>
                     </div>
                   ) : (
-                    <PricingCard
-                      monthlyRent={displayRent}
-                      securityDeposit={displayDeposit}
-                      brokerage={0}
-                      availability="available"
-                      includedBenefits={["High-speed Wi-Fi", "Daily housekeeping", "24/7 Power backup"]}
-                      onBookNow={() => router.push("/booking")}
-                      onScheduleVisit={() => setIsVisitModalOpen(true)}
-                      onSendEnquiry={() => setIsEnquiryModalOpen(true)}
-                      onContactOwner={() => setIsEnquiryModalOpen(true)}
-                    />
+                    <>
+                      <PricingCard
+                        propertyId={property?.id || propertyId}
+                        propertyName={displayTitle}
+                        coverPhoto={property?.coverPhoto || property?.images?.[0]?.url || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80"}
+                        monthlyRent={displayRent}
+                        securityDeposit={displayDeposit}
+                        brokerage={0}
+                        availability="available"
+                        includedBenefits={["High-speed Wi-Fi", "Daily housekeeping", "24/7 Power backup"]}
+                        selectedRoomType={selectedRoomType}
+                        onRoomTypeChange={setSelectedRoomType}
+                        onScheduleVisit={() => setIsVisitModalOpen(true)}
+                        onSendEnquiry={() => setIsEnquiryModalOpen(true)}
+                        onContactOwner={() => setIsEnquiryModalOpen(true)}
+                      />
+
+                      <OwnerCard
+                        ownerName="RoofOnClick Partner"
+                        ownerImage="https://api.dicebear.com/8.x/lorelei/svg?seed=RoofOnClick"
+                        isVerified={true}
+                        responseTime="Within 10 mins"
+                        phone="+91 98765 43210"
+                        joinedDate="Verified Property"
+                        listingsCount={1}
+                        onBookCall={() => setIsBookCallModalOpen(true)}
+                        onWhatsApp={() =>
+                          window.open(
+                            `https://wa.me/919876543210?text=Hi,%20I'm%20interested%20in%20${encodeURIComponent(displayTitle)}`,
+                            "_blank"
+                          )
+                        }
+                        onMessage={() => setIsEnquiryModalOpen(true)}
+                      />
+                    </>
                   )}
-                  
-                  <OwnerCard
-                    ownerName="RoofOnClick Partner"
-                    ownerImage="https://api.dicebear.com/8.x/lorelei/svg?seed=RoofOnClick"
-                    isVerified={true}
-                    responseTime="Within 10 mins"
-                    phone="+91 98765 43210"
-                    joinedDate="Verified Property"
-                    listingsCount={1}
-                    onBookCall={() => setIsBookCallModalOpen(true)}
-                    onWhatsApp={() =>
-                      window.open(
-                        `https://wa.me/919876543210?text=Hi,%20I'm%20interested%20in%20${encodeURIComponent(displayTitle)}`,
-                        "_blank"
-                      )
-                    }
-                    onMessage={() => setIsEnquiryModalOpen(true)}
-                  />
                 </div>
               </aside>
 
@@ -520,9 +528,56 @@ function PropertyDetailsContent() {
               </div>
             )}
 
+            {!isOwnerView && (
+              <RecentlyViewedSection
+                currentPropertyId={property?.id || propertyId}
+                title="You Recently Viewed"
+                subtitle="Stays you explored recently during your search."
+              />
+            )}
+
           </Container>
         </Section>
       </main>
+
+      {/* Mobile Fixed Bottom Sticky CTA Bar */}
+      {!isOwnerView && (
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-md border-t border-border/80 p-3 sm:p-4 shadow-2xl flex items-center justify-between gap-2">
+          <div className="flex flex-col text-left">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Starts From</span>
+            <div className="flex items-baseline gap-1">
+              <span className="font-heading text-lg sm:text-xl font-extrabold text-primary">₹{displayRent.toLocaleString()}</span>
+              <span className="text-[10px] font-semibold text-muted-foreground font-body">/mo</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              data-no-intercept="true"
+              onClick={() => setIsBookCallModalOpen(true)}
+              className="px-3 py-2.5 rounded-xl border border-primary/20 bg-primary/10 text-primary font-heading text-xs font-bold transition-all cursor-pointer min-h-[44px]"
+            >
+              Call
+            </button>
+            <button
+              type="button"
+              data-no-intercept="true"
+              onClick={() => setIsVisitModalOpen(true)}
+              className="px-3.5 py-2.5 rounded-xl bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground font-heading text-xs font-bold transition-all cursor-pointer shadow-md min-h-[44px]"
+            >
+              Book Visit
+            </button>
+            <button
+              type="button"
+              data-no-intercept="true"
+              onClick={() => setIsEnquiryModalOpen(true)}
+              className="px-3 py-2.5 rounded-xl border border-border bg-card text-foreground font-heading text-xs font-bold transition-all cursor-pointer min-h-[44px]"
+            >
+              Enquire
+            </button>
+          </div>
+        </div>
+      )}
 
       <Footer />
 
@@ -562,18 +617,27 @@ function PropertyDetailsContent() {
   );
 }
 
+import { SkeletonPropertyDetails } from "@/components/shared/skeletons";
+
+function PropertyDetailsFallback() {
+  return (
+    <div className="relative flex min-h-screen flex-col bg-background">
+      <Navbar />
+      <main className="flex-1" data-no-intercept="true">
+        <Section className="bg-background relative overflow-hidden text-left pt-6 pb-20">
+          <Container>
+            <SkeletonPropertyDetails />
+          </Container>
+        </Section>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 export default function PropertyDetailsPage() {
   return (
-    <React.Suspense
-      fallback={
-        <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="font-heading text-sm font-bold text-muted-foreground">
-            Loading Property Details...
-          </p>
-        </div>
-      }
-    >
+    <React.Suspense fallback={<PropertyDetailsFallback />}>
       <PropertyDetailsContent />
     </React.Suspense>
   );

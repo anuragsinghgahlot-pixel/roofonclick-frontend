@@ -39,12 +39,12 @@ export function PopularAreas() {
   return (
     <Section className="bg-background">
       <Container>
-        {/* Header block */}
-        <div className="flex flex-col gap-2 mb-12 text-left">
+        {/* Header */}
+        <div className="flex flex-col gap-2 mb-8 sm:mb-12 text-left">
           <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
             Explore Indore
           </span>
-          <h2 className="font-heading text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
+          <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
             Popular Areas
           </h2>
           <p className="font-body text-sm text-muted-foreground leading-relaxed max-w-md">
@@ -52,16 +52,41 @@ export function PopularAreas() {
           </p>
         </div>
 
-        {/* Grid Area Card Container */}
+        {/* Mobile: horizontal scroll */}
+        <div className="flex sm:hidden gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-none">
+          {MOCK_AREAS.map((area) => (
+            <div
+              key={area.id}
+              className="group relative overflow-hidden rounded-[20px] cursor-pointer shrink-0 w-[60vw] max-w-[240px] aspect-[3/4] shadow-md snap-start"
+            >
+              <div className="absolute inset-0 w-full h-full overflow-hidden">
+                <img
+                  src={area.image}
+                  alt={`${area.name} area in Indore`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/30 to-transparent pointer-events-none" />
+              <div className="absolute top-3 right-3">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-bold bg-card/85 backdrop-blur-sm text-foreground border border-border/30">
+                  {area.count}+ Stays
+                </span>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col gap-1 z-10">
+                <h3 className="font-heading text-base font-extrabold text-secondary leading-snug">{area.name}</h3>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* sm+: grid */}
         <motion.div
-          variants={{
-            hidden: {},
-            visible: { transition: { staggerChildren: 0.1 } },
-          }}
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full"
+          className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full"
         >
           {MOCK_AREAS.map((area) => (
             <motion.div
@@ -74,34 +99,24 @@ export function PopularAreas() {
               transition={{ duration: 0.3, ease: PREMIUM_EASE }}
               className="group relative overflow-hidden rounded-[24px] cursor-pointer aspect-[3/4] shadow-md hover:shadow-xl transition-shadow duration-300"
             >
-              {/* Background Image */}
               <div className="absolute inset-0 w-full h-full overflow-hidden">
                 <img
                   src={area.image}
                   alt={`${area.name} area in Indore`}
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  loading="lazy"
                 />
               </div>
-
-              {/* Gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/30 to-transparent pointer-events-none" />
-
-              {/* Top/Right Badge */}
               <div className="absolute top-4 right-4">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-card/85 backdrop-blur-sm text-foreground border border-border/30">
                   {area.count}+ Stays
                 </span>
               </div>
-
-              {/* Bottom text info */}
               <div className="absolute bottom-0 left-0 right-0 p-5 flex flex-col gap-1 z-10">
-                <h3 className="font-heading text-lg font-extrabold text-secondary leading-snug">
-                  {area.name}
-                </h3>
+                <h3 className="font-heading text-lg font-extrabold text-secondary leading-snug">{area.name}</h3>
                 <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                  <span className="font-heading text-xs font-bold text-secondary uppercase tracking-widest">
-                    View Listings
-                  </span>
+                  <span className="font-heading text-xs font-bold text-secondary uppercase tracking-widest">View Listings</span>
                   <ArrowRight className="w-3.5 h-3.5 text-secondary" />
                 </div>
               </div>

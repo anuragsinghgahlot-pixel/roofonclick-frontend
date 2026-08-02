@@ -10,8 +10,21 @@ import { ProgressTimeline } from "./progress-timeline";
 import { NavigationButtons } from "./navigation-buttons";
 import { BackButton } from "@/components/shared/back-button";
 
+import { useAuth } from "@/providers/auth-provider";
+import { useRouter } from "next/navigation";
+
 export function WizardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const { user, role } = useAuth();
   const { currentStep, handleReset } = useWizard();
+
+  const currentRole = user?.role || role;
+
+  React.useEffect(() => {
+    if (user && currentRole === "buyer") {
+      router.replace("/");
+    }
+  }, [user, currentRole, router]);
 
   const stepTitles = [
     "Basic Details",
@@ -32,24 +45,24 @@ export function WizardLayout({ children }: { children: React.ReactNode }) {
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
-          <Container className="max-w-2xl mx-auto">
+          <Container className="max-w-2xl mx-auto px-4 sm:px-6">
             {/* Top Navigation Row */}
-            <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="flex items-center justify-between gap-4 mb-5 sm:mb-6">
               <BackButton fallbackUrl="/owner/dashboard" />
             </div>
 
             {/* Header section with timeline */}
-            <div className="mb-8">
-              <div className="flex justify-between items-end mb-4">
+            <div className="mb-6 sm:mb-8">
+              <div className="flex justify-between items-end mb-3 sm:mb-4">
                 <div>
                   <span className="text-[10px] font-extrabold uppercase tracking-widest text-secondary block mb-1">
                     Listing Wizard
                   </span>
-                  <h1 className="font-heading text-2xl font-extrabold text-primary">
+                  <h1 className="font-heading text-xl sm:text-2xl font-extrabold text-primary">
                     {stepTitles[currentStep - 1] || "Wizard Complete"}
                   </h1>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <span className="font-heading text-xs font-bold text-muted-foreground block leading-none">
                     Step {currentStep} of 6
                   </span>
@@ -78,7 +91,7 @@ export function WizardLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Inner Content Card Box */}
-            <div className="bg-card border border-border/80 rounded-[28px] p-8 sm:p-10 shadow-premium flex flex-col gap-6">
+            <div className="bg-card border border-border/80 rounded-[20px] sm:rounded-[28px] p-5 sm:p-8 shadow-premium flex flex-col gap-5 sm:gap-6">
               {/* Form Content rendering the children step component */}
               <div className="flex-1">
                 {children}

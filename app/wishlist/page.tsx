@@ -9,46 +9,7 @@ import { Section } from "@/components/shared/section";
 import { useWishlist } from "@/providers/wishlist-provider";
 import { PropertyCard } from "@/components/cards/property-card";
 import { MOCK_PROPERTIES } from "@/constants/mock-properties";
-
-// Reusable Loading Skeleton for Property Card
-function PropertyCardSkeleton() {
-  return (
-    <div className="bg-card border border-border/80 rounded-2xl overflow-hidden shadow-premium flex flex-col animate-pulse select-none">
-      {/* Image Container Skeleton */}
-      <div className="relative aspect-[4/3] w-full bg-muted/65" />
-
-      {/* Content Container Skeleton */}
-      <div className="p-5 flex-1 flex flex-col justify-between text-left">
-        <div>
-          {/* Location and Rating Row */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="h-3.5 bg-muted/65 rounded-md w-24" />
-            <div className="h-5 bg-muted/65 rounded-lg w-10" />
-          </div>
-
-          {/* Property Name */}
-          <div className="h-5.5 bg-muted/65 rounded-md w-3/4 mb-4" />
-
-          {/* Amenities Tags */}
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            <div className="h-5 bg-muted/65 rounded-md w-12" />
-            <div className="h-5 bg-muted/65 rounded-md w-14" />
-            <div className="h-5 bg-muted/65 rounded-md w-10" />
-          </div>
-        </div>
-
-        {/* Price & Action Row */}
-        <div className="border-t border-border/60 pt-4 flex items-center justify-between mt-auto">
-          <div className="space-y-1.5">
-            <div className="h-3 bg-muted/65 rounded-md w-14" />
-            <div className="h-5.5 bg-muted/65 rounded-md w-20" />
-          </div>
-          <div className="h-9.5 bg-muted/65 rounded-xl w-24" />
-        </div>
-      </div>
-    </div>
-  );
-}
+import { PropertyCardSkeleton } from "@/components/shared/skeletons";
 
 import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { BackButton } from "@/components/shared/back-button";

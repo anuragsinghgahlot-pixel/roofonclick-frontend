@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, User, Phone, X, CheckCircle } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { EnquiryService, EnquiryRequest } from "@/services/enquiry";
-import { toast } from "sonner";
+import { showToast } from "@/lib/toast";
 
 interface ScheduleVisitModalProps {
   isOpen: boolean;
@@ -81,7 +81,7 @@ export function ScheduleVisitModal({
 
     setCreatedRequest(req);
     setIsSubmitted(true);
-    toast.success("Visit scheduled successfully! The owner will confirm shortly.");
+    showToast.success("Visit Scheduled!", `Inspection request sent for ${propertyName}. The owner will confirm shortly.`);
   };
 
   return (

@@ -61,14 +61,14 @@ export function StepReview() {
         </p>
       </div>
 
-      <div className="space-y-6 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
+      <div className="space-y-5 max-h-[50vh] sm:max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
         {/* Basic Details Summary */}
-        <div className="bg-muted/30 border border-border/60 rounded-2xl p-5 space-y-3">
+        <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 sm:p-5 space-y-3">
           <h4 className="font-heading text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-1.5 border-b border-border/40 pb-2">
             <Building className="w-4.5 h-4.5" />
             Basic Summary
           </h4>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <span className="text-[10px] font-semibold text-muted-foreground block">Property Name</span>
               <span className="font-body text-xs font-bold text-primary">{values.propertyName || "—"}</span>
@@ -79,7 +79,7 @@ export function StepReview() {
                 {values.propertyType || "—"} ({values.gender || "—"})
               </span>
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <span className="text-[10px] font-semibold text-muted-foreground block">Short Description</span>
               <span className="font-body text-xs text-muted-foreground leading-relaxed italic block">
                 &quot;{values.description || "No description provided."}&quot;
@@ -89,12 +89,12 @@ export function StepReview() {
         </div>
 
         {/* Location Summary */}
-        <div className="bg-muted/30 border border-border/60 rounded-2xl p-5 space-y-3">
+        <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 sm:p-5 space-y-3">
           <h4 className="font-heading text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-1.5 border-b border-border/40 pb-2">
             <MapPin className="w-4.5 h-4.5" />
             Location Details
           </h4>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <span className="text-[10px] font-semibold text-muted-foreground block">Area / City</span>
               <span className="font-body text-xs font-bold text-primary">{values.area || "—"}, {values.city || "—"}</span>
@@ -103,7 +103,7 @@ export function StepReview() {
               <span className="text-[10px] font-semibold text-muted-foreground block">Landmark</span>
               <span className="font-body text-xs font-bold text-primary">{values.landmark || "—"}</span>
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <span className="text-[10px] font-semibold text-muted-foreground block">Complete Address</span>
               <span className="font-body text-xs text-primary leading-relaxed block">{values.address || "—"}</span>
             </div>
@@ -111,7 +111,7 @@ export function StepReview() {
         </div>
 
         {/* Room Configurations Summary */}
-        <div className="bg-muted/30 border border-border/60 rounded-2xl p-5 space-y-3">
+        <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 sm:p-5 space-y-3">
           <h4 className="font-heading text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-1.5 border-b border-border/40 pb-2">
             ₹ Pricing & Room Configurations
           </h4>
@@ -127,9 +127,9 @@ export function StepReview() {
               const furnished = room.furnished || "Fully Furnished";
 
               return (
-                <div key={idx} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-card border border-border/45 p-3.5 rounded-xl gap-2 text-left">
+                <div key={idx} className="flex flex-col gap-2 bg-card border border-border/45 p-3 rounded-xl text-left">
                   <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <span className="font-heading text-xs font-bold text-primary">{sharing}</span>
                       <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-md">
                         {roomGender}
@@ -142,7 +142,7 @@ export function StepReview() {
                       {avail}/{total} Rooms Available • {furnished}
                     </span>
                   </div>
-                  <div className="text-left sm:text-right">
+                  <div>
                     <span className="font-heading text-xs font-extrabold text-emerald-500 block">₹{rent.toLocaleString()} / month</span>
                     <span className="font-body text-[9px] text-muted-foreground block">
                       Security Deposit: ₹{deposit.toLocaleString()}
@@ -155,7 +155,7 @@ export function StepReview() {
         </div>
 
         {/* Photo Gallery Summary */}
-        <div className="bg-muted/30 border border-border/60 rounded-2xl p-5 space-y-3">
+        <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 sm:p-5 space-y-3">
           <h4 className="font-heading text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-1.5 border-b border-border/40 pb-2">
             📷 Media Summary
           </h4>

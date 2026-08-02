@@ -69,29 +69,61 @@ export function Categories() {
   return (
     <Section className="bg-background">
       <Container>
-        {/* Header Block */}
-        <div className="flex flex-col gap-2 mb-12 text-center items-center">
+        {/* Header */}
+        <div className="flex flex-col gap-2 mb-8 sm:mb-12 text-center items-center">
           <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
             Explore Options
           </span>
-          <h2 className="font-heading text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
+          <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
             Browse by Category
           </h2>
           <p className="font-body text-sm text-muted-foreground leading-relaxed max-w-md">
-            Find the perfect accommodation match aligned with your dynamic lifestyle and specific budget goals.
+            Find the perfect accommodation match aligned with your lifestyle and budget.
           </p>
         </div>
 
-        {/* Categories Card Grid */}
+        {/* Mobile: horizontal scroll; sm+: 2-col; lg+: 3-col grid */}
+        {/* Mobile scroll strip */}
+        <div className="flex sm:hidden gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-none">
+          {MOCK_CATEGORIES.map((category) => (
+            <div
+              key={category.id}
+              className="group relative overflow-hidden rounded-[20px] cursor-pointer shrink-0 w-[72vw] max-w-[280px] h-64 shadow-md snap-start"
+            >
+              <div className="absolute inset-0 w-full h-full overflow-hidden">
+                <img
+                  src={category.image}
+                  alt={`${category.name} accommodation`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div className={`absolute inset-0 bg-gradient-to-t ${category.gradient} to-primary/10`} />
+              <div className="absolute top-3 left-3">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest bg-secondary text-primary shadow-sm">
+                  {category.badge}
+                </span>
+              </div>
+              <div className="absolute top-3 right-3">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-bold bg-card/80 backdrop-blur-sm text-foreground border border-border/30">
+                  {category.propertyCount}+ stays
+                </span>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col gap-1">
+                <h3 className="font-heading text-lg font-extrabold text-secondary leading-snug">{category.name}</h3>
+                <p className="font-body text-xs text-background/85 leading-relaxed line-clamp-2">{category.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* sm+: regular grid */}
         <motion.div
-          variants={{
-            hidden: {},
-            visible: { transition: { staggerChildren: 0.08 } },
-          }}
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full"
+          className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full"
         >
           {MOCK_CATEGORIES.map((category) => (
             <motion.div
@@ -104,45 +136,30 @@ export function Categories() {
               transition={{ duration: 0.3, ease: PREMIUM_EASE }}
               className="group relative overflow-hidden rounded-[24px] cursor-pointer h-72 shadow-md hover:shadow-xl transition-shadow duration-300"
             >
-              {/* Background Image */}
               <div className="absolute inset-0 w-full h-full overflow-hidden">
                 <img
                   src={category.image}
                   alt={`${category.name} accommodation`}
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  loading="lazy"
                 />
               </div>
-
-              {/* Gradient Overlay */}
               <div className={`absolute inset-0 bg-gradient-to-t ${category.gradient} to-primary/10`} />
-
-              {/* Top badges */}
               <div className="absolute top-4 left-4">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-secondary text-primary shadow-sm">
                   {category.badge}
                 </span>
               </div>
-
               <div className="absolute top-4 right-4">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-card/80 backdrop-blur-sm text-foreground border border-border/30">
                   {category.propertyCount}+ stays
                 </span>
               </div>
-
-              {/* Bottom text description */}
               <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col gap-1.5 z-10">
-                <h3 className="font-heading text-xl font-extrabold text-secondary leading-snug">
-                  {category.name}
-                </h3>
-                <p className="font-body text-xs text-background/85 leading-relaxed line-clamp-2">
-                  {category.description}
-                </p>
-
-                {/* Explore call to action */}
+                <h3 className="font-heading text-xl font-extrabold text-secondary leading-snug">{category.name}</h3>
+                <p className="font-body text-xs text-background/85 leading-relaxed line-clamp-2">{category.description}</p>
                 <div className="flex items-center gap-1.5 mt-2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                  <span className="font-heading text-xs font-bold text-secondary uppercase tracking-widest">
-                    Explore
-                  </span>
+                  <span className="font-heading text-xs font-bold text-secondary uppercase tracking-widest">Explore</span>
                   <ArrowRight className="w-3.5 h-3.5 text-secondary" />
                 </div>
               </div>

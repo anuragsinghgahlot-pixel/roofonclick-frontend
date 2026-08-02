@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { CallbackService, CALLBACK_UPDATED_EVENT } from "@/services/callback/callback.service";
 import { CallbackRequest, CallbackStatus } from "@/services/callback/callback.types";
+import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -100,7 +101,7 @@ export function OwnerCallbackList() {
         </div>
 
         {/* Filter Buttons */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
           {["ALL", "PENDING", "ACCEPTED", "RESCHEDULED", "DECLINED"].map((filter) => (
             <button
               key={filter}
@@ -121,17 +122,16 @@ export function OwnerCallbackList() {
 
       {/* Request Cards Grid */}
       {filteredRequests.length === 0 ? (
-        <div className="bg-card border border-border/80 rounded-3xl p-12 text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-muted/60 text-muted-foreground flex items-center justify-center mx-auto">
-            <PhoneCall className="w-6 h-6" />
-          </div>
-          <h4 className="font-heading text-base font-bold text-primary">
-            No Callback Requests Found
-          </h4>
-          <p className="font-body text-xs text-muted-foreground max-w-sm mx-auto">
-            There are currently no callback requests matching the selected filter.
-          </p>
-        </div>
+        <EmptyState
+          icon={PhoneCall}
+          size="sm"
+          title="No Callback Requests"
+          description={
+            activeFilter === "ALL"
+              ? "You have not received any tenant callback requests yet."
+              : `No callback requests with status "${activeFilter}".`
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">

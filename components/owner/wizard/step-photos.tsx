@@ -4,6 +4,7 @@ import { Upload, X, ArrowLeft, ArrowRight, Star, FileVideo, AlertCircle } from "
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { MediaImage } from "@/services/property";
+import { showToast } from "@/lib/toast";
 
 export function StepPhotos() {
   const { form } = useWizard();
@@ -58,7 +59,7 @@ export function StepPhotos() {
     if (!files || files.length === 0) return;
     const file = files[0];
     if (file.type !== "video/mp4") {
-      alert("Please upload a valid MP4 video.");
+      showToast.error("Invalid Video Format", "Please upload a valid MP4 video file under 50MB.");
       return;
     }
 

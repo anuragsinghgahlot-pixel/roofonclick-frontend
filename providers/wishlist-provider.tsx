@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { showToast } from "@/lib/toast";
 
 interface WishlistContextType {
   wishlist: string[];
@@ -31,9 +32,16 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const toggleWishlist = React.useCallback((id: string) => {
     saveLastBrowsingRoute();
-    setWishlist((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+    setWishlist((prev) => {
+      const isCurrentlySaved = prev.includes(id);
+      if (isCurrentlySaved) {
+        showToast.info("Removed from Wishlist", "Property removed from your saved stays.");
+        return prev.filter((item) => item !== id);
+      } else {
+        showToast.success("Saved to Wishlist", "Property saved to your saved stays.");
+        return [...prev, id];
+      }
+    });
   }, [saveLastBrowsingRoute]);
 
   const isInWishlist = React.useCallback(

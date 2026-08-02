@@ -503,7 +503,7 @@ export function Gallery({
           {images.map((src, i) => (
             <div
               key={i}
-              className="snap-center shrink-0 w-[88%] aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer relative group bg-muted shadow-md"
+              className="snap-center shrink-0 w-[92vw] sm:w-[88%] aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer relative group bg-muted shadow-md"
               onClick={() => gallery.open(i, "photos")}
             >
               <SmartImage

@@ -21,7 +21,7 @@ export function PartnerCTA() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.8, ease: PREMIUM_EASE }}
-          className="relative overflow-hidden w-full rounded-[32px] bg-primary text-primary-foreground px-8 py-16 md:py-20 text-center shadow-xl border border-primary/20"
+          className="relative overflow-hidden w-full rounded-[24px] sm:rounded-[32px] bg-primary text-primary-foreground px-5 sm:px-8 py-12 sm:py-16 md:py-20 text-center shadow-xl border border-primary/20"
         >
           {/* Inner glass overlay details */}
           <div className="absolute inset-0 bg-gradient-to-br from-background/[0.03] to-transparent pointer-events-none" />
@@ -37,8 +37,8 @@ export function PartnerCTA() {
 
           {/* Main Title & Subtitle */}
           <div className="relative z-10 flex flex-col items-center gap-4 max-w-2xl mx-auto mb-10">
-            <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-background tracking-tight leading-[1.15]">
-              Ready to Find Your <br />
+            <h2 className="font-heading text-2xl sm:text-4xl lg:text-5xl font-extrabold text-background tracking-tight leading-[1.15]">
+              Ready to Find Your{" "}
               <span className="text-secondary bg-gradient-to-r from-secondary to-secondary/80 bg-clip-text text-transparent">Perfect Stay?</span>
             </h2>
             <p className="font-body text-sm sm:text-base text-background/80 leading-relaxed max-w-lg">

@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (hover: none) {
+  .hover\:scale-\[1\.015\]:hover,
+  .hover\:scale-105:hover,
+  .hover\:-translate-y-0\.5:hover,
+  .group:hover .group-hover\:scale-105 {
+    transform: none !important;
+  }
+}
+
 :root {
   /* Colors */
   --background: hsl(40, 20%, 96%);
@@ -63,6 +84,12 @@
   /* Focus Ring */
   --focus-ring: 0 0 0 2px color-mix(in srgb, var(--ring) 25%, transparent);
 
+  /* Fluid Typography Tokens */
+  --text-fluid-hero: clamp(1.875rem, 4vw + 1rem, 4.25rem);
+  --text-fluid-h1: clamp(1.5rem, 3vw + 0.75rem, 3rem);
+  --text-fluid-h2: clamp(1.25rem, 2vw + 0.5rem, 2.25rem);
+  --text-fluid-body: clamp(0.875rem, 0.5vw + 0.75rem, 1.125rem);
+
   /* Spacing */
   --spacing-0\.5: 0.125rem;
   --spacing-1: 0.25rem;
@@ -92,6 +119,15 @@
   --z-modal: 1000;
   --z-gallery: 1100;
   --z-toast: 1200;
+
+  /* Navbar Height (used by spacer to offset fixed header) */
+  --navbar-height: 4.5rem; /* 72px mobile: 0.75rem + 3rem + 0.75rem */
+}
+
+@media (min-width: 768px) {
+  :root {
+    --navbar-height: 6rem; /* 96px desktop: 1.5rem + 3rem + 1.5rem */
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -415,4 +451,13 @@ html {
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
   }
-}
+
+  /* Hide scrollbar for horizontal scroll strips */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}

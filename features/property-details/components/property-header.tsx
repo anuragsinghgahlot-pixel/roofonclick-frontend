@@ -39,6 +39,8 @@ export interface PropertyHeaderProps {
   className?: string;
   /** The unique ID of the property to synchronize wishlist status */
   propertyId?: string;
+  /** Hide wishlist button (e.g. for owner preview) */
+  hideWishlist?: boolean;
 }
 
 // ─── Animation ─────────────────────────────────────────────────────────────────
@@ -84,6 +86,7 @@ export function PropertyHeader({
   onShare,
   className,
   propertyId,
+  hideWishlist = false,
 }: PropertyHeaderProps) {
   const [localWishlisted, setLocalWishlisted] = React.useState(isWishlisted);
   let wishlistContext: ReturnType<typeof useWishlist> | null = null;
@@ -140,7 +143,7 @@ export function PropertyHeader({
         {/* Title */}
         <motion.h1
           variants={itemVariants}
-          className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-primary tracking-tight leading-[1.12] max-w-4xl"
+          className="font-heading text-2xl sm:text-4xl lg:text-5xl font-extrabold text-primary tracking-tight leading-[1.15] max-w-4xl break-words"
         >
           {title}
         </motion.h1>
@@ -161,24 +164,26 @@ export function PropertyHeader({
           </motion.button>
 
           {/* Wishlist Button */}
-          <motion.button
-            type="button"
-            data-no-intercept="true"
-            onClick={handleWishlist}
-            whileHover={{ scale: 1.02, y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.2, ease: PREMIUM_EASE }}
-            className={cn(
-              "inline-flex items-center gap-2 px-4.5 py-3 rounded-2xl border text-xs font-bold tracking-wide transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-sm",
-              wishlisted
-                ? "border-rose-500/25 bg-rose-500/10 text-rose-500 hover:bg-rose-500/15 shadow-[0_4px_12px_rgba(244,63,94,0.12)]"
-                : "border-border/80 bg-card/65 backdrop-blur-md hover:bg-muted/40 hover:border-border text-muted-foreground hover:text-foreground"
-            )}
-            aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-          >
-            <Heart className={cn("w-4 h-4 transition-transform duration-300", wishlisted && "fill-current scale-110")} />
-            <span>{wishlisted ? "Saved" : "Save"}</span>
-          </motion.button>
+          {!hideWishlist && (
+            <motion.button
+              type="button"
+              data-no-intercept="true"
+              onClick={handleWishlist}
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2, ease: PREMIUM_EASE }}
+              className={cn(
+                "inline-flex items-center gap-2 px-4.5 py-3 rounded-2xl border text-xs font-bold tracking-wide transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-sm",
+                wishlisted
+                  ? "border-rose-500/25 bg-rose-500/10 text-rose-500 hover:bg-rose-500/15 shadow-[0_4px_12px_rgba(244,63,94,0.12)]"
+                  : "border-border/80 bg-card/65 backdrop-blur-md hover:bg-muted/40 hover:border-border text-muted-foreground hover:text-foreground"
+              )}
+              aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            >
+              <Heart className={cn("w-4 h-4 transition-transform duration-300", wishlisted && "fill-current scale-110")} />
+              <span>{wishlisted ? "Saved" : "Save"}</span>
+            </motion.button>
+          )}
         </motion.div>
       </div>
 

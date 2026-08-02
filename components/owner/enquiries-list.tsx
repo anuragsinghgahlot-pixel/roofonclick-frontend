@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { EnquiryService, EnquiryRequest, RequestStatus } from "@/services/enquiry";
+import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -125,19 +126,16 @@ export function OwnerEnquiriesList() {
 
       {/* Requests List */}
       {filteredRequests.length === 0 ? (
-        <div className="bg-card border border-dashed border-border p-10 rounded-3xl text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-muted/60 text-muted-foreground flex items-center justify-center mx-auto">
-            <MessageSquare className="w-6 h-6" />
-          </div>
-          <div className="space-y-1">
-            <h4 className="font-heading text-sm font-bold text-primary">No Enquiries Found</h4>
-            <p className="font-body text-xs text-muted-foreground">
-              {filter === "ALL"
-                ? "You have not received any enquiries or visit requests yet."
-                : `No requests with status "${filter}".`}
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          icon={MessageSquare}
+          size="sm"
+          title="No Enquiries Found"
+          description={
+            filter === "ALL"
+              ? "You have not received any enquiries or visit requests yet."
+              : `No requests with status "${filter}".`
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4">
           <AnimatePresence>

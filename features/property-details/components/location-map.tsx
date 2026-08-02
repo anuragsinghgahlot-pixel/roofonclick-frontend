@@ -1,226 +1,228 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
-import { MapPin, Navigation, Compass } from "lucide-react";
+import {
+  MapPin,
+  Navigation,
+  Compass,
+  ExternalLink,
+  Plus,
+  Minus,
+  Maximize2,
+  Minimize2,
+  Crosshair,
+  Copy,
+  Check,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
-
-export interface NearbyPlace {
-  /** Name of the place (e.g., "IET DAVV") */
-  name: string;
-  /** Category/type of the place (e.g., "University", "Metro Station") */
-  type: string;
-  /** Distance in km or mins (e.g., "1.2 km", "10 mins walk") */
-  distance: string;
-  /** Lucide icon component to represent the category */
-  icon: React.ElementType;
-}
+import { showToast } from "@/lib/toast";
 
 export interface LocationMapProps {
-  /** Property address string */
   address: string;
-  /** Latitude coordinate */
-  latitude: number;
-  /** Longitude coordinate */
-  longitude: number;
-  /** List of nearby points of interest */
-  nearbyPlaces: NearbyPlace[];
-  /** Optional class override for root container */
+  latitude?: number;
+  longitude?: number;
   className?: string;
 }
 
-// ─── Animation Variants ────────────────────────────────────────────────────────
-
-const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
-
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, ease: PREMIUM_EASE },
-  },
-};
-
-const listVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.05,
-    },
-  },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, x: -10 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: 0.4, ease: PREMIUM_EASE },
-  },
-};
-
-// ─── LocationMap Component ─────────────────────────────────────────────────────
-
 export function LocationMap({
-  address,
-  latitude,
-  longitude,
-  nearbyPlaces,
+  address = "Scheme 54, Vijay Nagar, Indore, MP 452010",
+  latitude = 22.7533,
+  longitude = 75.8937,
   className,
 }: LocationMapProps) {
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  // Map Controls State
+  const [zoomScale, setZoomScale] = React.useState(1);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [isCopied, setIsCopied] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const openGoogleMapsDirections = () => {
+    const destination = encodeURIComponent(address);
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}&destination_place_id=${latitude},${longitude}`;
+    window.open(mapsUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleCopyAddress = () => {
+    navigator.clipboard.writeText(address);
+    setIsCopied(true);
+    showToast.success("Address Copied! 📍", "Property address copied to clipboard.");
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleZoomIn = () => setZoomScale((prev) => Math.min(prev + 0.25, 2));
+  const handleZoomOut = () => setZoomScale((prev) => Math.max(prev - 0.25, 1));
+  const handleRecenter = () => {
+    setZoomScale(1);
+  };
+
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-40px" }}
-      className={cn("flex flex-col gap-6", className)}
-    >
-      {/* ── Section Header ── */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
-        <h3 className="font-heading text-xl font-extrabold text-primary">
-          Location & Neighborhood
-        </h3>
-        <p className="font-body text-sm text-muted-foreground">
-          Find out what is around your new home.
-        </p>
-      </motion.div>
-
-      {/* ── Main Layout: Map + Nearby POIs ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        
-        {/* Left Column: Map Placeholder & Address Info (Spans 3 cols on desktop) */}
-        <motion.div variants={itemVariants} className="lg:col-span-3 flex flex-col gap-4">
-          
-          {/* Map Preview Container */}
-          <div className="relative aspect-[16/9] w-full rounded-2xl bg-card border border-border/80 overflow-hidden shadow-sm group">
-            {/* Grid Pattern Overlay */}
-            <div
-              className="absolute inset-0 opacity-[0.07] pointer-events-none"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle, rgba(0,0,0,0.8) 1.5px, transparent 1.5px)",
-                backgroundSize: "24px 24px",
-              }}
-            />
-
-            {/* Stylized vector map representation */}
-            <svg
-              className="absolute inset-0 w-full h-full text-border/40 pointer-events-none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* Street lines */}
-              <line x1="10%" y1="0%" x2="10%" y2="100%" stroke="currentColor" strokeWidth="2" />
-              <line x1="45%" y1="0%" x2="45%" y2="100%" stroke="currentColor" strokeWidth="4" />
-              <line x1="85%" y1="0%" x2="85%" y2="100%" stroke="currentColor" strokeWidth="2" />
-              <line x1="0%" y1="30%" x2="100%" y2="30%" stroke="currentColor" strokeWidth="2" />
-              <line x1="0%" y1="65%" x2="100%" y2="65%" stroke="currentColor" strokeWidth="4" strokeDasharray="6 4" />
-              <line x1="0%" y1="80%" x2="100%" y2="80%" stroke="currentColor" strokeWidth="1" />
-              
-              {/* Subtle local parks / spaces */}
-              <rect x="15%" y="10%" width="20%" height="15%" fill="currentColor" opacity="0.08" rx="8" />
-              <rect x="55%" y="40%" width="25%" height="20%" fill="currentColor" opacity="0.08" rx="8" />
-            </svg>
-
-            {/* Central Pulsing Target / Marker */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-              {/* Pulsing ring */}
-              <div className="absolute w-12 h-12 rounded-full bg-primary/20 animate-ping pointer-events-none" />
-              {/* Solid Marker container */}
-              <div className="relative w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg border-2 border-white z-10">
-                <MapPin className="w-4 h-4" />
-              </div>
-            </div>
-
-            {/* Coordinates & Overlay Label */}
-            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-              <div className="bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[10px] font-bold text-white border border-white/10 flex items-center gap-1">
-                <Compass className="w-3.5 h-3.5 animate-spin-slow" />
-                {latitude.toFixed(6)}, {longitude.toFixed(6)}
-              </div>
-              <div className="bg-primary/95 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-widest text-primary-foreground shadow-sm">
-                Interactive Maps Coming Soon
-              </div>
-            </div>
-          </div>
-
-          {/* Address Display Box */}
-          <div className="flex items-start gap-3 p-4 rounded-xl border border-border/80 bg-card">
-            <div className="w-9 h-9 rounded-lg bg-primary/5 flex items-center justify-center text-primary shrink-0 mt-0.5">
-              <Navigation className="w-4.5 h-4.5" />
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="font-heading text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                Full Address
-              </span>
-              <p className="font-body text-sm text-foreground leading-relaxed">
-                {address}
-              </p>
-            </div>
-          </div>
-
-        </motion.div>
-
-        {/* Right Column: Neighborhood POIs (Spans 2 cols on desktop) */}
-        <motion.div variants={itemVariants} className="lg:col-span-2 flex flex-col gap-3">
-          <span className="font-heading text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">
-            Nearby Places
+    <div className={cn("space-y-4 text-left select-none", className)}>
+      {/* ── 1. Section Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <span className="font-heading text-xs font-extrabold uppercase tracking-widest text-secondary flex items-center gap-1.5">
+            <Compass className="w-3.5 h-3.5" /> Property Location
           </span>
+          <h2 className="font-heading text-2xl md:text-3xl font-extrabold text-primary tracking-tight">
+            Interactive Location
+          </h2>
+        </div>
 
-          <motion.div
-            variants={listVariants}
-            className="flex flex-col gap-2 overflow-y-auto max-h-[340px] pr-1 scrollbar-thin"
-          >
-            {nearbyPlaces.map((place, idx) => {
-              const PlaceIcon = place.icon;
-              return (
-                <motion.div
-                  key={`${place.name}-${idx}`}
-                  variants={cardVariants}
-                  whileHover={{ x: 4, scale: 1.01 }}
-                  transition={{ duration: 0.2, ease: PREMIUM_EASE }}
-                  className="flex items-center justify-between p-3.5 rounded-xl border border-border/80 bg-card hover:border-primary/30 transition-colors duration-200 cursor-default"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    {/* Icon container */}
-                    <div className="w-9 h-9 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center text-primary shrink-0">
-                      <PlaceIcon className="w-4 h-4" />
-                    </div>
-                    {/* Place Name and category */}
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-heading text-sm font-bold text-foreground truncate">
-                        {place.name}
-                      </span>
-                      <span className="font-body text-[10px] text-muted-foreground">
-                        {place.type}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Distance info */}
-                  <span className="font-heading text-xs font-bold text-primary shrink-0 bg-primary/5 border border-primary/10 px-2.5 py-1 rounded-full">
-                    {place.distance}
-                  </span>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </motion.div>
-
+        {/* Open in Google Maps Navigation Button */}
+        <button
+          type="button"
+          data-no-intercept="true"
+          onClick={openGoogleMapsDirections}
+          className="px-4 py-2.5 rounded-2xl bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground font-heading text-xs font-extrabold transition-all shadow-md flex items-center gap-2 cursor-pointer w-fit"
+          aria-label="Open directions in Google Maps"
+        >
+          <span>Open in Google Maps</span>
+          <ExternalLink className="w-3.5 h-3.5" />
+        </button>
       </div>
-    </motion.div>
+
+      {/* ── 2. Full-Width Interactive Map Canvas ── */}
+      <div
+        className={cn(
+          "relative aspect-[16/10] sm:aspect-[16/9] w-full rounded-3xl bg-card border border-border/80 overflow-hidden shadow-md group transition-all",
+          isFullscreen && "fixed inset-4 z-modal aspect-none h-[calc(100vh-2rem)] shadow-2xl"
+        )}
+      >
+        {isLoading ? (
+          <div className="absolute inset-0 bg-muted/40 animate-pulse flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+              <Compass className="w-8 h-8 animate-spin text-primary" />
+              <span className="font-heading text-xs font-bold">Loading Interactive Map...</span>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* SVG Vector Map Grid */}
+            <div
+              className="absolute inset-0 transition-transform duration-300 ease-out"
+              style={{ transform: `scale(${zoomScale})` }}
+            >
+              <div
+                className="absolute inset-0 opacity-[0.08] pointer-events-none"
+                style={{
+                  backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.8) 1.5px, transparent 1.5px)",
+                  backgroundSize: "24px 24px",
+                }}
+              />
+
+              <svg className="absolute inset-0 w-full h-full text-border/60 pointer-events-none">
+                <line x1="20%" y1="0%" x2="20%" y2="100%" stroke="currentColor" strokeWidth="2" />
+                <line x1="50%" y1="0%" x2="50%" y2="100%" stroke="currentColor" strokeWidth="4" />
+                <line x1="80%" y1="0%" x2="80%" y2="100%" stroke="currentColor" strokeWidth="2" />
+                <line x1="0%" y1="35%" x2="100%" y2="35%" stroke="currentColor" strokeWidth="3" />
+                <line x1="0%" y1="65%" x2="100%" y2="65%" stroke="currentColor" strokeWidth="4" strokeDasharray="6 4" />
+                <rect x="10%" y="15%" width="22%" height="16%" fill="currentColor" opacity="0.06" rx="8" />
+                <rect x="58%" y="45%" width="28%" height="22%" fill="currentColor" opacity="0.06" rx="8" />
+              </svg>
+
+              {/* Property Main Marker Pin (Center) */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center pointer-events-none">
+                <div className="w-10 h-10 rounded-full bg-primary/20 animate-ping absolute" />
+                <div className="relative bg-primary text-primary-foreground p-2 rounded-2xl shadow-xl border-2 border-white flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 fill-primary-foreground" />
+                  <span className="font-heading text-[10px] font-extrabold uppercase tracking-wider hidden sm:inline">
+                    RoofOnClick Property
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Map Control Buttons Overlay */}
+            <div className="absolute top-3 left-3 z-20">
+              <button
+                type="button"
+                data-no-intercept="true"
+                onClick={() => setIsFullscreen((prev) => !prev)}
+                className="p-2 rounded-xl bg-card/90 backdrop-blur-md border border-border/80 text-foreground hover:text-primary transition-colors shadow-sm cursor-pointer"
+                aria-label="Toggle Fullscreen Map"
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+            </div>
+
+            <div className="absolute top-3 right-3 z-20 flex flex-col gap-1">
+              <button
+                type="button"
+                data-no-intercept="true"
+                onClick={handleZoomIn}
+                className="p-2 rounded-xl bg-card/90 backdrop-blur-md border border-border/80 text-foreground hover:text-primary transition-colors shadow-sm cursor-pointer"
+                aria-label="Zoom In"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                data-no-intercept="true"
+                onClick={handleZoomOut}
+                className="p-2 rounded-xl bg-card/90 backdrop-blur-md border border-border/80 text-foreground hover:text-primary transition-colors shadow-sm cursor-pointer"
+                aria-label="Zoom Out"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="absolute bottom-3 right-3 z-20">
+              <button
+                type="button"
+                data-no-intercept="true"
+                onClick={handleRecenter}
+                className="p-2 rounded-xl bg-card/90 backdrop-blur-md border border-border/80 text-foreground hover:text-primary transition-colors shadow-sm cursor-pointer"
+                aria-label="Recenter Property Marker"
+              >
+                <Crosshair className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="absolute bottom-3 left-3 z-20 pointer-events-none">
+              <div className="bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-white border border-white/10 flex items-center gap-1">
+                <Compass className="w-3.5 h-3.5 text-primary" />
+                {latitude.toFixed(4)}° N, {longitude.toFixed(4)}° E
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ── 3. Full-Width Property Address Card ── */}
+      <div className="flex items-start sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl border border-border/80 bg-card shadow-xs w-full">
+        <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-0.5 sm:mt-0">
+            <Navigation className="w-4 h-4" />
+          </div>
+          <div className="flex flex-col flex-1 min-w-0">
+            <span className="font-heading text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+              Full Property Address
+            </span>
+            <p className="font-body text-xs sm:text-sm text-foreground leading-snug break-words whitespace-normal font-medium">
+              {address}
+            </p>
+          </div>
+        </div>
+
+        {/* Compact Copy Address Button */}
+        <button
+          type="button"
+          data-no-intercept="true"
+          onClick={handleCopyAddress}
+          title="Copy Address"
+          aria-label="Copy Address"
+          className="p-2 rounded-xl border border-border/80 bg-muted/30 hover:bg-muted text-foreground transition-colors shrink-0 cursor-pointer flex items-center justify-center"
+        >
+          {isCopied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-muted-foreground hover:text-foreground" />}
+        </button>
+      </div>
+    </div>
   );
 }
 

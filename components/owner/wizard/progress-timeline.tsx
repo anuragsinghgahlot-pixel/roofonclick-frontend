@@ -24,12 +24,12 @@ export function ProgressTimeline({ currentStep }: ProgressTimelineProps) {
 
   return (
     <div className="w-full">
-      {/* Desktop Horizontal Timeline */}
+      {/* Desktop Horizontal Timeline (md+) */}
       <div className="hidden md:flex items-center justify-between w-full relative mb-10 px-4 select-none">
         {/* Connecting progress line */}
         <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-muted -translate-y-1/2 -z-10 w-full" />
-        <div 
-          className="absolute top-1/2 left-0 h-0.5 bg-primary -translate-y-1/2 -z-10 transition-all duration-500 ease-out" 
+        <div
+          className="absolute top-1/2 left-0 h-0.5 bg-primary -translate-y-1/2 -z-10 transition-all duration-500 ease-out"
           style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
         />
 
@@ -50,23 +50,20 @@ export function ProgressTimeline({ currentStep }: ProgressTimelineProps) {
                 isUnlocked ? "cursor-pointer hover:scale-[1.05]" : "cursor-not-allowed opacity-65"
               )}
             >
-              {/* Badge Circle */}
               <div
                 className={cn(
-                  "w-8.5 h-8.5 rounded-full flex items-center justify-center border-2 transition-all duration-300 font-heading text-xs font-bold",
+                  "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 font-heading text-xs font-bold",
                   isCompleted && "border-primary bg-primary text-primary-foreground",
                   isActive && "border-primary bg-primary/10 text-primary scale-110 shadow-sm",
                   isFuture && "border-border bg-card text-muted-foreground/60"
                 )}
               >
                 {isCompleted ? (
-                  <Check className="w-4.5 h-4.5 stroke-[3]" />
+                  <Check className="w-4 h-4 stroke-[3]" />
                 ) : (
                   <span>{s.step}</span>
                 )}
               </div>
-
-              {/* Label */}
               <span
                 className={cn(
                   "font-heading text-[10px] uppercase tracking-wider font-semibold whitespace-nowrap",
@@ -80,73 +77,55 @@ export function ProgressTimeline({ currentStep }: ProgressTimelineProps) {
         })}
       </div>
 
-      {/* Mobile Vertical Timeline */}
-      <div className="flex md:hidden flex-col gap-4 w-full mb-8 pl-2 text-left select-none">
-        {STEPS.map((s) => {
-          const isCompleted = s.step < currentStep;
-          const isActive = s.step === currentStep;
-          const isFuture = s.step > currentStep;
-          const isUnlocked = isStepUnlocked(s.step);
+      {/* Mobile: compact horizontal pill progress bar (below md) */}
+      <div className="flex md:hidden items-center gap-2 mb-5 select-none overflow-x-auto scrollbar-none pb-1">
+        {/* Progress bar */}
+        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden shrink-0 min-w-[60px]">
+          <div
+            className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
+          />
+        </div>
 
-          return (
-            <button
-              key={s.step}
-              type="button"
-              disabled={!isUnlocked}
-              onClick={() => isUnlocked && setStep(s.step)}
-              className={cn(
-                "flex items-center gap-3.5 relative transition-all duration-200 border-none outline-none select-none text-left w-full",
-                isUnlocked ? "cursor-pointer hover:translate-x-1" : "cursor-not-allowed opacity-65"
-              )}
-            >
-              {/* Vertical connecting line */}
-              {s.step < STEPS.length && (
-                <div 
-                  className={cn(
-                    "absolute left-4.5 top-8.5 bottom-[-16px] w-[2px] bg-muted -z-10",
-                    isCompleted && "bg-primary"
-                  )} 
-                />
-              )}
+        {/* Step dots */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {STEPS.map((s) => {
+            const isCompleted = s.step < currentStep;
+            const isActive = s.step === currentStep;
+            const isUnlocked = isStepUnlocked(s.step);
 
-              {/* Badge Circle */}
-              <div
+            return (
+              <button
+                key={s.step}
+                type="button"
+                disabled={!isUnlocked}
+                onClick={() => isUnlocked && setStep(s.step)}
+                title={s.label}
+                aria-label={`Go to step ${s.step}: ${s.label}`}
                 className={cn(
-                  "w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all duration-300 font-heading text-xs font-bold shrink-0",
-                  isCompleted && "border-primary bg-primary text-primary-foreground",
-                  isActive && "border-primary bg-primary/10 text-primary scale-105",
-                  isFuture && "border-border bg-card text-muted-foreground/60"
+                  "rounded-full flex items-center justify-center border-2 transition-all duration-300 font-heading text-[9px] font-bold shrink-0",
+                  isActive
+                    ? "w-8 h-8 border-primary bg-primary/10 text-primary shadow-sm"
+                    : isCompleted
+                    ? "w-6 h-6 border-primary bg-primary text-primary-foreground"
+                    : "w-5 h-5 border-border bg-card text-muted-foreground/60",
+                  isUnlocked ? "cursor-pointer" : "cursor-not-allowed opacity-50"
                 )}
               >
                 {isCompleted ? (
-                  <Check className="w-4.5 h-4.5 stroke-[3]" />
+                  <Check className="w-3 h-3 stroke-[3]" />
                 ) : (
                   <span>{s.step}</span>
                 )}
-              </div>
+              </button>
+            );
+          })}
+        </div>
 
-              {/* Text */}
-              <div className="flex flex-col gap-0.5">
-                <span
-                  className={cn(
-                    "font-heading text-[10px] uppercase tracking-wider font-extrabold",
-                    isActive ? "text-primary" : "text-muted-foreground/60"
-                  )}
-                >
-                  Step {s.step}
-                </span>
-                <span
-                  className={cn(
-                    "font-heading text-sm font-bold",
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  )}
-                >
-                  {s.label}
-                </span>
-              </div>
-            </button>
-          );
-        })}
+        {/* Current step label */}
+        <span className="font-heading text-[10px] font-bold text-primary uppercase tracking-wide shrink-0">
+          {STEPS[currentStep - 1]?.label}
+        </span>
       </div>
     </div>
   );

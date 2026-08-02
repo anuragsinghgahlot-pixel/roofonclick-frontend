@@ -63,12 +63,11 @@ export function Advantages() {
   return (
     <Section className="bg-background">
       <Container>
-        {/* Header Block */}
-        <div className="flex flex-col gap-2 mb-12 text-center items-center">
+        <div className="flex flex-col gap-2 mb-8 sm:mb-12 text-center items-center">
           <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
             Our Promise
           </span>
-          <h2 className="font-heading text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
+          <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
             Why Choose RoofOnClick?
           </h2>
           <p className="font-body text-sm text-muted-foreground leading-relaxed max-w-md">

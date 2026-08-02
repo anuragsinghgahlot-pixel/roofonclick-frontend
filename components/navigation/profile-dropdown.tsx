@@ -13,11 +13,16 @@ import {
   ChevronDown,
   Bell,
   LayoutDashboard,
+  Plus,
+  Bookmark,
+  Clock,
+  Scale,
 } from "lucide-react";
 import { useAuth, UserRole } from "@/providers/auth-provider";
 import { EnquiryService } from "@/services/enquiry";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { showToast } from "@/lib/toast";
 
 /**
  * Calculates uppercase 1-2 letter initials from full name or email.
@@ -92,8 +97,16 @@ export function ProfileAvatar({
 }
 
 import { CallbackService, CALLBACK_UPDATED_EVENT } from "@/services/callback/callback.service";
+import { NotificationDropdown } from "./notification-dropdown";
 
 export function NotificationsButton() {
+  const { user, role } = useAuth();
+  const isOwner = user !== null && (user.role === "owner" || role === "owner");
+
+  if (!isOwner) {
+    return <NotificationDropdown />;
+  }
+
   const getCombinedCount = React.useCallback(() => {
     return EnquiryService.getPendingCount() + CallbackService.getPendingCount();
   }, []);
@@ -121,15 +134,9 @@ export function NotificationsButton() {
     e.preventDefault();
     e.stopPropagation();
     if (unreadCount > 0) {
-      toast("Pending Enquiries & Visits", {
-        description: `You have ${unreadCount} pending request(s) on your Owner Dashboard.`,
-        icon: "🔔",
-      });
+      showToast.info("Pending Enquiries & Visits", `You have ${unreadCount} pending request(s) on your Owner Dashboard.`);
     } else {
-      toast("No new notifications", {
-        description: "You're all caught up with property alerts and messages.",
-        icon: "🔔",
-      });
+      showToast.info("You're all caught up.", "You have no new notifications or property alerts.");
     }
   };
 
@@ -358,6 +365,16 @@ export function ProfileDropdown() {
                   <button
                     type="button"
                     role="menuitem"
+                    onClick={() => handleNavigate("/owner/property/new")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200 cursor-pointer text-left focus:outline-none focus:bg-primary/5 focus:text-primary"
+                  >
+                    <Plus className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>Add Property</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
                     onClick={() => handleNavigate("/profile")}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200 cursor-pointer text-left focus:outline-none focus:bg-primary/5 focus:text-primary"
                   >
@@ -395,6 +412,26 @@ export function ProfileDropdown() {
                   >
                     <Heart className="w-4 h-4 text-rose-500 shrink-0" />
                     <span>Wishlist</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => handleNavigate("/saved-searches")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200 cursor-pointer text-left focus:outline-none focus:bg-primary/5 focus:text-primary"
+                  >
+                    <Bookmark className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>Saved Searches</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => handleNavigate("/recently-viewed")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200 cursor-pointer text-left focus:outline-none focus:bg-primary/5 focus:text-primary"
+                  >
+                    <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>Recently Viewed</span>
                   </button>
 
                   <button

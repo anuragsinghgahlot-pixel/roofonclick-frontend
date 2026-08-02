@@ -66,7 +66,7 @@ export function StepBasicDetails() {
         <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
           Target Gender / Occupancy
         </label>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {GENDER_OPTIONS.map((opt) => {
             const isSelected = genderValue === opt.value;
             return (

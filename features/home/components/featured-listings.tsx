@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight, Star, Heart, BadgeCheck, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
 import { cn } from "@/lib/utils";
 import { useWishlist } from "@/providers/wishlist-provider";
+import { useAuth } from "@/providers/auth-provider";
 
 interface Property {
   id: string;
@@ -117,18 +119,20 @@ function getGenderBadge(gender: Property["gender"]): { label: string; style: str
 }
 
 export function FeaturedListings() {
+  const { user, role } = useAuth();
+  const isOwner = user !== null && (user.role === "owner" || role === "owner");
   const { isInWishlist, toggleWishlist } = useWishlist();
 
   return (
     <Section className="bg-muted/5">
       <Container>
         {/* Header Block */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between mb-8 sm:mb-12">
           <div className="flex flex-col gap-2 text-left">
             <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
               Handpicked for You
             </span>
-            <h2 className="font-heading text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
+            <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
               Featured Listings
             </h2>
             <p className="font-body text-sm text-muted-foreground leading-relaxed max-w-md">
@@ -140,14 +144,14 @@ export function FeaturedListings() {
           <div className="flex gap-2 shrink-0">
             <button
               type="button"
-              className="p-3 bg-card border border-border/80 rounded-full hover:bg-muted/40 text-muted-foreground transition-all duration-200 shadow-sm cursor-pointer active:scale-90"
+              className="p-3 bg-card border border-border/80 rounded-full hover:bg-muted/40 text-muted-foreground transition-all duration-200 shadow-sm cursor-pointer active:scale-90 min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Previous stays"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               type="button"
-              className="p-3 bg-card border border-border/80 rounded-full hover:bg-muted/40 text-muted-foreground transition-all duration-200 shadow-sm cursor-pointer active:scale-90"
+              className="p-3 bg-card border border-border/80 rounded-full hover:bg-muted/40 text-muted-foreground transition-all duration-200 shadow-sm cursor-pointer active:scale-90 min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Next stays"
             >
               <ChevronRight className="w-5 h-5" />
@@ -199,29 +203,31 @@ export function FeaturedListings() {
                     )}
 
                     {/* Wishlist button */}
-                    <button
-                      type="button"
-                      data-no-intercept="true"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleWishlist(property.id);
-                      }}
-                      className="absolute top-4 right-4 w-9 h-9 bg-card/85 backdrop-blur-sm rounded-full shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center hover:scale-105 active:scale-95 z-20"
-                      aria-label="Add to wishlist"
-                    >
-                      <motion.div
-                        animate={{ scale: isFavorite ? [1, 1.25, 1] : 1 }}
-                        transition={{ duration: 0.2 }}
+                    {!isOwner && (
+                      <button
+                        type="button"
+                        data-no-intercept="true"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleWishlist(property.id);
+                        }}
+                        className="absolute top-4 right-4 w-9 h-9 bg-card/85 backdrop-blur-sm rounded-full shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center hover:scale-105 active:scale-95 z-20"
+                        aria-label="Add to wishlist"
                       >
-                        <Heart
-                          className={cn(
-                            "w-4 h-4 transition-colors duration-200",
-                            isFavorite ? "fill-rose-500 text-rose-500" : "text-muted-foreground/75 hover:text-rose-500"
-                          )}
-                        />
-                      </motion.div>
-                    </button>
+                        <motion.div
+                          animate={{ scale: isFavorite ? [1, 1.25, 1] : 1 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Heart
+                            className={cn(
+                              "w-4 h-4 transition-colors duration-200",
+                              isFavorite ? "fill-rose-500 text-rose-500" : "text-muted-foreground/75 hover:text-rose-500"
+                            )}
+                          />
+                        </motion.div>
+                      </button>
+                    )}
                   </div>
 
                   {/* Info details box */}
@@ -280,13 +286,13 @@ export function FeaturedListings() {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
+                      <Link
+                        href={`/property/${property.id}`}
                         className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground hover:bg-accent px-5 py-3 rounded-xl text-xs font-semibold active:scale-95 transition-all duration-200 cursor-pointer shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         View Details
                         <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </div>

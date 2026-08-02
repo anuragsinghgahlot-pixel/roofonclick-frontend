@@ -9,16 +9,19 @@ import { ReviewService, Review } from "@/services/reviews";
 import { LightboxModal } from "./gallery";
 import { MediaTab } from "@/hooks/use-gallery";
 import { Modal } from "@/components/shared/modal";
+import { EmptyState } from "@/components/shared/empty-state";
+import { showToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 interface PropertyReviewsProps {
   propertyId: string;
   onReviewChange?: () => void;
+  isOwnerView?: boolean;
 }
 
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 
-export function PropertyReviews({ propertyId, onReviewChange }: PropertyReviewsProps) {
+export function PropertyReviews({ propertyId, onReviewChange, isOwnerView = false }: PropertyReviewsProps) {
   const { user, role } = useAuth();
   
   // States
@@ -256,21 +259,21 @@ export function PropertyReviews({ propertyId, onReviewChange }: PropertyReviewsP
           </h2>
         </div>
 
-        <button
-          onClick={() => {
-            if (!user) {
-              toast.error("Please sign in to write a review.");
-            } else if (isOwner) {
-              toast.error("Owners cannot review their own properties.");
-            } else {
-              setIsWriteModalOpen(true);
-            }
-          }}
-          className="inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground font-heading text-xs font-bold transition-all duration-300 shadow-md cursor-pointer select-none"
-        >
-          <Plus className="w-4 h-4" />
-          Write a Review
-        </button>
+        {!isOwnerView && !isOwner && (
+          <button
+            onClick={() => {
+              if (!user) {
+                toast.error("Please sign in to write a review.");
+              } else {
+                setIsWriteModalOpen(true);
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground font-heading text-xs font-bold transition-all duration-300 shadow-md cursor-pointer select-none"
+          >
+            <Plus className="w-4 h-4" />
+            Write a Review
+          </button>
+        )}
       </div>
 
       {/* 1. Summary Breakdown Panel */}
@@ -482,7 +485,7 @@ export function PropertyReviews({ propertyId, onReviewChange }: PropertyReviewsP
 
                 {/* Optional Review Images (Click opens Lightbox Modal) */}
                 {review.images && review.images.length > 0 && (
-                  <div className="flex flex-wrap gap-2.5 pt-2">
+                  <div className="flex items-center gap-2.5 overflow-x-auto scrollbar-none pt-2 pb-1">
                     {review.images.map((imgUrl, i) => (
                       <button
                         key={i}
@@ -529,19 +532,30 @@ export function PropertyReviews({ propertyId, onReviewChange }: PropertyReviewsP
               </motion.div>
             ))
           ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-12 bg-muted/10 border border-dashed border-border/85 rounded-3xl"
-            >
-              <MessageSquare className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2.5" />
-              <p className="font-heading text-sm font-bold text-muted-foreground">No Reviews Found</p>
-              <p className="font-body text-xs text-muted-foreground/75 mt-1 leading-snug">
-                {filterRating === "All"
-                  ? "Be the first to stay here and write a review!"
-                  : `There are currently no ${filterRating}-star reviews listed.`}
-              </p>
-            </motion.div>
+            <EmptyState
+              icon={MessageSquare}
+              size="sm"
+              title="Be the first to review this property"
+              description={
+                filterRating === "All"
+                  ? "Share your experience about the rooms, food quality, amenities, and host hospitality."
+                  : `There are currently no ${filterRating}-star reviews listed for this property.`
+              }
+              primaryAction={
+                !isOwnerView && !isOwner
+                  ? {
+                      label: "Write Review",
+                      onClick: () => {
+                        if (!user) {
+                          showToast.error("Please sign in to write a review.");
+                        } else {
+                          setIsWriteModalOpen(true);
+                        }
+                      },
+                    }
+                  : undefined
+              }
+            />
           )}
         </AnimatePresence>
 
