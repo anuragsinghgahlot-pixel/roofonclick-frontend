@@ -19,6 +19,12 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
   const pathname = usePathname();
 
   React.useEffect(() => {
+    // Do not initialize Lenis on admin pages — admin panel has its own nested overflow container
+    if (pathname?.startsWith("/admin")) {
+      setLenis(null);
+      return;
+    }
+
     // Check prefers-reduced-motion
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
