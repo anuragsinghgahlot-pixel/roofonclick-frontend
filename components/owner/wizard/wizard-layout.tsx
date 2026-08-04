@@ -40,7 +40,7 @@ export function WizardLayout({ children }: { children: React.ReactNode }) {
       <Navbar />
 
       <main className="flex-1" data-no-intercept="true">
-        <Section className="bg-muted/10 py-12 relative overflow-hidden text-left">
+        <Section className="bg-muted/10 py-12 relative text-left">
           {/* Background glows */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />

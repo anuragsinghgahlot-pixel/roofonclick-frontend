@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const signup = React.useCallback((name: string, email: string, phoneNumber?: string, gender?: string, userRole?: UserRole) => {
-    const targetRole = userRole || role || undefined;
+    const targetRole: UserRole = userRole || role || "buyer";
     const newUser: User = { 
       name, 
       email, 
@@ -69,17 +69,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role: targetRole 
     };
     setUser(newUser);
-    if (targetRole) {
-      setRoleState(targetRole);
-    }
+    setRoleState(targetRole);
+
     if (typeof window !== "undefined") {
       const json = JSON.stringify(newUser);
       localStorage.setItem("auth_user", json);
       sessionStorage.setItem("auth_user", json);
-      if (targetRole) {
-        localStorage.setItem("auth_role", targetRole);
-        sessionStorage.setItem("auth_role", targetRole);
-      }
+      localStorage.setItem("auth_role", targetRole);
+      sessionStorage.setItem("auth_role", targetRole);
     }
     showToast.success("Account Created", `Welcome to RoofOnClick, ${name}!`);
   }, [role]);
@@ -100,22 +97,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         : email;
 
       const storedRole = (localStorage.getItem("auth_role") || sessionStorage.getItem("auth_role")) as UserRole | null;
+      const targetRole: UserRole = existingUser?.role || storedRole || "buyer";
 
       const loggedInUser: User = {
         name: (existingUser?.email === email && existingUser?.name) ? existingUser.name : defaultName,
         email,
-        role: existingUser?.role || storedRole || undefined,
+        role: targetRole,
         avatarUrl: existingUser?.email === email ? existingUser?.avatarUrl : undefined,
       };
 
       setUser(loggedInUser);
-      if (storedRole) {
-        setRoleState(storedRole);
-      }
+      setRoleState(targetRole);
 
       const json = JSON.stringify(loggedInUser);
       localStorage.setItem("auth_user", json);
+      localStorage.setItem("auth_role", targetRole);
       sessionStorage.setItem("auth_user", json);
+      sessionStorage.setItem("auth_role", targetRole);
       showToast.success("Logged In Successfully", `Welcome back, ${loggedInUser.name}!`);
     }
   }, []);

@@ -36,7 +36,7 @@ function getDisplayTitle(slug: string): string {
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
-  const locationSlug = searchParams.get("location");
+  const locationSlug = searchParams.get("location") || searchParams.get("area");
   const [selectedType] = React.useState<string>("All");
   const [isSaveModalOpen, setIsSaveModalOpen] = React.useState(false);
   const [selectedGenders, setSelectedGenders] = React.useState<string[]>([]);
@@ -120,12 +120,14 @@ function SearchPageContent() {
   const filteredProperties = React.useMemo(() => {
     let result = [...MOCK_PROPERTIES];
 
-    // 1. Filter by location slug
+    // 1. Filter by location/area slug
     if (locationSlug) {
-      const targetSlug = locationSlug.toLowerCase();
-      result = result.filter(
-        (p) => p.location.toLowerCase().replace(/\s+/g, "-") === targetSlug
-      );
+      const targetSlug = locationSlug.toLowerCase().trim();
+      const targetClean = targetSlug.replace(/[-_]/g, " ");
+      result = result.filter((p) => {
+        const loc = p.location.toLowerCase();
+        return loc.includes(targetClean) || targetClean.includes(loc) || loc.replace(/\s+/g, "-") === targetSlug;
+      });
     }
 
     // 2. Filter by selected top property type chip

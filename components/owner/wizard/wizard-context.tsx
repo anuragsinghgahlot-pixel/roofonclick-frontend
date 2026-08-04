@@ -77,6 +77,8 @@ export const propertyWizardSchema = z.object({
     ),
 
   // Step 4: Amenities
+  propertyManagementType: z.string().optional(),
+  foodType: z.string().optional(),
   amenities: z.array(z.string()).optional(),
   rules: z.object({
     smokingAllowed: z.boolean().optional(),

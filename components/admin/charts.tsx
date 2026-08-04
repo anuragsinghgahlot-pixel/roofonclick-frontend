@@ -338,8 +338,8 @@ export function KpiCard({
           <span className="font-body text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
             {label}
           </span>
-          <span className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-none block">
-            {formattedValue.startsWith("₹") ? `₹${(animatedValue / (value > 99999 ? 100000 : 1)).toFixed(value > 99999 ? 1 : 0)}${value > 99999 ? "L" : ""}` : animatedValue.toLocaleString()}
+          <span className="font-heading text-xl sm:text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight leading-none block">
+            {formattedValue}
           </span>
         </div>
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform">

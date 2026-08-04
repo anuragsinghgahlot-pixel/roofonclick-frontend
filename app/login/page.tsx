@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, Mail, Lock } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import Navbar from "@/components/navigation/navbar";
@@ -11,7 +11,9 @@ import { cn } from "@/lib/utils";
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = React.useState("");
+  const [identifier, setIdentifier] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showToast, setShowToast] = React.useState(false);
 
@@ -21,15 +23,15 @@ export default function LoginPage() {
 
     setIsSubmitting(true);
 
-    // Simulate login authentication delay (e.g. 700ms)
+    // Simulate login authentication delay
     setTimeout(() => {
-      login(email);
+      login(identifier);
       setShowToast(true);
 
-      // Short delay to let the user see the success toast
       setTimeout(() => {
         setIsSubmitting(false);
-        router.push("/");
+        const targetRoute = typeof window !== "undefined" ? sessionStorage.getItem("lastBrowsingRoute") || "/" : "/";
+        router.push(targetRoute);
       }, 900);
     }, 700);
   };
@@ -39,7 +41,6 @@ export default function LoginPage() {
       {/* Soft background radial highlights */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse" />
-
 
       {/* Main card */}
       <div className="w-full max-w-md bg-card/85 backdrop-blur-md border border-border/80 p-8 sm:p-10 rounded-[28px] shadow-premium relative z-10 flex flex-col gap-6">
@@ -53,7 +54,7 @@ export default function LoginPage() {
             Welcome Back
           </h1>
           <p className="font-body text-xs text-muted-foreground">
-            Sign in to continue exploring verified PGs, hostels, co-living spaces, and rental properties.
+            Sign in using your Email or Mobile Number to continue exploring verified PGs & hostels.
           </p>
         </div>
 
@@ -66,20 +67,20 @@ export default function LoginPage() {
 
         {/* Demo Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* Email */}
+          {/* Email or Mobile Number */}
           <div className="flex flex-col gap-1.5 text-left">
             <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-              Email Address
+              Email or Mobile Number
             </label>
             <div className="relative flex items-center">
               <Mail className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
               <input
-                type="email"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
-                placeholder="your@example.com"
+                placeholder="your@email.com or +91 9876543210"
               />
             </div>
           </div>
@@ -100,11 +101,22 @@ export default function LoginPage() {
             <div className="relative flex items-center">
               <Lock className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
-                className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-11 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
                 placeholder="••••••••"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                title={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 

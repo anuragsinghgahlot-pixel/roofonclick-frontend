@@ -2,13 +2,52 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { ArrowRight, ChevronRight, Zap } from "lucide-react";
+import { useAuth } from "@/providers/auth-provider";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
+
+import { showToast } from "@/lib/toast";
 
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 
 export function PartnerCTA() {
+  const router = useRouter();
+  const { user, role } = useAuth();
+
+  const handleGetStarted = () => {
+    router.push("/search");
+  };
+
+  const handleListProperty = () => {
+    const isAuthenticated = user !== null;
+    const userRole = user?.role || role;
+
+    if (!isAuthenticated) {
+      // Guest -> Redirect to Owner Registration / Login
+      router.push("/owners");
+      return;
+    }
+
+    if (userRole === "buyer") {
+      // Buyer -> Informational Toast (Do NOT redirect to Buyer dashboard)
+      showToast.info(
+        "Owner Account Required",
+        "Only Owner accounts can list properties. Please register or switch to an Owner account."
+      );
+      return;
+    }
+
+    if (userRole === "owner") {
+      // Owner -> Direct to Owner Properties
+      router.push("/owner/properties");
+      return;
+    }
+
+    router.push("/owners");
+  };
+
   return (
     <Section className="relative overflow-hidden bg-background">
       {/* Ambient background glows */}
@@ -51,6 +90,7 @@ export function PartnerCTA() {
             {/* Get Started / Explore */}
             <motion.button
               type="button"
+              onClick={handleGetStarted}
               whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 px-8 py-4 rounded-xl font-heading text-sm font-bold tracking-wide transition-all duration-300 cursor-pointer shadow-md"
@@ -62,6 +102,7 @@ export function PartnerCTA() {
             {/* List Property */}
             <motion.button
               type="button"
+              onClick={handleListProperty}
               whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-background/20 bg-background/5 hover:bg-background hover:text-primary text-background px-8 py-4 rounded-xl font-heading text-sm font-bold tracking-wide transition-all duration-300 cursor-pointer shadow-sm"

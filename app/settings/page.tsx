@@ -190,7 +190,7 @@ export default function SettingsPage() {
               </div>
             </motion.section>
 
-            {/* 2. Appearance (Theme) Section */}
+            {/* 2. Useful Account Credentials & Security Section */}
             <motion.section
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
@@ -199,170 +199,42 @@ export default function SettingsPage() {
             >
               <div className="space-y-0.5 border-b border-border/60 pb-4">
                 <h2 className="font-heading text-lg font-extrabold text-primary flex items-center gap-2">
-                  <Sun className="w-5 h-5 text-amber-500" />
-                  Appearance & Theme
+                  <Lock className="w-5 h-5 text-secondary" />
+                  Account Security & Password
                 </h2>
                 <p className="font-body text-xs text-muted-foreground">
-                  Customize the interface theme of RoofOnClick.
-                </p>
-              </div>
-
-              {mounted && (
-                <div className="grid grid-cols-3 gap-3 sm:gap-4">
-                  {/* System Theme */}
-                  <button
-                    type="button"
-                    data-no-intercept="true"
-                    onClick={() => setTheme("system")}
-                    className={cn(
-                      "flex flex-col items-center gap-2.5 p-4 rounded-2xl border text-center transition-all cursor-pointer select-none",
-                      theme === "system"
-                        ? "border-primary bg-primary/10 text-primary shadow-sm ring-2 ring-primary/20"
-                        : "border-border/60 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                    )}
-                  >
-                    <Laptop className="w-5 h-5" />
-                    <span className="font-heading text-xs font-bold">System</span>
-                  </button>
-
-                  {/* Light Theme */}
-                  <button
-                    type="button"
-                    data-no-intercept="true"
-                    onClick={() => setTheme("light")}
-                    className={cn(
-                      "flex flex-col items-center gap-2.5 p-4 rounded-2xl border text-center transition-all cursor-pointer select-none",
-                      theme === "light"
-                        ? "border-primary bg-primary/10 text-primary shadow-sm ring-2 ring-primary/20"
-                        : "border-border/60 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                    )}
-                  >
-                    <Sun className="w-5 h-5" />
-                    <span className="font-heading text-xs font-bold">Light</span>
-                  </button>
-
-                  {/* Dark Theme */}
-                  <button
-                    type="button"
-                    data-no-intercept="true"
-                    onClick={() => setTheme("dark")}
-                    className={cn(
-                      "flex flex-col items-center gap-2.5 p-4 rounded-2xl border text-center transition-all cursor-pointer select-none",
-                      theme === "dark"
-                        ? "border-primary bg-primary/10 text-primary shadow-sm ring-2 ring-primary/20"
-                        : "border-border/60 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                    )}
-                  >
-                    <Moon className="w-5 h-5" />
-                    <span className="font-heading text-xs font-bold">Dark</span>
-                  </button>
-                </div>
-              )}
-            </motion.section>
-
-            {/* 3. Notifications Section */}
-            <motion.section
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.2, ease: PREMIUM_EASE }}
-              className="bg-card/90 border border-border/80 rounded-3xl p-6 sm:p-8 shadow-premium space-y-6 text-left"
-            >
-              <div className="space-y-0.5 border-b border-border/60 pb-4">
-                <h2 className="font-heading text-lg font-extrabold text-primary flex items-center gap-2">
-                  <Bell className="w-5 h-5 text-secondary" />
-                  Notifications & Preferences
-                </h2>
-                <p className="font-body text-xs text-muted-foreground">
-                  Choose how RoofOnClick communicates updates to you.
+                  Manage password updates, authentication credentials, and 2FA settings.
                 </p>
               </div>
 
               <div className="space-y-4">
-                {/* Email Notifications Toggle */}
-                <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-muted/20 border border-border/60">
-                  <div className="space-y-0.5 text-left">
-                    <span className="font-heading text-xs font-extrabold text-primary block">
-                      Email Notifications
-                    </span>
-                    <span className="font-body text-xs text-muted-foreground">
-                      Receive account alerts and message summaries via email.
-                    </span>
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/60">
+                  <div className="space-y-0.5">
+                    <span className="font-heading text-xs font-bold text-primary block">Password</span>
+                    <span className="font-body text-xs text-muted-foreground">Last updated 30 days ago</span>
                   </div>
                   <button
                     type="button"
-                    data-no-intercept="true"
-                    onClick={() => toggleNotification("emailNotifications")}
-                    className={cn(
-                      "w-12 h-6 rounded-full transition-colors relative cursor-pointer focus:outline-none shrink-0",
-                      notifications.emailNotifications ? "bg-primary" : "bg-muted-foreground/30"
-                    )}
+                    onClick={() => router.push("/auth/reset-password")}
+                    className="px-3.5 py-2 rounded-xl bg-secondary/10 hover:bg-secondary/20 text-secondary font-heading text-xs font-bold transition-all cursor-pointer"
                   >
-                    <span
-                      className={cn(
-                        "w-5 h-5 rounded-full bg-white transition-transform absolute top-0.5 shadow-sm",
-                        notifications.emailNotifications ? "left-6.5" : "left-0.5"
-                      )}
-                    />
+                    Update Password
                   </button>
                 </div>
 
-                {/* Booking Updates Toggle */}
-                <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-muted/20 border border-border/60">
-                  <div className="space-y-0.5 text-left">
-                    <span className="font-heading text-xs font-extrabold text-primary block">
-                      Booking & Inquiry Updates
-                    </span>
-                    <span className="font-body text-xs text-muted-foreground">
-                      Real-time updates regarding hostel reservations and inquiries.
-                    </span>
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/60">
+                  <div className="space-y-0.5">
+                    <span className="font-heading text-xs font-bold text-primary block">Two-Factor Authentication (2FA)</span>
+                    <span className="font-body text-xs text-muted-foreground font-body">Protect your account with OTP verification</span>
                   </div>
-                  <button
-                    type="button"
-                    data-no-intercept="true"
-                    onClick={() => toggleNotification("bookingUpdates")}
-                    className={cn(
-                      "w-12 h-6 rounded-full transition-colors relative cursor-pointer focus:outline-none shrink-0",
-                      notifications.bookingUpdates ? "bg-primary" : "bg-muted-foreground/30"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "w-5 h-5 rounded-full bg-white transition-transform absolute top-0.5 shadow-sm",
-                        notifications.bookingUpdates ? "left-6.5" : "left-0.5"
-                      )}
-                    />
-                  </button>
-                </div>
-
-                {/* Promotional Offers Toggle */}
-                <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-muted/20 border border-border/60">
-                  <div className="space-y-0.5 text-left">
-                    <span className="font-heading text-xs font-extrabold text-primary block">
-                      Promotional Offers & Discounts
-                    </span>
-                    <span className="font-body text-xs text-muted-foreground">
-                      Special deals, seasonal coupons, and property recommendations.
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    data-no-intercept="true"
-                    onClick={() => toggleNotification("promotionalOffers")}
-                    className={cn(
-                      "w-12 h-6 rounded-full transition-colors relative cursor-pointer focus:outline-none shrink-0",
-                      notifications.promotionalOffers ? "bg-primary" : "bg-muted-foreground/30"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "w-5 h-5 rounded-full bg-white transition-transform absolute top-0.5 shadow-sm",
-                        notifications.promotionalOffers ? "left-6.5" : "left-0.5"
-                      )}
-                    />
-                  </button>
+                  <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-extrabold uppercase">
+                    Active
+                  </span>
                 </div>
               </div>
             </motion.section>
+
+
 
             {/* 4. Privacy & Security Section */}
             <motion.section

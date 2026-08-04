@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { useAuth } from "@/providers/auth-provider";
+import { useRouter } from "next/navigation";
 import { showToast } from "@/lib/toast";
 
 interface WishlistContextType {
@@ -14,7 +16,31 @@ interface WishlistContextType {
 const WishlistContext = React.createContext<WishlistContextType | undefined>(undefined);
 
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const { user, role } = useAuth();
   const [wishlist, setWishlist] = React.useState<string[]>([]);
+
+  const isAuthenticated = user !== null;
+  const userRole = user?.role || role;
+  const userKey = user?.email ? `roofonclick_wishlist_${user.email}` : "roofonclick_wishlist_guest";
+
+  // Load user-specific wishlist from storage
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && isAuthenticated && userRole === "buyer") {
+      try {
+        const stored = localStorage.getItem(userKey);
+        if (stored) {
+          setWishlist(JSON.parse(stored));
+        } else {
+          setWishlist([]);
+        }
+      } catch {
+        setWishlist([]);
+      }
+    } else {
+      setWishlist([]);
+    }
+  }, [isAuthenticated, userRole, userKey]);
 
   const getLastBrowsingRoute = React.useCallback(() => {
     if (typeof window !== "undefined") {
@@ -24,25 +50,107 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const saveLastBrowsingRoute = React.useCallback(() => {
-    if (typeof window !== "undefined" && window.location.pathname !== "/wishlist") {
+    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login") && window.location.pathname !== "/wishlist") {
       const currentRoute = window.location.pathname + window.location.search;
       sessionStorage.setItem("lastBrowsingRoute", currentRoute);
     }
   }, []);
 
-  const toggleWishlist = React.useCallback((id: string) => {
-    saveLastBrowsingRoute();
-    setWishlist((prev) => {
-      const isCurrentlySaved = prev.includes(id);
-      if (isCurrentlySaved) {
-        showToast.info("Removed from Wishlist", "Property removed from your saved stays.");
-        return prev.filter((item) => item !== id);
-      } else {
-        showToast.success("Saved to Wishlist", "Property saved to your saved stays.");
-        return [...prev, id];
+  // Save wishlist to user-specific storage
+  const updateWishlist = React.useCallback(
+    (nextList: string[]) => {
+      setWishlist(nextList);
+      if (typeof window !== "undefined" && userKey) {
+        try {
+          localStorage.setItem(userKey, JSON.stringify(nextList));
+        } catch {
+          // ignore
+        }
       }
-    });
-  }, [saveLastBrowsingRoute]);
+    },
+    [userKey]
+  );
+
+  // Auto-resolve pending wishlist action after login
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isUserLoggedIn = user !== null || !!localStorage.getItem("auth_user");
+      const activeRole = user?.role || role || (localStorage.getItem("auth_role") as any) || "buyer";
+
+      if (isUserLoggedIn && activeRole === "buyer") {
+        const pendingId = sessionStorage.getItem("pending_wishlist_id");
+        if (pendingId) {
+          sessionStorage.removeItem("pending_wishlist_id");
+          setWishlist((prev) => {
+            if (!prev.includes(pendingId)) {
+              const next = [...prev, pendingId];
+              try {
+                localStorage.setItem(userKey, JSON.stringify(next));
+              } catch {
+                // ignore
+              }
+              showToast.success("Added to Wishlist", "Property saved to your Wishlist.");
+              return next;
+            }
+            return prev;
+          });
+        }
+      }
+    }
+  }, [user, role, userKey]);
+
+  const toggleWishlist = React.useCallback(
+    (id: string) => {
+      // Dynamically resolve live session and role
+      const isUserLoggedIn = user !== null || (typeof window !== "undefined" && !!localStorage.getItem("auth_user"));
+      const activeRole = user?.role || role || (typeof window !== "undefined" ? (localStorage.getItem("auth_role") as any) : null) || "buyer";
+
+      // 1. Unauthenticated Guest Check
+      if (!isUserLoggedIn) {
+        saveLastBrowsingRoute();
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("pending_wishlist_id", id);
+        }
+        showToast.info("Sign In Required", "Please log in as a Buyer to save properties to your Wishlist.");
+        router.push("/login");
+        return;
+      }
+
+      // 2. Owner or Admin Check
+      if (activeRole === "owner") {
+        showToast.warning("Buyer Account Required", "This feature is available for Buyer accounts only.");
+        return;
+      }
+
+      if (activeRole === "admin") {
+        showToast.warning("Unavailable", "Wishlist is unavailable for Admin accounts.");
+        return;
+      }
+
+      // 3. Buyer Wishlist Toggle
+      saveLastBrowsingRoute();
+      setWishlist((prev) => {
+        const isCurrentlySaved = prev.includes(id);
+        let next: string[];
+        if (isCurrentlySaved) {
+          showToast.info("Removed from Wishlist", "Property removed from your saved stays.");
+          next = prev.filter((item) => item !== id);
+        } else {
+          showToast.success("Added to Wishlist", "Property saved to your Wishlist.");
+          next = [...prev, id];
+        }
+        if (typeof window !== "undefined" && userKey) {
+          try {
+            localStorage.setItem(userKey, JSON.stringify(next));
+          } catch {
+            // ignore
+          }
+        }
+        return next;
+      });
+    },
+    [user, role, saveLastBrowsingRoute, userKey, router]
+  );
 
   const isInWishlist = React.useCallback(
     (id: string) => wishlist.includes(id),

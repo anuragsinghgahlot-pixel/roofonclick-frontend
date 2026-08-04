@@ -7,13 +7,27 @@ import { Container } from "@/components/layout/container";
 import { cn } from "@/lib/utils";
 import { useWishlist } from "@/providers/wishlist-provider";
 import { useAuth } from "@/providers/auth-provider";
-import { Heart, User as UserIcon, Calendar, Settings, LogOut, Building, LayoutDashboard, X, Plus } from "lucide-react";
+import { Heart, User as UserIcon, Calendar, Settings, LogOut, Building, LayoutDashboard, X, Plus, ChevronDown, MapPin } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { ProfileDropdown, NotificationsButton, ProfileAvatar } from "./profile-dropdown";
 import { Portal } from "@/components/shared/portal";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { toast } from "sonner";
 
-const NAV_ITEMS = ["Explore", "Areas", "For Owners"];
+export const INDORE_AREAS = [
+  "Vijay Nagar",
+  "Palasia",
+  "Bhawarkuan",
+  "Geeta Bhawan",
+  "Bengali Square",
+  "Scheme No. 54",
+  "Scheme No. 78",
+  "LIG",
+  "AB Road",
+  "Rajendra Nagar",
+  "Annapurna",
+  "Sudama Nagar",
+];
 
 export default function Navbar() {
   const router = useRouter();
@@ -25,8 +39,23 @@ export default function Navbar() {
   const wishlistCount = wishlist.length;
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isAreasOpen, setIsAreasOpen] = React.useState(false);
+  const areasDropdownRef = React.useRef<HTMLDivElement>(null);
   const drawerRef = React.useRef<HTMLDivElement>(null);
   const hamburgerRef = React.useRef<HTMLButtonElement>(null);
+
+  // Close areas dropdown on outside click
+  React.useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (areasDropdownRef.current && !areasDropdownRef.current.contains(e.target as Node)) {
+        setIsAreasOpen(false);
+      }
+    }
+    if (isAreasOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isAreasOpen]);
 
   // Close mobile menu on route change
   React.useEffect(() => {
@@ -109,23 +138,42 @@ export default function Navbar() {
       router.push("/");
     } else if (item === "Areas") {
       router.push("/areas");
-    } else if (item === "For Owners") {
-      if (user?.role === "owner" || role === "owner") {
-        router.push("/owner/dashboard");
-      } else {
-        router.push("/owners");
-      }
+    } else if (item === "Owner Dashboard") {
+      router.push("/owner/dashboard");
     }
   };
 
   const getActiveNavItem = () => {
     if (pathname === "/areas") return "Areas";
-    if (pathname === "/owners" || pathname.startsWith("/owner/")) return "For Owners";
+    if (pathname.startsWith("/owner/")) return "Owner Dashboard";
     if (pathname === "/") return "Explore";
     return "";
   };
 
   const activeItem = getActiveNavItem();
+  const userRole = user?.role || role;
+  const isGuest = !isAuthenticated;
+  const isOwner = userRole === "owner";
+  const isInsideOwnerArea = pathname.startsWith("/owner/");
+
+  const visibleNavItems = React.useMemo(() => {
+    if (isGuest) {
+      // Guest sees ONLY: Explore, Areas (Login & Sign Up in auth controls, "For Owners" removed completely)
+      return ["Explore", "Areas"];
+    }
+
+    if (isOwner) {
+      if (isInsideOwnerArea) {
+        // Owner inside Dashboard: Explore, Areas (Redundant Owner Dashboard / For Owners removed)
+        return ["Explore", "Areas"];
+      }
+      // Owner on Public pages: Explore, Areas, Owner Dashboard
+      return ["Explore", "Areas", "Owner Dashboard"];
+    }
+
+    // Buyer logged in: Explore, Areas (For Owners and Owner Dashboard removed)
+    return ["Explore", "Areas"];
+  }, [isGuest, isOwner, isInsideOwnerArea]);
 
   return (
     <>
@@ -148,27 +196,94 @@ export default function Navbar() {
 
             {/* Desktop Navigation Links */}
             <nav className="hidden md:flex items-center gap-8 relative h-full">
-              {NAV_ITEMS.map((item) => (
-                <button
-                  key={item}
-                  onClick={() => handleNavItemClick(item)}
-                  className={cn(
-                    "relative font-heading text-[15px] font-semibold tracking-wide transition-colors py-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
-                    activeItem === item
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-primary"
-                  )}
-                >
-                  {item}
-                  {activeItem === item && (
-                    <motion.div
-                      layoutId="activeNav"
-                      className="absolute bottom-[-6px] left-0 right-0 h-[2px] bg-primary rounded-full"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                    />
-                  )}
-                </button>
-              ))}
+              {visibleNavItems.map((item) => {
+                if (item === "Areas") {
+                  return (
+                    <div key="Areas" ref={areasDropdownRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIsAreasOpen(!isAreasOpen)}
+                        className={cn(
+                          "relative inline-flex items-center gap-1 font-heading text-[15px] font-semibold tracking-wide transition-colors py-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
+                          activeItem === "Areas" || isAreasOpen
+                            ? "text-primary"
+                            : "text-muted-foreground hover:text-primary"
+                        )}
+                      >
+                        <span>Areas</span>
+                        <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isAreasOpen && "rotate-180")} />
+                        {activeItem === "Areas" && (
+                          <motion.div
+                            layoutId="activeNav"
+                            className="absolute bottom-[-6px] left-0 right-0 h-[2px] bg-primary rounded-full"
+                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                          />
+                        )}
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      <AnimatePresence>
+                        {isAreasOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute top-full left-0 mt-3 w-64 bg-card/95 backdrop-blur-md border border-border/80 rounded-2xl shadow-xl p-3 z-50 flex flex-col gap-2"
+                          >
+                            <div className="flex items-center justify-between px-2.5 py-1 border-b border-border/40">
+                              <span className="font-heading text-[10px] font-extrabold uppercase tracking-widest text-primary flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-secondary" /> Indore City
+                              </span>
+                              <span className="text-[9px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">
+                                {INDORE_AREAS.length} Areas
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-1 max-h-56 overflow-y-auto custom-scrollbar p-1">
+                              {INDORE_AREAS.map((areaName) => (
+                                <button
+                                  key={areaName}
+                                  type="button"
+                                  onClick={() => {
+                                    setIsAreasOpen(false);
+                                    router.push(`/search?area=${encodeURIComponent(areaName)}`);
+                                  }}
+                                  className="text-left font-body text-xs font-semibold px-2.5 py-1.5 rounded-lg hover:bg-muted/60 text-foreground hover:text-primary transition-colors truncate cursor-pointer"
+                                >
+                                  {areaName}
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    key={item}
+                    onClick={() => handleNavItemClick(item)}
+                    className={cn(
+                      "relative font-heading text-[15px] font-semibold tracking-wide transition-colors py-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
+                      activeItem === item
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-primary"
+                    )}
+                  >
+                    {item}
+                    {activeItem === item && (
+                      <motion.div
+                        layoutId="activeNav"
+                        className="absolute bottom-[-6px] left-0 right-0 h-[2px] bg-primary rounded-full"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
 
               {/* Wishlist Link */}
               <button
@@ -190,26 +305,29 @@ export default function Navbar() {
             </nav>
 
             {/* Desktop Auth Controls */}
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-3">
+              <ThemeToggle />
               {isAuthenticated ? (
                 <div className="flex items-center gap-2">
                   <NotificationsButton />
                   <ProfileDropdown />
                 </div>
               ) : (
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => router.push("/login")}
-                    className="font-heading text-[15px] font-semibold text-muted-foreground hover:text-primary transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/login"
+                    data-no-intercept="true"
+                    className="font-heading text-[15px] font-semibold text-muted-foreground hover:text-primary transition-colors py-1 cursor-pointer"
                   >
-                    Sign In
-                  </button>
-                  <button
-                    onClick={() => router.push("/signup")}
-                    className="bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground px-6 py-2.5 rounded-full font-heading text-[14px] font-bold tracking-wide scale-95 hover:scale-100 active:scale-95 transition-all duration-200 cursor-pointer shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    Log in
+                  </Link>
+                  <Link
+                    href="/signup"
+                    data-no-intercept="true"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-4.5 py-2 rounded-full font-heading text-xs font-bold transition-all duration-300 shadow-sm cursor-pointer hover:scale-105 active:scale-95"
                   >
-                    Sign Up
-                  </button>
+                    Sign up
+                  </Link>
                 </div>
               )}
             </div>
@@ -279,24 +397,27 @@ export default function Navbar() {
                     RoofOnClick
                   </span>
                 </Link>
-                <button
-                  type="button"
-                  data-no-intercept="true"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setIsOpen(false);
-                  }}
-                  className="p-2.5 rounded-xl bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
-                  aria-label="Close menu"
-                >
-                  <X className="w-4.5 h-4.5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <ThemeToggle />
+                  <button
+                    type="button"
+                    data-no-intercept="true"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsOpen(false);
+                    }}
+                    className="p-2.5 rounded-xl bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                    aria-label="Close menu"
+                  >
+                    <X className="w-4.5 h-4.5" />
+                  </button>
+                </div>
               </div>
 
               {/* Navigation Items */}
               <nav className="flex flex-col gap-4 mb-6">
-                {NAV_ITEMS.map((item) => (
+                {visibleNavItems.map((item) => (
                   <button
                     key={item}
                     onClick={() => handleNavItemClick(item)}

@@ -2,18 +2,34 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, Percent, PhoneCall, CalendarCheck, Lock, RefreshCw } from "lucide-react";
+import { ShieldCheck, Percent, Lock, RefreshCw, UserCheck, DollarSign } from "lucide-react";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
 
-const MOCK_ADVANTAGES = [
+const ADVANTAGES_DATA = [
   {
     id: "verified",
     title: "Verified Properties",
-    description: "Every room undergoes complete physical checks on location, size, hygiene, and amenities before going active.",
+    description: "Every room undergoes complete physical checks on location, hygiene, and amenities before going active.",
     icon: ShieldCheck,
     iconBg: "bg-primary/10 border-primary/20",
     accentColor: "text-primary",
+  },
+  {
+    id: "security",
+    title: "Safe & Biometric Security",
+    description: "Modern entrance safety setups with CCTV surveillance layers, biometric locks, and security guards.",
+    icon: Lock,
+    iconBg: "bg-secondary/10 border-secondary/20",
+    accentColor: "text-secondary",
+  },
+  {
+    id: "contracts",
+    title: "Flexible Stay Contracts",
+    description: "Freedom of occupancy from single semesters to full-year leases with seamless room upgrades.",
+    icon: RefreshCw,
+    iconBg: "bg-accent/10 border-accent/20",
+    accentColor: "text-accent",
   },
   {
     id: "brokerage",
@@ -24,36 +40,20 @@ const MOCK_ADVANTAGES = [
     accentColor: "text-secondary",
   },
   {
-    id: "support",
-    title: "24/7 Resident Support",
-    description: "Dedicated stay manager assistance for maintenance queries, utility coordination, or dynamic ticket raising.",
-    icon: PhoneCall,
-    iconBg: "bg-accent/10 border-accent/20",
-    accentColor: "text-accent",
-  },
-  {
-    id: "booking",
-    title: "Instant Confirmation",
-    description: "Lock room reservations in real-time with instant token deposits. Skip long physical vetting waiting rows.",
-    icon: CalendarCheck,
-    iconBg: "bg-secondary/10 border-secondary/20",
-    accentColor: "text-secondary",
-  },
-  {
-    id: "secure",
-    title: "Safe & Biometric",
-    description: "Modern entrance safety setups with CCTV surveillance layers, biometric locks, and security warden guards.",
-    icon: Lock,
-    iconBg: "bg-accent/10 border-accent/20",
-    accentColor: "text-accent",
-  },
-  {
-    id: "flexible",
-    title: "Flexible Stay Contracts",
-    description: "Freedom of occupancy from single semesters to full-year leases with seamless room upgrades.",
-    icon: RefreshCw,
+    id: "owners",
+    title: "Trusted Owners",
+    description: "Direct communication with vetted property owners for transparent agreements and fast assistance.",
+    icon: UserCheck,
     iconBg: "bg-primary/10 border-primary/20",
     accentColor: "text-primary",
+  },
+  {
+    id: "pricing",
+    title: "Transparent Pricing",
+    description: "Clear breakdown of rent, security deposit, and utilities with zero hidden charges or extra fees.",
+    icon: DollarSign,
+    iconBg: "bg-accent/10 border-accent/20",
+    accentColor: "text-accent",
   },
 ];
 
@@ -86,7 +86,7 @@ export function Advantages() {
           viewport={{ once: true, margin: "-80px" }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full"
         >
-          {MOCK_ADVANTAGES.map((item) => {
+          {ADVANTAGES_DATA.map((item) => {
             const Icon = item.icon;
 
             return (
@@ -98,31 +98,17 @@ export function Advantages() {
                 }}
                 whileHover={{ y: -6, scale: 1.02 }}
                 transition={{ duration: 0.28, ease: PREMIUM_EASE }}
-                className="group flex flex-col gap-5 p-7 rounded-[24px] bg-card border border-border/80 hover:border-border hover:shadow-xl transition-all duration-300 cursor-default"
+                className="group relative flex flex-col items-start p-6 rounded-[24px] bg-card/90 border border-border/80 shadow-md hover:shadow-xl transition-all duration-300 text-left"
               >
-                {/* Icon Container */}
-                <div
-                  className={`w-12 h-12 flex items-center justify-center rounded-[14px] border ${item.iconBg} transition-transform duration-300 group-hover:scale-110`}
-                >
-                  <Icon className={`w-5 h-5 ${item.accentColor}`} strokeWidth={2.2} />
+                <div className={`w-12 h-12 rounded-2xl ${item.iconBg} border flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                  <Icon className={`w-6 h-6 ${item.accentColor}`} />
                 </div>
-
-                {/* Info Text */}
-                <div className="flex flex-col gap-2">
-                  <h3 className="font-heading text-base font-bold text-primary leading-snug">
-                    {item.title}
-                  </h3>
-                  <p className="font-body text-sm text-muted-foreground leading-relaxed">
-                    {item.description}
-                  </p>
-                </div>
-
-                {/* Bottom accent indicator line */}
-                <div className="mt-auto pt-2">
-                  <div
-                    className={`h-[2.5px] w-8 rounded-full ${item.accentColor.replace("text-", "bg-")} opacity-40 group-hover:w-16 group-hover:opacity-90 transition-all duration-500`}
-                  />
-                </div>
+                <h3 className="font-heading text-base font-extrabold text-primary mb-2">
+                  {item.title}
+                </h3>
+                <p className="font-body text-xs text-muted-foreground leading-relaxed">
+                  {item.description}
+                </p>
               </motion.div>
             );
           })}

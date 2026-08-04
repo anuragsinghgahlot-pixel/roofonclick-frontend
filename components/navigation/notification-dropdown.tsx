@@ -154,7 +154,11 @@ export function NotificationDropdown() {
             </div>
 
             {/* Notifications List */}
-            <div className="max-h-80 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+            <div
+              onWheel={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+              className="max-h-[340px] overflow-y-auto overscroll-contain touch-auto space-y-2 pr-1 scrollbar-thin"
+            >
               {notifications.length === 0 ? (
                 <div className="py-8 text-center space-y-2">
                   <Bell className="w-8 h-8 text-muted-foreground/40 mx-auto" />

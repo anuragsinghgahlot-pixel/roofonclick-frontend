@@ -10,7 +10,6 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
 
   /**
@@ -36,28 +35,19 @@ export default function AdminLayout({
      * overflow-hidden on the wrapper prevents any document-level scrollbar.
      * The ONLY element that scrolls is <main> below.
      */
-    <div className="h-screen bg-background flex overflow-hidden">
-      {/* Desktop Sidebar — fixed, full height, own internal scroll */}
-      <AdminSidebar
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-      />
+    <div className="h-screen w-screen bg-background flex overflow-hidden">
+      {/* Desktop & Laptop Sidebar — permanently expanded w-[280px] */}
+      <AdminSidebar />
 
-      {/* Mobile Drawer Sidebar */}
+      {/* Mobile Drawer Sidebar — fixed overlay on demand */}
       <AdminMobileSidebar
         isOpen={isMobileSidebarOpen}
         onClose={() => setIsMobileSidebarOpen(false)}
       />
 
-      {/* Main Content Column — takes remaining width */}
-      <div
-        className={cn(
-          "flex-1 flex flex-col min-w-0 h-full overflow-hidden transition-all duration-300 ease-[var(--ease-premium)]",
-          /* Offset for fixed sidebar on desktop */
-          isSidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-[260px]"
-        )}
-      >
-        {/* Top Navbar — sticky within the scroll container */}
+      {/* Main Column — takes remaining flex width (flex-1 min-w-0) */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        {/* Top Navbar — sticky header inside main column */}
         <AdminTopNavbar
           onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
         />

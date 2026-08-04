@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
 
@@ -36,6 +36,12 @@ const MOCK_AREAS = [
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 
 export function PopularAreas() {
+  const router = useRouter();
+
+  const handleAreaClick = (areaName: string) => {
+    router.push(`/search?area=${encodeURIComponent(areaName)}`);
+  };
+
   return (
     <Section className="bg-background">
       <Container>
@@ -57,13 +63,14 @@ export function PopularAreas() {
           {MOCK_AREAS.map((area) => (
             <div
               key={area.id}
+              onClick={() => handleAreaClick(area.name)}
               className="group relative overflow-hidden rounded-[20px] cursor-pointer shrink-0 w-[60vw] max-w-[240px] aspect-[3/4] shadow-md snap-start"
             >
               <div className="absolute inset-0 w-full h-full overflow-hidden">
                 <img
                   src={area.image}
                   alt={`${area.name} area in Indore`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
               </div>
@@ -91,6 +98,7 @@ export function PopularAreas() {
           {MOCK_AREAS.map((area) => (
             <motion.div
               key={area.id}
+              onClick={() => handleAreaClick(area.name)}
               variants={{
                 hidden: { opacity: 0, y: 20 },
                 visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: PREMIUM_EASE } },
@@ -103,22 +111,21 @@ export function PopularAreas() {
                 <img
                   src={area.image}
                   alt={`${area.name} area in Indore`}
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/30 to-transparent pointer-events-none" />
               <div className="absolute top-4 right-4">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-card/85 backdrop-blur-sm text-foreground border border-border/30">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-card/85 backdrop-blur-sm text-foreground border border-border/30 shadow-xs">
                   {area.count}+ Stays
                 </span>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 p-5 flex flex-col gap-1 z-10">
-                <h3 className="font-heading text-lg font-extrabold text-secondary leading-snug">{area.name}</h3>
-                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                  <span className="font-heading text-xs font-bold text-secondary uppercase tracking-widest">View Listings</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-secondary" />
-                </div>
+              <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col gap-1 z-10 text-left">
+                <h3 className="font-heading text-xl font-extrabold text-secondary tracking-tight group-hover:text-primary-foreground transition-colors">
+                  {area.name}
+                </h3>
+                <span className="text-[11px] font-semibold text-secondary-foreground/80">Explore Verified Options →</span>
               </div>
             </motion.div>
           ))}

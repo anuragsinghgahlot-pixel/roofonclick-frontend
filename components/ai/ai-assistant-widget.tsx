@@ -213,7 +213,12 @@ export function AIAssistantWidget() {
   return (
     <>
       {/* 3. FLOATING AI BUTTON */}
-      <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-[950] select-none">
+      <div
+        className={cn(
+          "fixed bottom-5 right-5 sm:bottom-6 sm:right-6 select-none transition-all",
+          pathname.startsWith("/admin") ? "z-[90] sm:bottom-8 sm:right-8" : "z-[950]"
+        )}
+      >
         <motion.button
           type="button"
           aria-label="Open RoofAI Assistant"

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
   User as UserIcon,
   Heart,
@@ -17,6 +18,8 @@ import {
   Bookmark,
   Clock,
   Scale,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAuth, UserRole } from "@/providers/auth-provider";
 import { EnquiryService } from "@/services/enquiry";
@@ -161,6 +164,7 @@ export function NotificationsButton() {
 export function ProfileDropdown() {
   const router = useRouter();
   const { user, role, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
@@ -458,6 +462,26 @@ export function ProfileDropdown() {
             </div>
 
             <div className="h-px bg-border/60 my-1" />
+
+            {/* Theme Switcher Menu Item */}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-muted/40 transition-all duration-200 cursor-pointer text-left focus:outline-none"
+            >
+              <div className="flex items-center gap-3">
+                {theme === "dark" ? (
+                  <Sun className="w-4 h-4 text-amber-400 shrink-0" />
+                ) : (
+                  <Moon className="w-4 h-4 text-indigo-500 shrink-0" />
+                )}
+                <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">
+                {theme === "dark" ? "Dark" : "Light"}
+              </span>
+            </button>
 
             {/* Logout Button */}
             <button

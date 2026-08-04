@@ -62,11 +62,11 @@ export function StepReview() {
       </div>
 
       <div className="space-y-5 max-h-[50vh] sm:max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
-        {/* Basic Details Summary */}
+        {/* Property Structure & Basic Details Summary */}
         <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 sm:p-5 space-y-3">
           <h4 className="font-heading text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-1.5 border-b border-border/40 pb-2">
             <Building className="w-4.5 h-4.5" />
-            Basic Summary
+            Basic Summary & Structure
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
@@ -77,6 +77,18 @@ export function StepReview() {
               <span className="text-[10px] font-semibold text-muted-foreground block">Type & Gender</span>
               <span className="font-body text-xs font-bold text-primary">
                 {values.propertyType || "—"} ({values.gender || "—"})
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground block">Ownership Structure</span>
+              <span className="font-body text-xs font-bold text-secondary">
+                {values.propertyManagementType || "Independent Property"}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground block">Food / Mess Facility</span>
+              <span className="font-body text-xs font-bold text-primary">
+                {values.foodType || "3-Time Mess Available"}
               </span>
             </div>
             <div className="sm:col-span-2">
@@ -109,6 +121,46 @@ export function StepReview() {
             </div>
           </div>
         </div>
+
+        {/* Selected Amenities Summary */}
+        <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 sm:p-5 space-y-3">
+          <h4 className="font-heading text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-1.5 border-b border-border/40 pb-2">
+            ✨ Selected Amenities ({(values.amenities || []).length})
+          </h4>
+          <div className="flex flex-wrap gap-1.5">
+            {(values.amenities || []).length > 0 ? (
+              (values.amenities || []).map((amenity: string) => (
+                <span
+                  key={amenity}
+                  className="px-2.5 py-1 rounded-md bg-primary/10 text-primary border border-primary/20 text-[11px] font-bold"
+                >
+                  ✓ {amenity}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs text-muted-foreground italic">No amenities selected.</span>
+            )}
+          </div>
+        </div>
+
+        {/* Nearby Facilities Summary */}
+        {(values.nearby || []).length > 0 && (
+          <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 sm:p-5 space-y-3">
+            <h4 className="font-heading text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-1.5 border-b border-border/40 pb-2">
+              📍 Nearby Facilities
+            </h4>
+            <div className="flex flex-wrap gap-1.5">
+              {(values.nearby || []).map((place: string) => (
+                <span
+                  key={place}
+                  className="px-2.5 py-1 rounded-md bg-muted border border-border text-muted-foreground text-[11px] font-semibold"
+                >
+                  📍 {place}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Room Configurations Summary */}
         <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 sm:p-5 space-y-3">

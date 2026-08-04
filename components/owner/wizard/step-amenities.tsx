@@ -94,15 +94,51 @@ export function StepAmenities() {
   return (
     <div className="flex flex-col gap-8 text-left">
       
-      {/* Friendly Tip alert if no amenities are selected */}
-      {selectedAmenities.length === 0 && (
-        <div className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/25 p-4.5 rounded-2xl">
-          <Info className="w-5.5 h-5.5 text-amber-500 shrink-0 mt-0.5" />
-          <p className="font-body text-xs font-semibold text-amber-600 leading-relaxed">
-            💡 <strong>Tip:</strong> Properties with more amenities usually receive more enquiries. Add amenities to stand out in Indore stay listings!
-          </p>
+      {/* Property Structure Type */}
+      <div className="space-y-3 bg-card border border-border/80 p-5 rounded-2xl shadow-xs">
+        <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider block text-left">
+          Property Structure & Ownership Type
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setValue("propertyManagementType", "Independent Property", { shouldValidate: true })}
+            className={cn(
+              "flex flex-col items-start p-4 rounded-xl border transition-all text-left cursor-pointer",
+              watch("propertyManagementType") === "Independent Property"
+                ? "bg-primary/10 border-primary text-primary font-bold shadow-xs"
+                : "bg-muted/30 border-border/80 text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <Check className={cn("w-4 h-4", watch("propertyManagementType") === "Independent Property" ? "text-primary" : "opacity-0")} />
+              <span className="font-heading text-xs font-bold">Independent Property</span>
+            </div>
+            <span className="font-body text-[10px] text-muted-foreground mt-1">
+              Separate entrance, independent management, full privacy for residents.
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setValue("propertyManagementType", "Non-Independent Property", { shouldValidate: true })}
+            className={cn(
+              "flex flex-col items-start p-4 rounded-xl border transition-all text-left cursor-pointer",
+              watch("propertyManagementType") === "Non-Independent Property"
+                ? "bg-primary/10 border-primary text-primary font-bold shadow-xs"
+                : "bg-muted/30 border-border/80 text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <Check className={cn("w-4 h-4", watch("propertyManagementType") === "Non-Independent Property" ? "text-primary" : "opacity-0")} />
+              <span className="font-heading text-xs font-bold">Non-Independent Property</span>
+            </div>
+            <span className="font-body text-[10px] text-muted-foreground mt-1">
+              Shared premises, owner residing on property or warden supervised.
+            </span>
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Categorized Amenities */}
       <div className="space-y-6">

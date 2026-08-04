@@ -18,6 +18,7 @@ import {
   X,
   Sparkles,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { CommandPalette } from "@/components/admin/command-palette";
 
 /* ─── Dynamic Auto-Generated Breadcrumbs ─── */
@@ -88,8 +89,8 @@ export function AdminTopNavbar({
           <button
             type="button"
             onClick={onOpenMobileSidebar}
-            aria-label="Open mobile menu"
-            className="p-2 rounded-xl border border-border/60 text-muted-foreground hover:text-foreground lg:hidden cursor-pointer"
+            aria-label="Open mobile navigation menu"
+            className="p-2.5 rounded-xl border border-border/60 text-muted-foreground hover:text-foreground md:hidden cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-95 transition-all"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -97,8 +98,10 @@ export function AdminTopNavbar({
           <AdminBreadcrumb />
         </div>
 
-        {/* Right: Search, Notifications, Profile Dropdown */}
+        {/* Right: Search, ThemeToggle, Notifications, Profile Dropdown */}
         <div className="flex items-center gap-2.5 shrink-0">
+          <ThemeToggle />
+
           {/* Global Search & Command Palette Trigger */}
           <button
             type="button"
@@ -144,7 +147,11 @@ export function AdminTopNavbar({
                       <span className="font-heading text-[10px] font-bold text-primary">Mark All Read</span>
                     </div>
 
-                    <div className="space-y-2 text-xs font-body">
+                    <div
+                      onWheel={(e) => e.stopPropagation()}
+                      onTouchMove={(e) => e.stopPropagation()}
+                      className="space-y-2 text-xs font-body max-h-[300px] overflow-y-auto overscroll-contain touch-auto pr-1"
+                    >
                       <div className="p-2.5 rounded-xl bg-muted/20 border border-border/40 space-y-1">
                         <span className="font-heading font-bold text-foreground block">New Booking #ROC-1091</span>
                         <p className="text-muted-foreground text-[11px]">Student Rahul Verma booked Elite Residency PG.</p>
