@@ -131,7 +131,15 @@ export default function VerifyOtpPage() {
       const res = await AuthService.verifyOTP(emailOrPhone, fullOtp);
       if (res.success) {
         toast.success(res.message);
-        router.push("/auth/reset-password");
+        const searchParams = new URLSearchParams(window.location.search);
+        const roleParam = searchParams.get("role");
+        if (roleParam === "owner") {
+          router.push("/owner/dashboard");
+        } else if (roleParam === "buyer") {
+          router.push("/");
+        } else {
+          router.push("/auth/reset-password");
+        }
       } else {
         setError(res.message);
       }

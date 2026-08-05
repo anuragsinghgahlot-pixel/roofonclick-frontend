@@ -75,16 +75,21 @@ export function Footer() {
               </ul>
             </div>
 
-            {/* Support */}
+            {/* Legal & Support */}
             <div className="flex flex-col gap-3 text-left">
               <span className="font-heading text-xs font-bold text-foreground uppercase tracking-widest">
-                Support
+                Legal &amp; Support
               </span>
               <ul className="flex flex-col gap-2.5 list-none p-0 m-0">
-                {["Help Center", "Contact Us", "Privacy Policy"].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="font-body text-sm text-muted-foreground hover:text-primary transition-colors">
-                      {item}
+                {[
+                  { label: "Buyer Terms & Conditions", href: "/legal/buyer-terms" },
+                  { label: "Property Owner Terms", href: "/legal/owner-terms" },
+                  { label: "Privacy Policy", href: "/legal/privacy-policy" },
+                  { label: "Refund & Cancellation", href: "/legal/cancellation-policy" },
+                ].map((item) => (
+                  <li key={item.label}>
+                    <a href={item.href} className="font-body text-sm text-muted-foreground hover:text-primary transition-colors">
+                      {item.label}
                     </a>
                   </li>
                 ))}

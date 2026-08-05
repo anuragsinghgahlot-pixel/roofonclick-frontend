@@ -94,7 +94,7 @@ export default function RoleSelectionPage() {
               </span>
               <div>
                 <h3 className="font-heading text-xl font-extrabold text-primary group-hover:text-primary transition-colors">
-                  I&apos;m Looking for a Stay
+                  Find Your Stay
                 </h3>
                 <p className="font-body text-xs text-muted-foreground mt-2 leading-relaxed">
                   Explore verified PGs, hostels, co-living spaces and rental properties.
@@ -105,8 +105,8 @@ export default function RoleSelectionPage() {
               <ul className="flex flex-col gap-2.5 mt-6 border-t border-border/60 pt-6">
                 {[
                   "Search verified stays",
-                  "Save favourites",
-                  "Contact owners",
+                  "Save favourites to wishlist",
+                  "Contact owners directly",
                   "Book confidently",
                 ].map((feat) => (
                   <li key={feat} className="flex items-center gap-2.5 font-body text-xs font-semibold text-primary">
@@ -154,7 +154,7 @@ export default function RoleSelectionPage() {
               </span>
               <div>
                 <h3 className="font-heading text-xl font-extrabold text-primary group-hover:text-primary transition-colors">
-                  I&apos;m a Property Owner
+                  List Your Property
                 </h3>
                 <p className="font-body text-xs text-muted-foreground mt-2 leading-relaxed">
                   List your property, manage enquiries and grow your occupancy.

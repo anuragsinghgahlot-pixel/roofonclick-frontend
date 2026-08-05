@@ -1,10 +1,12 @@
-import { ComingSoon } from "@/components/shared/coming-soon";
+"use client";
+
+import * as React from "react";
+import { redirect } from "next/navigation";
 
 export default function RegisterPage() {
-  return (
-    <ComingSoon
-      title="Create Account"
-      description="Join RoofOnClick today as a resident or property manager. Unlock Indore's premium stay verification network and listing management dashboard."
-    />
-  );
+  React.useEffect(() => {
+    redirect("/signup");
+  }, []);
+
+  return null;
 }

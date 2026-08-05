@@ -19,8 +19,8 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
   const pathname = usePathname();
 
   React.useEffect(() => {
-    // Do not initialize Lenis on admin pages — admin panel has its own nested overflow container
-    if (pathname?.startsWith("/admin")) {
+    // Do not initialize Lenis on admin or owner pages — dashboards and wizard forms require native scroll
+    if (pathname?.startsWith("/admin") || pathname?.startsWith("/owner")) {
       setLenis(null);
       return;
     }

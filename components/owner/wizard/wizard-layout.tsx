@@ -36,7 +36,11 @@ export function WizardLayout({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
+    <div
+      data-lenis-prevent="true"
+      data-lenis-prevent-wheel="true"
+      className="relative flex min-h-screen flex-col bg-background"
+    >
       <Navbar />
 
       <main className="flex-1" data-no-intercept="true">
