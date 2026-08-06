@@ -129,6 +129,25 @@
   /* 72px mobile: 0.75rem + 3rem + 0.75rem */
 }
 
+@keyframes marquee-slow {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee-slow {
+  display: flex;
+  width: max-content;
+  animation: marquee-slow 22s linear infinite;
+}
+
+.animate-marquee-slow:hover {
+  animation-play-state: paused;
+}
+
 @media (min-width: 768px) {
   :root {
     --navbar-height: 6rem;

@@ -12,7 +12,7 @@ interface ComingSoonProps {
 
 export function ComingSoon({ title, description }: ComingSoonProps) {
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 pt-24 text-center relative overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
       <Navbar />
 
       {/* Premium ambient glows */}

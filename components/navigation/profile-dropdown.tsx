@@ -102,12 +102,25 @@ export function ProfileAvatar({
 import { CallbackService, CALLBACK_UPDATED_EVENT } from "@/services/callback/callback.service";
 import { NotificationDropdown } from "./notification-dropdown";
 
-export function NotificationsButton() {
+interface NotificationsButtonProps {
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
+}
+
+export function NotificationsButton({
+  isOpen,
+  onOpenChange,
+}: NotificationsButtonProps) {
   const { user, role } = useAuth();
   const isOwner = user !== null && (user.role === "owner" || role === "owner");
 
   if (!isOwner) {
-    return <NotificationDropdown />;
+    return (
+      <NotificationDropdown
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+      />
+    );
   }
 
   const getCombinedCount = React.useCallback(() => {

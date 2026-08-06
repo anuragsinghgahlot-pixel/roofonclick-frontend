@@ -62,7 +62,7 @@ export default function ComparePage() {
       <div className="relative flex min-h-screen flex-col bg-background">
         <Navbar />
         <main className="flex-1" data-no-intercept="true">
-          <Section className="bg-background relative overflow-hidden text-left pt-6 pb-20">
+          <Section className="bg-background relative overflow-hidden text-left pt-4 sm:pt-6 lg:pt-8 pb-20">
             <Container className="space-y-8">
               <PageHeader
                 title="Compare Properties"
@@ -91,7 +91,7 @@ export default function ComparePage() {
       <Navbar />
 
       <main className="flex-1" data-no-intercept="true">
-        <Section className="bg-background relative overflow-hidden text-left pt-6 pb-20">
+        <Section className="bg-background relative overflow-hidden text-left pt-4 sm:pt-6 lg:pt-8 pb-20">
           <Container className="space-y-8">
             <PageHeader
               title="Side-by-Side Comparison"

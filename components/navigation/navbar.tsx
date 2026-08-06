@@ -7,9 +7,10 @@ import { Container } from "@/components/layout/container";
 import { cn } from "@/lib/utils";
 import { useWishlist } from "@/providers/wishlist-provider";
 import { useAuth } from "@/providers/auth-provider";
-import { Heart, User as UserIcon, Calendar, Settings, LogOut, Building, LayoutDashboard, X, Plus, ChevronDown, MapPin } from "lucide-react";
+import { Heart, User as UserIcon, Calendar, Settings, LogOut, Building, LayoutDashboard, X, Plus, ChevronDown, MapPin, MessageSquare, Bookmark, Clock, Bell } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { ProfileDropdown, NotificationsButton, ProfileAvatar } from "./profile-dropdown";
+import { NotificationDropdown } from "./notification-dropdown";
 import { Portal } from "@/components/shared/portal";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { toast } from "sonner";
@@ -29,6 +30,13 @@ export const INDORE_AREAS = [
   "Sudama Nagar",
 ];
 
+export const SERVICES_ITEMS = [
+  { label: "Hostels", description: "Budget & premium student hostels", filterType: "Hostel", icon: "🏢" },
+  { label: "PGs", description: "Paying guest stays with food & laundry", filterType: "PG", icon: "🏠" },
+  { label: "Studio / RK", description: "Independent 1RK & studio apartments", filterType: "Studio/RK", icon: "🚪" },
+  { label: "BHKs", description: "1BHK, 2BHK & 3BHK full apartments", filterType: "Apartment", icon: "🏬" },
+];
+
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,23 +47,29 @@ export default function Navbar() {
   const wishlistCount = wishlist.length;
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
   const [isAreasOpen, setIsAreasOpen] = React.useState(false);
+  const [isServicesOpen, setIsServicesOpen] = React.useState(false);
+  const [isMobileAreasOpen, setIsMobileAreasOpen] = React.useState(false);
+  const [isMobileServicesOpen, setIsMobileServicesOpen] = React.useState(false);
   const areasDropdownRef = React.useRef<HTMLDivElement>(null);
+  const servicesDropdownRef = React.useRef<HTMLDivElement>(null);
   const drawerRef = React.useRef<HTMLDivElement>(null);
   const hamburgerRef = React.useRef<HTMLButtonElement>(null);
 
-  // Close areas dropdown on outside click
+  // Close dropdowns on outside click
   React.useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (areasDropdownRef.current && !areasDropdownRef.current.contains(e.target as Node)) {
         setIsAreasOpen(false);
       }
+      if (servicesDropdownRef.current && !servicesDropdownRef.current.contains(e.target as Node)) {
+        setIsServicesOpen(false);
+      }
     }
-    if (isAreasOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isAreasOpen]);
+  }, []);
 
   // Close mobile menu on route change
   React.useEffect(() => {
@@ -138,6 +152,8 @@ export default function Navbar() {
       router.push("/");
     } else if (item === "Areas") {
       router.push("/areas");
+    } else if (item === "Services") {
+      router.push("/search");
     } else if (item === "Owner Dashboard") {
       router.push("/owner/dashboard");
     }
@@ -145,6 +161,7 @@ export default function Navbar() {
 
   const getActiveNavItem = () => {
     if (pathname === "/areas") return "Areas";
+    if (pathname.startsWith("/search")) return "Services";
     if (pathname.startsWith("/owner/")) return "Owner Dashboard";
     if (pathname === "/") return "Explore";
     return "";
@@ -158,21 +175,21 @@ export default function Navbar() {
 
   const visibleNavItems = React.useMemo(() => {
     if (isGuest) {
-      // Guest sees ONLY: Explore, Areas (Login & Sign Up in auth controls, "For Owners" removed completely)
-      return ["Explore", "Areas"];
+      // Guest sees: Explore, Areas, Services
+      return ["Explore", "Areas", "Services"];
     }
 
     if (isOwner) {
       if (isInsideOwnerArea) {
-        // Owner inside Dashboard: Explore, Areas (Redundant Owner Dashboard / For Owners removed)
-        return ["Explore", "Areas"];
+        // Owner inside Dashboard: Explore, Areas, Services
+        return ["Explore", "Areas", "Services"];
       }
-      // Owner on Public pages: Explore, Areas, Owner Dashboard
-      return ["Explore", "Areas", "Owner Dashboard"];
+      // Owner on Public pages: Explore, Areas, Services, Owner Dashboard
+      return ["Explore", "Areas", "Services", "Owner Dashboard"];
     }
 
-    // Buyer logged in: Explore, Areas (For Owners and Owner Dashboard removed)
-    return ["Explore", "Areas"];
+    // Buyer logged in: Explore, Areas, Services
+    return ["Explore", "Areas", "Services"];
   }, [isGuest, isOwner, isInsideOwnerArea]);
 
   return (
@@ -262,6 +279,70 @@ export default function Navbar() {
                   );
                 }
 
+                if (item === "Services") {
+                  return (
+                    <div key="Services" ref={servicesDropdownRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIsServicesOpen(!isServicesOpen)}
+                        className={cn(
+                          "relative inline-flex items-center gap-1 font-heading text-[15px] font-semibold tracking-wide transition-colors py-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
+                          activeItem === "Services" || isServicesOpen
+                            ? "text-primary"
+                            : "text-muted-foreground hover:text-primary"
+                        )}
+                      >
+                        <span>Services</span>
+                        <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isServicesOpen && "rotate-180")} />
+                        {activeItem === "Services" && (
+                          <motion.div
+                            layoutId="activeNav"
+                            className="absolute bottom-[-6px] left-0 right-0 h-[2px] bg-primary rounded-full"
+                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                          />
+                        )}
+                      </button>
+
+                      {/* Services Dropdown Menu */}
+                      <AnimatePresence>
+                        {isServicesOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute top-full left-0 mt-3 w-72 bg-card/95 backdrop-blur-md border border-border/80 rounded-2xl shadow-xl p-2.5 z-50 flex flex-col gap-1 text-left select-none"
+                          >
+                            {SERVICES_ITEMS.map((service) => (
+                              <button
+                                key={service.label}
+                                type="button"
+                                onClick={() => {
+                                  setIsServicesOpen(false);
+                                  router.push(`/search?type=${encodeURIComponent(service.filterType)}`);
+                                }}
+                                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/60 transition-all cursor-pointer group text-left w-full"
+                              >
+                                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-base group-hover:scale-105 transition-transform shrink-0">
+                                  {service.icon}
+                                </div>
+                                <div className="flex flex-col text-left min-w-0">
+                                  <span className="font-heading text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                                    {service.label}
+                                  </span>
+                                  <span className="font-body text-[10px] text-muted-foreground truncate">
+                                    {service.description}
+                                  </span>
+                                </div>
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                }
+
                 return (
                   <button
                     key={item}
@@ -285,23 +366,25 @@ export default function Navbar() {
                 );
               })}
 
-              {/* Wishlist Link */}
-              <button
-                data-no-intercept="true"
-                onClick={() => {
-                  saveLastBrowsingRoute();
-                  router.push("/wishlist");
-                }}
-                className="relative flex items-center gap-1.5 font-heading text-[15px] font-semibold tracking-wide transition-colors py-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm text-muted-foreground hover:text-primary"
-              >
-                <Heart className={cn("w-4 h-4 text-rose-500", wishlistCount > 0 && "fill-rose-500")} />
-                <span>Wishlist</span>
-                {wishlistCount > 0 && (
-                  <span className="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full select-none">
-                    {wishlistCount}
-                  </span>
-                )}
-              </button>
+              {/* Wishlist Link (Buyer Only) */}
+              {isAuthenticated && userRole === "buyer" && (
+                <button
+                  data-no-intercept="true"
+                  onClick={() => {
+                    saveLastBrowsingRoute();
+                    router.push("/wishlist");
+                  }}
+                  className="relative flex items-center gap-1.5 font-heading text-[15px] font-semibold tracking-wide transition-colors py-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm text-muted-foreground hover:text-primary"
+                >
+                  <Heart className={cn("w-4 h-4 text-rose-500", wishlistCount > 0 && "fill-rose-500")} />
+                  <span>Wishlist</span>
+                  {wishlistCount > 0 && (
+                    <span className="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full select-none">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </button>
+              )}
             </nav>
 
             {/* Desktop Auth Controls */}
@@ -309,7 +392,7 @@ export default function Navbar() {
               <ThemeToggle />
               {isAuthenticated ? (
                 <div className="flex items-center gap-2">
-                  <NotificationsButton />
+                  <NotificationsButton isOpen={isNotificationOpen} onOpenChange={setIsNotificationOpen} />
                   <ProfileDropdown />
                 </div>
               ) : (
@@ -416,38 +499,119 @@ export default function Navbar() {
               </div>
 
               {/* Navigation Items */}
-              <nav className="flex flex-col gap-4 mb-6">
-                {visibleNavItems.map((item) => (
-                  <button
-                    key={item}
-                    onClick={() => handleNavItemClick(item)}
-                    className={cn(
-                      "text-left font-heading text-base font-semibold py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm cursor-pointer",
-                      activeItem === item ? "text-primary" : "text-muted-foreground hover:text-primary"
-                    )}
-                  >
-                    {item}
-                  </button>
-                ))}
+              <nav className="flex flex-col gap-3 mb-6">
+                {visibleNavItems.map((item) => {
+                  if (item === "Areas") {
+                    return (
+                      <div key="Areas" className="flex flex-col">
+                        <button
+                          type="button"
+                          onClick={() => setIsMobileAreasOpen((prev) => !prev)}
+                          className={cn(
+                            "flex items-center justify-between font-heading text-base font-semibold py-2 transition-colors focus:outline-none rounded-sm cursor-pointer text-left",
+                            activeItem === "Areas" || isMobileAreasOpen ? "text-primary" : "text-muted-foreground hover:text-primary"
+                          )}
+                        >
+                          <span>Areas</span>
+                          <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", isMobileAreasOpen && "rotate-180")} />
+                        </button>
 
-                {/* Mobile Wishlist Link */}
-                <button
-                  data-no-intercept="true"
-                  onClick={() => {
-                    saveLastBrowsingRoute();
-                    setIsOpen(false);
-                    router.push("/wishlist");
-                  }}
-                  className="text-left flex items-center gap-2 font-heading text-base font-semibold py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm text-muted-foreground hover:text-primary cursor-pointer"
-                >
-                  <Heart className={cn("w-4.5 h-4.5 text-rose-500", wishlistCount > 0 && "fill-rose-500")} />
-                  <span>Wishlist</span>
-                  {wishlistCount > 0 && (
-                    <span className="bg-rose-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full select-none">
-                      {wishlistCount}
-                    </span>
-                  )}
-                </button>
+                        <AnimatePresence>
+                          {isMobileAreasOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden pl-3 py-1.5 flex flex-col gap-1 border-l-2 border-primary/20 my-1"
+                            >
+                              <div className="grid grid-cols-2 gap-1 py-1">
+                                {INDORE_AREAS.map((areaName) => (
+                                  <button
+                                    key={areaName}
+                                    type="button"
+                                    onClick={() => {
+                                      setIsMobileAreasOpen(false);
+                                      setIsOpen(false);
+                                      router.push(`/search?area=${encodeURIComponent(areaName)}`);
+                                    }}
+                                    className="text-left font-body text-xs font-semibold px-2 py-1.5 rounded-lg hover:bg-muted/60 text-muted-foreground hover:text-primary transition-colors truncate cursor-pointer"
+                                  >
+                                    📍 {areaName}
+                                  </button>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  }
+
+                  if (item === "Services") {
+                    return (
+                      <div key="Services" className="flex flex-col">
+                        <button
+                          type="button"
+                          onClick={() => setIsMobileServicesOpen((prev) => !prev)}
+                          className={cn(
+                            "flex items-center justify-between font-heading text-base font-semibold py-2 transition-colors focus:outline-none rounded-sm cursor-pointer text-left",
+                            activeItem === "Services" || isMobileServicesOpen ? "text-primary" : "text-muted-foreground hover:text-primary"
+                          )}
+                        >
+                          <span>Services</span>
+                          <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", isMobileServicesOpen && "rotate-180")} />
+                        </button>
+
+                        <AnimatePresence>
+                          {isMobileServicesOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden pl-3 py-1.5 flex flex-col gap-1.5 border-l-2 border-primary/20 my-1 text-left"
+                            >
+                              {SERVICES_ITEMS.map((service) => (
+                                <button
+                                  key={service.label}
+                                  type="button"
+                                  onClick={() => {
+                                    setIsMobileServicesOpen(false);
+                                    setIsOpen(false);
+                                    router.push(`/search?type=${encodeURIComponent(service.filterType)}`);
+                                  }}
+                                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-muted/60 transition-all cursor-pointer text-left w-full"
+                                >
+                                  <span className="text-sm">{service.icon}</span>
+                                  <div className="flex flex-col text-left min-w-0">
+                                    <span className="font-heading text-xs font-bold text-foreground">
+                                      {service.label}
+                                    </span>
+                                    <span className="font-body text-[10px] text-muted-foreground truncate">
+                                      {service.description}
+                                    </span>
+                                  </div>
+                                </button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={item}
+                      onClick={() => handleNavItemClick(item)}
+                      className={cn(
+                        "text-left font-heading text-base font-semibold py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm cursor-pointer",
+                        activeItem === item ? "text-primary" : "text-muted-foreground hover:text-primary"
+                      )}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
               </nav>
 
               {/* Mobile Auth Controls */}
@@ -471,51 +635,28 @@ export default function Navbar() {
                         </span>
                       </div>
                     </div>
-                    <NotificationsButton />
+                    <button
+                      type="button"
+                      data-no-intercept="true"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsNotificationOpen(true);
+                        setIsOpen(false);
+                      }}
+                      className="relative p-2.5 rounded-full border border-border/80 bg-card/60 hover:bg-card text-muted-foreground hover:text-primary transition-all duration-200 cursor-pointer select-none"
+                      aria-label="Notifications"
+                    >
+                      <Bell className="w-4.5 h-4.5 pointer-events-none" />
+                    </button>
                   </div>
 
                   {/* Role Menu Options */}
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 max-h-60 overflow-y-auto custom-scrollbar pr-1">
                     {(user?.role || role) === "owner" ? (
                       <>
                         <button
-                          onClick={() => {
-                            setIsOpen(false);
-                            router.push("/owner/dashboard");
-                          }}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
-                        >
-                          <LayoutDashboard className="w-4 h-4 text-primary shrink-0" />
-                          <span>Owner Dashboard</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setIsOpen(false);
-                            router.push("/owner/properties");
-                          }}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
-                        >
-                          <Building className="w-4 h-4 text-secondary shrink-0" />
-                          <span>My Properties</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setIsOpen(false);
-                            router.push("/owner/property/new");
-                          }}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
-                        >
-                          <Plus className="w-4 h-4 text-emerald-500 shrink-0" />
-                          <span>Add Property</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setIsOpen(false);
-                            router.push("/profile");
-                          }}
+                          onClick={() => { setIsOpen(false); router.push("/profile"); }}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
                         >
                           <UserIcon className="w-4 h-4 text-primary shrink-0" />
@@ -523,10 +664,65 @@ export default function Navbar() {
                         </button>
 
                         <button
-                          onClick={() => {
-                            setIsOpen(false);
-                            router.push("/settings");
-                          }}
+                          onClick={() => { setIsOpen(false); router.push("/owner/properties"); }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
+                        >
+                          <Building className="w-4 h-4 text-secondary shrink-0" />
+                          <span>My Properties</span>
+                        </button>
+
+                        <button
+                          onClick={() => { setIsOpen(false); router.push("/owner/dashboard"); }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
+                        >
+                          <Calendar className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span>Bookings</span>
+                        </button>
+
+                        <button
+                          onClick={() => { setIsOpen(false); router.push("/owner/dashboard"); }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
+                        >
+                          <MessageSquare className="w-4 h-4 text-sky-500 shrink-0" />
+                          <span>Enquiries</span>
+                        </button>
+
+                        <button
+                          onClick={() => { setIsOpen(false); router.push("/owner/dashboard"); }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-primary shrink-0" />
+                          <span>Dashboard</span>
+                        </button>
+
+                        <button
+                          onClick={() => { setIsOpen(false); router.push("/settings"); }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
+                        >
+                          <Settings className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <span>Settings</span>
+                        </button>
+                      </>
+                    ) : (user?.role || role) === "admin" ? (
+                      <>
+                        <button
+                          onClick={() => { setIsOpen(false); router.push("/admin"); }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-primary shrink-0" />
+                          <span>Admin Dashboard</span>
+                        </button>
+
+                        <button
+                          onClick={() => { setIsOpen(false); router.push("/admin/properties"); }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
+                        >
+                          <Building className="w-4 h-4 text-secondary shrink-0" />
+                          <span>Manage Properties</span>
+                        </button>
+
+                        <button
+                          onClick={() => { setIsOpen(false); router.push("/settings"); }}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
                         >
                           <Settings className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -536,10 +732,7 @@ export default function Navbar() {
                     ) : (
                       <>
                         <button
-                          onClick={() => {
-                            setIsOpen(false);
-                            router.push("/profile");
-                          }}
+                          onClick={() => { setIsOpen(false); router.push("/profile"); }}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
                         >
                           <UserIcon className="w-4 h-4 text-primary shrink-0" />
@@ -547,10 +740,31 @@ export default function Navbar() {
                         </button>
 
                         <button
-                          onClick={() => {
-                            setIsOpen(false);
-                            router.push("/booking");
-                          }}
+                          onClick={() => { setIsOpen(false); router.push("/wishlist"); }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
+                        >
+                          <Heart className="w-4 h-4 text-rose-500 shrink-0" />
+                          <span>Wishlist</span>
+                        </button>
+
+                        <button
+                          onClick={() => { setIsOpen(false); router.push("/saved-searches"); }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
+                        >
+                          <Bookmark className="w-4 h-4 text-amber-500 shrink-0" />
+                          <span>Saved Searches</span>
+                        </button>
+
+                        <button
+                          onClick={() => { setIsOpen(false); router.push("/recently-viewed"); }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
+                        >
+                          <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
+                          <span>Recently Viewed</span>
+                        </button>
+
+                        <button
+                          onClick={() => { setIsOpen(false); router.push("/booking"); }}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
                         >
                           <Calendar className="w-4 h-4 text-secondary shrink-0" />
@@ -558,10 +772,7 @@ export default function Navbar() {
                         </button>
 
                         <button
-                          onClick={() => {
-                            setIsOpen(false);
-                            router.push("/settings");
-                          }}
+                          onClick={() => { setIsOpen(false); router.push("/settings"); }}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:bg-primary/5 text-left cursor-pointer"
                         >
                           <Settings className="w-4 h-4 text-muted-foreground shrink-0" />

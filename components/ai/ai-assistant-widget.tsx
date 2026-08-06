@@ -215,8 +215,12 @@ export function AIAssistantWidget() {
       {/* 3. FLOATING AI BUTTON */}
       <div
         className={cn(
-          "fixed bottom-5 right-5 sm:bottom-6 sm:right-6 select-none transition-all",
-          pathname.startsWith("/admin") ? "z-[90] sm:bottom-8 sm:right-8" : "z-[950]"
+          "fixed right-4 sm:right-6 select-none transition-all duration-300",
+          pathname.startsWith("/property/")
+            ? "bottom-24 sm:bottom-8 z-[900]"
+            : pathname.startsWith("/admin")
+            ? "bottom-8 sm:right-8 z-[90]"
+            : "bottom-5 sm:bottom-6 z-[950]"
         )}
       >
         <motion.button

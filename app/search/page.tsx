@@ -37,7 +37,25 @@ function getDisplayTitle(slug: string): string {
 function SearchPageContent() {
   const searchParams = useSearchParams();
   const locationSlug = searchParams.get("location") || searchParams.get("area");
-  const [selectedType] = React.useState<string>("All");
+  const typeParam = searchParams.get("type") || searchParams.get("category");
+
+  const [selectedType, setSelectedType] = React.useState<string>(() => {
+    if (!typeParam) return "All";
+    if (typeParam.toLowerCase().includes("hostel")) return "Hostel";
+    if (typeParam.toLowerCase().includes("pg")) return "PG";
+    if (typeParam.toLowerCase().includes("studio") || typeParam.toLowerCase().includes("rk")) return "Studio/RK";
+    if (typeParam.toLowerCase().includes("bhk") || typeParam.toLowerCase().includes("apartment")) return "Apartment";
+    return "All";
+  });
+
+  React.useEffect(() => {
+    if (typeParam) {
+      if (typeParam.toLowerCase().includes("hostel")) setSelectedType("Hostel");
+      else if (typeParam.toLowerCase().includes("pg")) setSelectedType("PG");
+      else if (typeParam.toLowerCase().includes("studio") || typeParam.toLowerCase().includes("rk")) setSelectedType("Studio/RK");
+      else if (typeParam.toLowerCase().includes("bhk") || typeParam.toLowerCase().includes("apartment")) setSelectedType("Apartment");
+    }
+  }, [typeParam]);
   const [isSaveModalOpen, setIsSaveModalOpen] = React.useState(false);
   const [selectedGenders, setSelectedGenders] = React.useState<string[]>([]);
   const [selectedSidebarTypes, setSelectedSidebarTypes] = React.useState<string[]>([]);
@@ -205,7 +223,7 @@ function SearchPageContent() {
     <div className="relative flex min-h-screen flex-col bg-background">
       <Navbar />
       <main className="flex-1 flex flex-col">
-        <Section className="bg-muted/10 pt-24 pb-8 sm:pb-12 relative overflow-hidden">
+        <Section className="bg-muted/10 pt-4 sm:pt-6 lg:pt-8 pb-8 sm:pb-12 relative overflow-hidden">
           {/* Decorative ambient background glows */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />

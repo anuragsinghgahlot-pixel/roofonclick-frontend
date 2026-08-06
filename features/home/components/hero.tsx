@@ -2,12 +2,14 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Search as SearchIcon, Compass, Star, BadgeCheck, Users } from "lucide-react";
+import { MapPin, Search as SearchIcon, Compass, Star, BadgeCheck, Users, Building2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
+import { cn } from "@/lib/utils";
 
 const SEARCH_SUGGESTIONS = [
+  { label: "All Properties", category: "View All", description: "Explore all 500+ verified stays in Indore", badge: "All Stays" },
   { label: "Vijay Nagar", category: "Popular Area", description: "126 verified PGs available", badge: "Popular" },
   { label: "Palasia", category: "Popular Area", description: "84 premium stays nearby", badge: "Trending" },
   { label: "Bhawarkuan", category: "Student Area", description: "Near DAVV & SGSITS", badge: "Students" },
@@ -19,19 +21,31 @@ const SEARCH_SUGGESTIONS = [
 export function Hero() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const [searchError, setSearchError] = React.useState<string | null>(null);
   const searchRef = React.useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const navigateToSearch = React.useCallback(
     (location?: string) => {
-      if (!location || !location.trim()) {
+      const query = location !== undefined ? location : searchQuery;
+
+      if (!query || !query.trim()) {
+        setSearchError("Please enter what you're looking for or select a location.");
+        setIsSearchOpen(false);
+        return;
+      }
+
+      setSearchError(null);
+      const clean = query.trim();
+
+      if (clean.toLowerCase() === "all properties") {
         router.push("/search");
       } else {
-        const slug = location.trim().toLowerCase().replace(/\s+/g, "-");
+        const slug = clean.toLowerCase().replace(/\s+/g, "-");
         router.push(`/search?location=${slug}`);
       }
     },
-    [router]
+    [searchQuery, router]
   );
 
   React.useEffect(() => {
@@ -48,7 +62,10 @@ export function Hero() {
     if (!searchQuery.trim()) return SEARCH_SUGGESTIONS;
     const lq = searchQuery.toLowerCase();
     return SEARCH_SUGGESTIONS.filter(
-      (item) => item.label.toLowerCase().includes(lq) || item.category.toLowerCase().includes(lq)
+      (item) =>
+        item.label.toLowerCase().includes(lq) ||
+        item.category.toLowerCase().includes(lq) ||
+        item.label === "All Properties"
     );
   }, [searchQuery]);
 
@@ -69,7 +86,7 @@ export function Hero() {
 
   return (
     <Section className="relative pt-6 sm:pt-8 lg:pt-6 pb-16 sm:pb-24 lg:pb-20 bg-background overflow-hidden">
-      {/* Decorative glows — clipped by overflow-hidden on Section */}
+      {/* Decorative glows */}
       <div className="absolute inset-0 pointer-events-none -z-20">
         <div className="absolute top-[-10%] left-[-10%] w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] bg-primary/10 rounded-full blur-[140px] animate-pulse" />
         <div className="absolute bottom-[10%] right-[-10%] w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-secondary/8 rounded-full blur-[120px]" />
@@ -120,12 +137,17 @@ export function Hero() {
             <motion.div
               animate={{ marginBottom: isSearchOpen ? 320 : 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-xl"
+              className="w-full max-w-xl flex flex-col gap-2"
             >
               <motion.div
                 ref={searchRef}
                 variants={itemVariants}
-                className="w-full flex flex-col sm:flex-row gap-3 p-2.5 sm:p-3 bg-card/75 backdrop-blur-xl border border-border/80 rounded-[24px] sm:rounded-[28px] shadow-lg hover:shadow-2xl transition-all duration-300 hover:border-primary/20 group/search relative"
+                className={cn(
+                  "w-full flex flex-col sm:flex-row gap-3 p-2.5 sm:p-3 bg-card/75 backdrop-blur-xl border rounded-[24px] sm:rounded-[28px] shadow-lg hover:shadow-2xl transition-all duration-300 group/search relative",
+                  searchError
+                    ? "border-rose-500 ring-2 ring-rose-500/10"
+                    : "border-border/80 hover:border-primary/20"
+                )}
               >
                 {/* Input */}
                 <div className="flex-1 flex items-center px-3 sm:px-4 gap-2 sm:gap-3 border-b sm:border-b-0 sm:border-r border-border/60 pb-3 sm:pb-0 transition-colors group-hover/search:border-primary/25">
@@ -133,8 +155,12 @@ export function Hero() {
                   <input
                     type="text"
                     value={searchQuery}
-                    onFocus={() => setIsSearchOpen(true)}
-                    onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true); }}
+                    onFocus={() => { setIsSearchOpen(true); setSearchError(null); }}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setIsSearchOpen(true);
+                      setSearchError(null);
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Escape") { setIsSearchOpen(false); e.currentTarget.blur(); }
                       if (e.key === "Enter") navigateToSearch(searchQuery);
@@ -144,7 +170,7 @@ export function Hero() {
                   />
                 </div>
 
-                {/* CTA Button — full width on mobile */}
+                {/* CTA Button */}
                 <button
                   type="button"
                   onClick={() => navigateToSearch(searchQuery)}
@@ -162,17 +188,33 @@ export function Hero() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute left-0 right-0 top-full mt-2 z-[100] bg-card border border-border rounded-2xl shadow-xl backdrop-blur-xl max-h-[280px] sm:max-h-[320px] overflow-y-auto p-2 flex flex-col gap-1 text-left"
+                      onWheel={(e) => e.stopPropagation()}
+                      onTouchMove={(e) => e.stopPropagation()}
+                      className="absolute left-0 right-0 top-full mt-2 z-[100] bg-card border border-border rounded-2xl shadow-xl backdrop-blur-xl max-h-[280px] sm:max-h-[320px] overflow-y-auto overscroll-contain touch-auto p-2 flex flex-col gap-1 text-left scrollbar-thin"
                     >
                       {filteredSuggestions.length > 0 ? (
                         filteredSuggestions.map((item) => (
                           <div
                             key={item.label}
-                            onClick={() => { setSearchQuery(item.label); setIsSearchOpen(false); navigateToSearch(item.label); }}
-                            className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl cursor-pointer hover:bg-muted/40 transition-all duration-200 group/item min-h-[44px]"
+                            onClick={() => {
+                              setSearchQuery(item.label === "All Properties" ? "" : item.label);
+                              setIsSearchOpen(false);
+                              setSearchError(null);
+                              navigateToSearch(item.label);
+                            }}
+                            className={cn(
+                              "flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl cursor-pointer transition-all duration-200 group/item min-h-[44px]",
+                              item.label === "All Properties"
+                                ? "bg-primary/5 hover:bg-primary/10 border border-primary/20 mb-1"
+                                : "hover:bg-muted/40"
+                            )}
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              <MapPin className="w-4 h-4 text-primary shrink-0" />
+                              {item.label === "All Properties" ? (
+                                <Building2 className="w-4 h-4 text-primary shrink-0" />
+                              ) : (
+                                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                              )}
                               <div className="flex flex-col text-left min-w-0">
                                 <span className="font-body text-sm font-semibold text-primary truncate">{item.label}</span>
                                 <span className="font-body text-xs text-muted-foreground truncate">{item.description}</span>
@@ -192,10 +234,17 @@ export function Hero() {
                   )}
                 </AnimatePresence>
               </motion.div>
+
+              {/* Validation error message */}
+              {searchError && (
+                <span className="text-[11px] font-semibold text-rose-500 text-left pl-2 block">
+                  {searchError}
+                </span>
+              )}
             </motion.div>
           </div>
 
-          {/* ── Desktop Image Column (lg+) ── */}
+          {/* ── Desktop Image Column ── */}
           <motion.div
             variants={imageVariants}
             className="hidden lg:block lg:col-span-5 relative w-full aspect-[4/3] z-10"
@@ -219,74 +268,33 @@ export function Hero() {
               transition={{ delay: 0.8, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="absolute -top-4 -right-4 bg-card/85 backdrop-blur-md border border-border/80 px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 select-none z-20"
             >
-              <div className="w-7 h-7 rounded-lg bg-secondary/10 flex items-center justify-center">
-                <Star className="w-4 h-4 text-secondary fill-current" />
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xs">
+                <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
               </div>
               <div className="flex flex-col text-left">
-                <span className="text-xs font-bold text-primary">4.9 Star Rating</span>
-                <span className="text-[9px] text-muted-foreground font-semibold">Indore&apos;s Top Rated</span>
+                <span className="font-heading text-xs font-extrabold text-foreground">4.9 / 5.0</span>
+                <span className="font-body text-[10px] text-muted-foreground">Verified Reviews</span>
               </div>
             </motion.div>
 
-            {/* Verified Badge */}
+            {/* Verified Badge Pill */}
             <motion.div
               initial={{ opacity: 0, x: -20, y: 10 }}
               animate={{ opacity: 1, x: 0, y: 0 }}
-              transition={{ delay: 1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute -bottom-4 -left-4 bg-card/85 backdrop-blur-md border border-border/80 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 select-none z-20"
+              transition={{ delay: 0.9, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute -bottom-4 -left-4 bg-card/85 backdrop-blur-md border border-border/80 px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 select-none z-20"
             >
-              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center border border-accent/20">
-                <BadgeCheck className="w-4 h-4 text-accent" />
+              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+                <BadgeCheck className="w-4.5 h-4.5 text-primary" />
               </div>
               <div className="flex flex-col text-left">
-                <span className="text-xs font-extrabold text-primary">100% Physical Audited</span>
-                <span className="text-[9px] text-muted-foreground font-semibold">Safe &amp; Verified Hosts</span>
+                <span className="font-heading text-xs font-extrabold text-primary">100% Physical Check</span>
+                <span className="font-body text-[10px] text-muted-foreground">Verified Listings</span>
               </div>
             </motion.div>
-
-            {/* Community Pill */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute bottom-5 right-5 bg-card/75 backdrop-blur-md border border-border/40 px-3.5 py-2 rounded-xl flex items-center gap-2 text-foreground select-none"
-            >
-              <Users className="w-3.5 h-3.5 text-secondary" />
-              <span className="text-[10px] font-bold tracking-wide">Join 5,000+ Students</span>
-            </motion.div>
-
-            <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-secondary/10 rounded-[32px] -z-10 blur-sm animate-pulse" />
-            <div className="absolute -top-4 -right-4 w-40 h-40 border-2 border-primary/5 rounded-[32px] -z-10" />
-          </motion.div>
-
-          {/* ── Mobile/Tablet Hero Image (below content, hidden on lg+) ── */}
-          <motion.div
-            variants={imageVariants}
-            className="lg:hidden w-full max-w-sm sm:max-w-lg mx-auto aspect-[16/10] relative z-10"
-          >
-            <div className="w-full h-full rounded-[20px] overflow-hidden shadow-lg border border-border/80 bg-card">
-              <img
-                className="w-full h-full object-cover"
-                src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&auto=format&fit=crop&q=80"
-                alt="Premium co-living and hostel suite in Indore"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 to-transparent pointer-events-none" />
-            </div>
-            {/* Compact badges */}
-            <div className="absolute top-3 right-3 bg-card/90 backdrop-blur-sm border border-border/80 px-3 py-1.5 rounded-xl shadow flex items-center gap-1.5 z-10">
-              <Star className="w-3.5 h-3.5 text-secondary fill-current" />
-              <span className="text-[11px] font-bold text-primary">4.9 Rating</span>
-            </div>
-            <div className="absolute bottom-3 left-3 bg-card/90 backdrop-blur-sm border border-border/80 px-3 py-1.5 rounded-xl shadow flex items-center gap-1.5 z-10">
-              <BadgeCheck className="w-3.5 h-3.5 text-accent" />
-              <span className="text-[11px] font-bold text-primary">Verified Stays</span>
-            </div>
           </motion.div>
         </motion.div>
       </Container>
     </Section>
   );
 }
-
-export default Hero;

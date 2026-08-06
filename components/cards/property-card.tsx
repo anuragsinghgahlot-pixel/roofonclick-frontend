@@ -173,16 +173,18 @@ export function PropertyCard({ property }: PropertyCardProps) {
             {property.name}
           </h3>
 
-          {/* Amenities Tags */}
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {property.amenities.map((amenity) => (
-              <span
-                key={amenity}
-                className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-md"
-              >
-                {amenity}
-              </span>
-            ))}
+          {/* Amenities Tags (Single horizontal row with seamless infinite auto-scrolling loop) */}
+          <div className="overflow-hidden w-full mb-4 select-none group/marquee relative py-0.5">
+            <div className="flex items-center gap-1.5 animate-marquee-slow group-hover/marquee:[animation-play-state:paused]">
+              {[...property.amenities, ...property.amenities].map((amenity, idx) => (
+                <span
+                  key={`${amenity}-${idx}`}
+                  className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-md shrink-0 whitespace-nowrap"
+                >
+                  {amenity}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 

@@ -40,60 +40,65 @@ export default function SignupPage() {
   const [agreedToTerms, setAgreedToTerms] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showToast, setShowToast] = React.useState(false);
-  const [formError, setFormError] = React.useState<string | null>(null);
 
-  const strength = evaluatePasswordStrength(password);
-  const isWeak = password.length > 0 && strength.level === "Weak";
-  const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
+  // Field-level touched tracking
+  const [touched, setTouched] = React.useState({
+    name: false,
+    email: false,
+    phoneNumber: false,
+    gender: false,
+    password: false,
+    confirmPassword: false,
+    agreedToTerms: false,
+  });
 
+  const markTouched = (field: keyof typeof touched) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  // Validation rules
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isNameValid = name.trim().length > 0;
+  const isEmailValid = emailRegex.test(email.trim());
   const isPhoneValid = /^\d{10}$/.test(phoneNumber);
   const isGenderValid = gender !== "";
+  const isPasswordValid = password.length >= 8;
+  const isConfirmPasswordValid = confirmPassword.length > 0 && password === confirmPassword;
+
+  const errors = {
+    name: touched.name && !isNameValid ? "Full Name is required." : null,
+    email: touched.email && !isEmailValid ? "Please enter a valid email address." : null,
+    phoneNumber: touched.phoneNumber && !isPhoneValid ? "Please enter a valid 10-digit mobile number." : null,
+    gender: touched.gender && !isGenderValid ? "Please select your gender." : null,
+    password: touched.password && !isPasswordValid ? "Password must contain at least 8 characters." : null,
+    confirmPassword: touched.confirmPassword && !isConfirmPasswordValid ? "Passwords do not match." : null,
+    agreedToTerms: touched.agreedToTerms && !agreedToTerms ? "You must accept the Terms & Conditions to proceed." : null,
+  };
 
   const isFormValid =
-    name.trim().length > 0 &&
-    email.trim().length > 0 &&
+    isNameValid &&
+    isEmailValid &&
     isPhoneValid &&
     isGenderValid &&
-    password.length > 0 &&
-    !isWeak &&
-    passwordsMatch &&
+    isPasswordValid &&
+    isConfirmPasswordValid &&
     agreedToTerms;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError(null);
 
-    if (!selectedRole) {
-      setFormError("Please select an account role to continue.");
-      return;
-    }
+    // Mark all fields touched on submit attempt
+    setTouched({
+      name: true,
+      email: true,
+      phoneNumber: true,
+      gender: true,
+      password: true,
+      confirmPassword: true,
+      agreedToTerms: true,
+    });
 
-    if (!isPhoneValid) {
-      setFormError("Phone number must be exactly 10 digits.");
-      return;
-    }
-
-    if (!isGenderValid) {
-      setFormError("Please select your gender.");
-      return;
-    }
-
-    if (isWeak) {
-      setFormError("Please create a stronger password (at least Fair strength).");
-      return;
-    }
-
-    if (!passwordsMatch) {
-      setFormError("Passwords do not match.");
-      return;
-    }
-
-    if (!agreedToTerms) {
-      setFormError("Please agree to the Terms & Conditions to proceed.");
-      return;
-    }
-
-    if (isSubmitting) return;
+    if (!selectedRole || !isFormValid || isSubmitting) return;
 
     setIsSubmitting(true);
 
@@ -103,7 +108,16 @@ export default function SignupPage() {
 
       setTimeout(() => {
         setIsSubmitting(false);
-        router.push(`/auth/verify-otp?role=${selectedRole}&email=${encodeURIComponent(email)}`);
+
+        // TODO: Integrate backend OTP verification - Route to /auth/verify-otp once SMS/Email OTP backend service is connected
+        // router.push(`/auth/verify-otp?role=${selectedRole}&email=${encodeURIComponent(email)}`);
+
+        // TEMPORARY FRONTEND BYPASS: Automatically log user in and redirect directly to role-specific dashboard/home
+        if (selectedRole === "owner") {
+          router.push("/owner/dashboard");
+        } else {
+          router.push("/");
+        }
       }, 800);
     }, 600);
   };
@@ -303,11 +317,11 @@ export default function SignupPage() {
                 </div>
 
                 {/* Registration Form */}
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
                   {/* Full Name */}
                   <div className="flex flex-col gap-1.5 text-left">
                     <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-                      Full Name
+                      Full Name <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative flex items-center">
                       <User className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
@@ -315,17 +329,29 @@ export default function SignupPage() {
                         type="text"
                         required
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
-                        placeholder="Your Name"
+                        onBlur={() => markTouched("name")}
+                        onChange={(e) => {
+                          setName(e.target.value);
+                          markTouched("name");
+                        }}
+                        className={cn(
+                          "w-full bg-card border rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none transition-all duration-300",
+                          errors.name ? "border-rose-500 ring-2 ring-rose-500/10" : "border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/10"
+                        )}
+                        placeholder="Your Full Name"
                       />
                     </div>
+                    {errors.name && (
+                      <span className="text-[11px] font-semibold text-rose-500 text-left pl-1">
+                        {errors.name}
+                      </span>
+                    )}
                   </div>
 
                   {/* Email Address */}
                   <div className="flex flex-col gap-1.5 text-left">
                     <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-                      Email Address
+                      Email Address <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative flex items-center">
                       <Mail className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
@@ -333,17 +359,29 @@ export default function SignupPage() {
                         type="email"
                         required
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
+                        onBlur={() => markTouched("email")}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          markTouched("email");
+                        }}
+                        className={cn(
+                          "w-full bg-card border rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none transition-all duration-300",
+                          errors.email ? "border-rose-500 ring-2 ring-rose-500/10" : "border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/10"
+                        )}
                         placeholder="your@example.com"
                       />
                     </div>
+                    {errors.email && (
+                      <span className="text-[11px] font-semibold text-rose-500 text-left pl-1">
+                        {errors.email}
+                      </span>
+                    )}
                   </div>
 
                   {/* Phone Number */}
                   <div className="flex flex-col gap-1.5 text-left">
                     <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-                      Phone Number
+                      Phone Number <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative flex items-center">
                       <Phone className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
@@ -351,31 +389,44 @@ export default function SignupPage() {
                         type="tel"
                         required
                         value={phoneNumber}
+                        onBlur={() => markTouched("phoneNumber")}
                         onChange={(e) => {
                           setPhoneNumber(e.target.value.replace(/[^0-9]/g, "").slice(0, 10));
-                          setFormError(null);
+                          markTouched("phoneNumber");
                         }}
-                        className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
-                        placeholder="10-digit phone number"
+                        className={cn(
+                          "w-full bg-card border rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none transition-all duration-300",
+                          errors.phoneNumber ? "border-rose-500 ring-2 ring-rose-500/10" : "border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/10"
+                        )}
+                        placeholder="10-digit mobile number"
                       />
                     </div>
+                    {errors.phoneNumber && (
+                      <span className="text-[11px] font-semibold text-rose-500 text-left pl-1">
+                        {errors.phoneNumber}
+                      </span>
+                    )}
                   </div>
 
                   {/* Gender */}
                   <div className="flex flex-col gap-1.5 text-left">
                     <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-                      Gender
+                      Gender <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative flex items-center">
                       <span className="absolute left-3.5 text-sm">👤</span>
                       <select
                         required
                         value={gender}
+                        onBlur={() => markTouched("gender")}
                         onChange={(e) => {
                           setGender(e.target.value);
-                          setFormError(null);
+                          markTouched("gender");
                         }}
-                        className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-8 py-3 text-sm font-semibold font-body text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300 appearance-none cursor-pointer"
+                        className={cn(
+                          "w-full bg-card border rounded-xl pl-11 pr-8 py-3 text-sm font-semibold font-body text-foreground focus:outline-none transition-all duration-300 appearance-none cursor-pointer",
+                          errors.gender ? "border-rose-500 ring-2 ring-rose-500/10" : "border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/10"
+                        )}
                       >
                         <option value="" disabled>Select Gender</option>
                         <option value="Male">Male</option>
@@ -384,6 +435,11 @@ export default function SignupPage() {
                         <option value="Prefer not to say">Prefer not to say</option>
                       </select>
                     </div>
+                    {errors.gender && (
+                      <span className="text-[11px] font-semibold text-rose-500 text-left pl-1">
+                        {errors.gender}
+                      </span>
+                    )}
                   </div>
 
                   {/* Password & Strength */}
@@ -393,13 +449,21 @@ export default function SignupPage() {
                       label="Password"
                       required
                       value={password}
+                      onBlur={() => markTouched("password")}
                       onChange={(e) => {
                         setPassword(e.target.value);
-                        setFormError(null);
+                        markTouched("password");
                       }}
+                      className={errors.password ? "border-rose-500 ring-2 ring-rose-500/10" : ""}
                       placeholder="••••••••"
                     />
-                    <PasswordStrengthMeter password={password} showChecklist={true} />
+                    {errors.password ? (
+                      <span className="text-[11px] font-semibold text-rose-500 text-left pl-1 block">
+                        {errors.password}
+                      </span>
+                    ) : (
+                      <PasswordStrengthMeter password={password} showChecklist={true} />
+                    )}
                   </div>
 
                   {/* Confirm Password */}
@@ -409,86 +473,97 @@ export default function SignupPage() {
                       label="Confirm Password"
                       required
                       value={confirmPassword}
+                      onBlur={() => markTouched("confirmPassword")}
                       onChange={(e) => {
                         setConfirmPassword(e.target.value);
-                        setFormError(null);
+                        markTouched("confirmPassword");
                       }}
+                      className={errors.confirmPassword ? "border-rose-500 ring-2 ring-rose-500/10" : ""}
                       placeholder="••••••••"
                     />
-                    <ConfirmPasswordMessage password={password} confirmPassword={confirmPassword} />
+                    {errors.confirmPassword ? (
+                      <span className="text-[11px] font-semibold text-rose-500 text-left pl-1 block">
+                        {errors.confirmPassword}
+                      </span>
+                    ) : (
+                      <ConfirmPasswordMessage password={password} confirmPassword={confirmPassword} />
+                    )}
                   </div>
 
-                  {/* Inline Error */}
-                  {formError && (
-                    <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 font-body text-xs font-semibold text-left">
-                      {formError}
-                    </div>
-                  )}
-
                   {/* Role-Specific Terms & Conditions Checkbox */}
-                  <div className="flex items-start gap-2.5 pl-1 py-1 text-left">
-                    <input
-                      type="checkbox"
-                      required
-                      id="role-terms"
-                      checked={agreedToTerms}
-                      onChange={(e) => setAgreedToTerms(e.target.checked)}
-                      className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer mt-0.5"
-                    />
-                    <label htmlFor="role-terms" className="font-body text-[11px] text-muted-foreground leading-snug cursor-pointer select-none">
-                      {selectedRole === "owner" ? (
-                        <>
-                          I have read and agree to the{" "}
-                          <a
-                            href="/legal/owner-terms"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-bold text-secondary hover:underline"
-                          >
-                            Property Owner Terms &amp; Conditions
-                          </a>{" "}
-                          and{" "}
-                          <a
-                            href="/legal/privacy-policy"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-bold text-secondary hover:underline"
-                          >
-                            Privacy Policy
-                          </a>
-                          .
-                        </>
-                      ) : (
-                        <>
-                          I have read and agree to the{" "}
-                          <a
-                            href="/legal/buyer-terms"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-bold text-secondary hover:underline"
-                          >
-                            Buyer Terms &amp; Conditions
-                          </a>{" "}
-                          and{" "}
-                          <a
-                            href="/legal/privacy-policy"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-bold text-secondary hover:underline"
-                          >
-                            Privacy Policy
-                          </a>
-                          .
-                        </>
-                      )}
-                    </label>
+                  <div className="flex flex-col gap-1 text-left">
+                    <div className="flex items-start gap-2.5 pl-1 py-1">
+                      <input
+                        type="checkbox"
+                        required
+                        id="role-terms"
+                        checked={agreedToTerms}
+                        onChange={(e) => {
+                          setAgreedToTerms(e.target.checked);
+                          markTouched("agreedToTerms");
+                        }}
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer mt-0.5"
+                      />
+                      <label htmlFor="role-terms" className="font-body text-[11px] text-muted-foreground leading-snug cursor-pointer select-none">
+                        {selectedRole === "owner" ? (
+                          <>
+                            I have read and agree to the{" "}
+                            <a
+                              href="/legal/owner-terms"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-bold text-secondary hover:underline"
+                            >
+                              Property Owner Terms &amp; Conditions
+                            </a>{" "}
+                            and{" "}
+                            <a
+                              href="/legal/privacy-policy"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-bold text-secondary hover:underline"
+                            >
+                              Privacy Policy
+                            </a>
+                            .
+                          </>
+                        ) : (
+                          <>
+                            I have read and agree to the{" "}
+                            <a
+                              href="/legal/buyer-terms"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-bold text-secondary hover:underline"
+                            >
+                              Buyer Terms &amp; Conditions
+                            </a>{" "}
+                            and{" "}
+                            <a
+                              href="/legal/privacy-policy"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-bold text-secondary hover:underline"
+                            >
+                              Privacy Policy
+                            </a>
+                            .
+                          </>
+                        )}
+                      </label>
+                    </div>
+                    {errors.agreedToTerms && (
+                      <span className="text-[11px] font-semibold text-rose-500 text-left pl-1">
+                        {errors.agreedToTerms}
+                      </span>
+                    )}
                   </div>
 
                   {/* Toast */}
                   {showToast && (
                     <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground font-heading text-xs font-extrabold uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-2 select-none">
                       <ShieldCheck className="w-4 h-4 text-secondary" />
-                      <span>Account created! Redirecting to OTP Verification...</span>
+                      <span>Account created successfully! Logging you in...</span>
                     </div>
                   )}
 

@@ -111,7 +111,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         if (typeof window !== "undefined") {
           sessionStorage.setItem("pending_wishlist_id", id);
         }
-        showToast.info("Sign In Required", "Please log in as a Buyer to save properties to your Wishlist.");
+        showToast.info("Sign In Required", "Please sign in to save properties to your Wishlist.");
         router.push("/login");
         return;
       }

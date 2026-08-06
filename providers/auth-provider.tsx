@@ -3,7 +3,7 @@
 import * as React from "react";
 import { showToast } from "@/lib/toast";
 
-export type UserRole = "buyer" | "owner";
+export type UserRole = "buyer" | "owner" | "admin";
 
 export interface User {
   id?: string;

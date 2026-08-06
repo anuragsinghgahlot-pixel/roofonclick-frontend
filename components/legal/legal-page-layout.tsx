@@ -71,7 +71,7 @@ export function LegalPageLayout({
     <div className="min-h-screen bg-background flex flex-col justify-between relative">
       <Navbar />
 
-      <main className="flex-1 pt-24 pb-16">
+      <main className="flex-1 pt-0 pb-16">
         {/* Header Hero Banner */}
         <Section className="bg-muted/20 border-b border-border/60 py-10 sm:py-14 text-left">
           <Container>

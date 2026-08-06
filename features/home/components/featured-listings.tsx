@@ -251,16 +251,18 @@ export function FeaturedListings() {
                       </p>
                     </div>
 
-                    {/* Amenities list */}
-                    <div className="flex flex-wrap gap-1">
-                      {property.amenities.map((item) => (
-                        <span
-                          key={item}
-                          className="text-[10px] font-semibold text-foreground/80 px-2.5 py-0.5 bg-muted/40 rounded-full border border-border/60"
-                        >
-                          {item}
-                        </span>
-                      ))}
+                    {/* Amenities list (Single horizontal row with seamless infinite auto-scrolling loop) */}
+                    <div className="overflow-hidden w-full select-none group/marquee relative py-0.5">
+                      <div className="flex items-center gap-1.5 animate-marquee-slow group-hover/marquee:[animation-play-state:paused]">
+                        {[...property.amenities, ...property.amenities].map((item, idx) => (
+                          <span
+                            key={`${item}-${idx}`}
+                            className="text-[10px] font-semibold text-foreground/80 px-2.5 py-0.5 bg-muted/40 rounded-full border border-border/60 shrink-0 whitespace-nowrap"
+                          >
+                            {item}
+                          </span>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Pricing, review, CTA */}

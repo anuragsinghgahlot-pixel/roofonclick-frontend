@@ -7,6 +7,7 @@ import Footer from "@/components/navigation/footer";
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/shared/section";
 import { useWishlist } from "@/providers/wishlist-provider";
+import { useAuth } from "@/providers/auth-provider";
 import { PropertyCard } from "@/components/cards/property-card";
 import { MOCK_PROPERTIES } from "@/constants/mock-properties";
 import { PropertyCardSkeleton } from "@/components/shared/skeletons";
@@ -18,7 +19,21 @@ import { PageHeader } from "@/components/shared/page-header";
 export function WishlistPage() {
   const router = useRouter();
   const { wishlist, getLastBrowsingRoute } = useWishlist();
+  const { user, role } = useAuth();
   const [isLoading, setIsLoading] = React.useState(true);
+
+  // Route Protection: Owners visiting /wishlist directly are redirected to /owner/dashboard
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isUserLoggedIn = user !== null || !!localStorage.getItem("auth_user");
+      const activeRole = user?.role || role || (localStorage.getItem("auth_role") as any);
+
+      if (isUserLoggedIn && activeRole === "owner") {
+        router.replace("/owner/dashboard");
+        return;
+      }
+    }
+  }, [user, role, router]);
 
   // Simulated API fetch delay on page load
   React.useEffect(() => {
@@ -38,7 +53,7 @@ export function WishlistPage() {
       <Navbar />
 
       <main className="flex-1">
-        <Section className="bg-muted/10 pt-24 pb-12 relative overflow-hidden">
+        <Section className="bg-muted/10 pt-4 sm:pt-6 lg:pt-8 pb-12 relative overflow-hidden">
           {/* Ambient background decorative elements */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />

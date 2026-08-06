@@ -358,25 +358,7 @@ export function StepRoomsPricing() {
                       </div>
                     </div>
 
-                    {/* 6. Gender */}
-                    <div className="flex flex-col gap-1.5 text-left">
-                      <label className="font-heading text-[10px] font-extrabold uppercase tracking-wider text-primary pl-0.5">
-                        Allowed Gender
-                      </label>
-                      <div className="relative flex items-center">
-                        <select
-                          {...register(`rooms.${index}.gender` as const)}
-                          className="w-full bg-card border border-border/80 rounded-xl px-4 py-3 text-xs font-semibold font-body text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer appearance-none"
-                        >
-                          {GENDER_OPTIONS.map((g) => (
-                            <option key={g} value={g}>
-                              {g}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-4 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                      </div>
-                    </div>
+
 
                     {/* 7. Attached Bathroom Toggle */}
                     <div className="flex flex-col gap-1.5 text-left justify-center">

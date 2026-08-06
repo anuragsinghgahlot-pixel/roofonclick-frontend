@@ -14,7 +14,7 @@ export default function RecentlyViewedPage() {
       <Navbar />
 
       <main className="flex-1" data-no-intercept="true">
-        <Section className="bg-background relative overflow-hidden text-left pt-6 pb-20">
+        <Section className="bg-background relative overflow-hidden text-left pt-4 sm:pt-6 lg:pt-8 pb-20">
           <Container className="space-y-8">
             <PageHeader
               title="Recently Viewed Properties"

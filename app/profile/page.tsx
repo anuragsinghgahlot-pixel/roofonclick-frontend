@@ -249,10 +249,10 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-between pt-24">
+    <div className="min-h-screen bg-background flex flex-col justify-between">
       <Navbar />
 
-      <main className="flex-1 py-8 sm:py-12">
+      <main className="flex-1 pt-4 sm:pt-6 lg:pt-8 pb-12">
         <Container className="max-w-6xl mx-auto space-y-8">
           {/* Standardized Page Header */}
           <PageHeader
