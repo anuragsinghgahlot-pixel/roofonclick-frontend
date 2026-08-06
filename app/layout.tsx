@@ -27,6 +27,8 @@ export const metadata: Metadata = {
 };
 
 import { AIAssistantWidget } from "@/components/ai/ai-assistant-widget";
+import { GuestAuthPromptModal } from "@/components/modals/guest-auth-prompt-modal";
+import { PlatformReviewModal } from "@/components/modals/platform-review-modal";
 import { Toaster } from "@/components/ui/toaster";
 import { CompareProvider } from "@/providers/compare-provider";
 import { CompareBar } from "@/components/compare/compare-bar";
@@ -40,9 +42,9 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${plusJakartaSans.variable} ${inter.variable} min-h-screen antialiased`}
+      className={`${plusJakartaSans.variable} ${inter.variable} min-h-[100dvh] antialiased`}
     >
-      <body className="font-body min-h-screen bg-background text-foreground flex flex-col">
+      <body className="font-body min-h-[100dvh] bg-background text-foreground flex flex-col">
         <NavigationHandler />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
@@ -54,6 +56,8 @@ export default function RootLayout({
                       {children}
                       <AIAssistantWidget />
                       <CompareBar />
+                      <GuestAuthPromptModal />
+                      <PlatformReviewModal />
                       <Toaster />
                     </NavigationProvider>
                   </Suspense>

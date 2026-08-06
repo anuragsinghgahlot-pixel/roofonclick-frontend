@@ -23,6 +23,7 @@ import {
 import { PriceBreakdown, BookingService } from "@/services/booking";
 import { showToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { Portal } from "@/components/shared/portal";
 
 interface BookingConfirmationModalProps {
   isOpen: boolean;
@@ -73,6 +74,14 @@ export function BookingConfirmationModal({
 
   // Form Validation Error State
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+
+  // Lock body scroll when modal is open
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
 
   // Reset modal state on open
   React.useEffect(() => {
@@ -127,20 +136,30 @@ export function BookingConfirmationModal({
       setCreatedReservation(res);
       setCurrentStep(4);
       showToast.success("Booking Submitted Successfully! 🎉", `Reservation ID: ${res.reservationId}`);
+      if (typeof window !== "undefined") {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("roofonclick_trigger_review_modal"));
+        }, 1200);
+      }
       if (onConfirmSuccess) onConfirmSuccess();
     }, 1000);
   };
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-modal flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-md overflow-y-auto">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-4xl bg-card border border-border/80 rounded-3xl shadow-2xl space-y-6 text-left select-none overflow-hidden my-auto max-h-[92vh] flex flex-col"
+    <Portal>
+      <AnimatePresence>
+        <div
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-[1200] flex items-center justify-center p-2 sm:p-6 bg-background/80 backdrop-blur-md overscroll-none"
+          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="relative w-full max-w-4xl bg-card border border-border/80 rounded-2xl sm:rounded-3xl shadow-2xl text-left select-none my-auto max-h-[92vh] sm:max-h-[88vh] flex flex-col z-10"
+          >
           {/* ── Modal Top Bar ── */}
           <div className="p-4 sm:p-6 pb-0 flex items-center justify-between border-b border-border/60 pb-4 shrink-0">
             <div className="flex items-center gap-2">
@@ -267,7 +286,7 @@ export function BookingConfirmationModal({
           </div>
 
           {/* ── Modal Body Content (Flexible Scroll Area) ── */}
-          <div className="px-4 sm:px-6 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-primary/30">
+          <div data-lenis-prevent="true" className="px-4 sm:px-6 overflow-y-auto flex-1 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
             {currentStep === 4 ? (
               /* ── Step 4: SUCCESS CONFIRMATION SCREEN ── */
               <div className="py-8 space-y-6 text-center max-w-lg mx-auto">
@@ -608,6 +627,7 @@ export function BookingConfirmationModal({
         </motion.div>
       </div>
     </AnimatePresence>
+  </Portal>
   );
 }
 

@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/shared/brand-logo";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -173,20 +174,10 @@ export function AdminSidebar() {
       <div className="flex items-center justify-between h-16 px-4 border-b border-border/40 shrink-0">
         <Link
           href="/admin"
-          className="flex items-center gap-2.5 min-w-0 outline-none group"
+          className="flex items-center min-w-0 outline-none group"
           title="RoofOnClick Enterprise Admin"
         >
-          <div className="w-8 h-8 rounded-xl bg-primary text-primary-foreground font-heading text-sm font-black flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-            R
-          </div>
-          <div className="min-w-0 flex flex-col">
-            <span className="font-heading text-base font-extrabold text-foreground tracking-tight leading-none truncate">
-              RoofOnClick
-            </span>
-            <span className="font-heading text-[9px] font-extrabold text-primary uppercase tracking-widest mt-0.5">
-              Enterprise Admin
-            </span>
-          </div>
+          <BrandLogo />
         </Link>
       </div>
 
@@ -385,18 +376,8 @@ export function AdminMobileSidebar({
           >
             {/* Header */}
             <div className="flex items-center justify-between h-16 px-4 border-b border-border/40 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-primary text-primary-foreground font-heading text-sm font-black flex items-center justify-center shadow-xs">
-                  R
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-heading text-base font-extrabold text-foreground leading-none">
-                    RoofOnClick
-                  </span>
-                  <span className="font-heading text-[9px] font-extrabold text-primary uppercase tracking-widest mt-0.5">
-                    Admin Mobile
-                  </span>
-                </div>
+              <div className="flex items-center">
+                <BrandLogo />
               </div>
 
               <button

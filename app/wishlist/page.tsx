@@ -49,7 +49,7 @@ export function WishlistPage() {
   }, [wishlist]);
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
+    <div className="relative flex flex-col min-h-[100dvh] bg-background">
       <Navbar />
 
       <main className="flex-1">

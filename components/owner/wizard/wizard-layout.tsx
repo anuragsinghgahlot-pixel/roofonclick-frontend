@@ -39,25 +39,25 @@ export function WizardLayout({ children }: { children: React.ReactNode }) {
     <div
       data-lenis-prevent="true"
       data-lenis-prevent-wheel="true"
-      className="relative flex min-h-screen flex-col bg-background"
+      className="relative flex flex-col min-h-[100dvh] bg-background"
     >
       <Navbar />
 
-      <main className="flex-1" data-no-intercept="true">
-        <Section className="bg-muted/10 py-12 relative text-left">
+      <main className="flex-1 text-left" data-no-intercept="true">
+        <div className="bg-muted/10 pt-4 sm:pt-6 lg:pt-8 pb-12 sm:pb-16 relative">
           {/* Background glows */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
           <Container className="max-w-2xl mx-auto px-4 sm:px-6">
             {/* Top Navigation Row */}
-            <div className="flex items-center justify-between gap-4 mb-5 sm:mb-6">
+            <div className="flex items-center justify-between gap-4 mb-4">
               <BackButton fallbackUrl="/owner/dashboard" />
             </div>
 
             {/* Header section with timeline */}
-            <div className="mb-6 sm:mb-8">
-              <div className="flex justify-between items-end mb-3 sm:mb-4">
+            <div className="mb-5 sm:mb-6">
+              <div className="flex justify-between items-end mb-3">
                 <div>
                   <span className="text-[10px] font-extrabold uppercase tracking-widest text-secondary block mb-1">
                     Listing Wizard
@@ -105,7 +105,7 @@ export function WizardLayout({ children }: { children: React.ReactNode }) {
               <NavigationButtons />
             </div>
           </Container>
-        </Section>
+        </div>
       </main>
 
       <Footer />

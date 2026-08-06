@@ -488,24 +488,6 @@ function PropertyDetailsContent() {
                         onSendEnquiry={() => setIsEnquiryModalOpen(true)}
                         onContactOwner={() => setIsEnquiryModalOpen(true)}
                       />
-
-                      <OwnerCard
-                        ownerName="RoofOnClick Partner"
-                        ownerImage="https://api.dicebear.com/8.x/lorelei/svg?seed=RoofOnClick"
-                        isVerified={true}
-                        responseTime="Within 10 mins"
-                        phone="+91 98765 43210"
-                        joinedDate="Verified Property"
-                        listingsCount={1}
-                        onBookCall={() => setIsBookCallModalOpen(true)}
-                        onWhatsApp={() =>
-                          window.open(
-                            `https://wa.me/919876543210?text=Hi,%20I'm%20interested%20in%20${encodeURIComponent(displayTitle)}`,
-                            "_blank"
-                          )
-                        }
-                        onMessage={() => setIsEnquiryModalOpen(true)}
-                      />
                     </>
                   )}
                 </div>
@@ -579,8 +561,6 @@ function PropertyDetailsContent() {
         </div>
       )}
 
-      <Footer />
-
       {/* Action Modals */}
       <BookCallModal
         isOpen={isBookCallModalOpen}
@@ -613,6 +593,8 @@ function PropertyDetailsContent() {
           url: typeof window !== "undefined" ? window.location.href : "",
         }}
       />
+
+      <Footer />
     </div>
   );
 }

@@ -46,11 +46,48 @@ export const roomConfigurationSchema = z
     path: ["availableRooms"],
   });
 
+export const APARTMENT_TYPES = [
+  "Studio Apartment",
+  "RK",
+  "1 BHK",
+  "2 BHK",
+  "3 BHK",
+  "4+ BHK",
+  "Apartment",
+];
+
+export function isApartmentType(type?: string): boolean {
+  if (!type) return false;
+  return APARTMENT_TYPES.includes(type);
+}
+
+export function getBedroomsFromPropertyType(type?: string): string {
+  if (!type) return "N/A";
+  if (type === "Studio Apartment" || type === "Studio") return "Studio";
+  if (type === "RK") return "RK";
+  if (type === "1 BHK") return "1";
+  if (type === "2 BHK") return "2";
+  if (type === "3 BHK") return "3";
+  if (type === "4+ BHK") return "4+";
+  return "N/A";
+}
+
 export const propertyWizardSchema = z.object({
   id: z.string().optional(),
   // Step 1: Basic Details
   propertyName: z.string().min(1, "Property Name is required"),
-  propertyType: z.enum(["PG", "Hostel", "Co-living", "Apartment"]),
+  propertyType: z.enum([
+    "PG",
+    "Hostel",
+    "Co-living",
+    "Apartment",
+    "Studio Apartment",
+    "RK",
+    "1 BHK",
+    "2 BHK",
+    "3 BHK",
+    "4+ BHK",
+  ]),
   gender: z.enum(["Boys", "Girls", "Unisex"]),
   description: z.string().max(200, "Description must be 200 characters or less").optional(),
 
@@ -61,48 +98,77 @@ export const propertyWizardSchema = z.object({
   landmark: z.string().optional(),
   mapsLink: z.string().optional(),
 
-  // Step 3: Rooms & Pricing (Repeatable configurations)
+  // Step 3: Rooms & Pricing (Repeatable configurations for Hostel/PG or single configuration for Apartment)
   rooms: z
     .array(roomConfigurationSchema)
     .min(1, "At least one room configuration is required")
-    .refine(
-      (rooms) => {
-        const types = rooms.map((r) => (r.sharingType || r.roomType || "").trim().toLowerCase());
-        const uniqueTypes = new Set(types);
-        return types.length === uniqueTypes.size;
-      },
-      {
-        message: "Sharing Type cannot be duplicated within the same property",
-      }
-    ),
+    .optional(),
+
+  // Apartment Specific Details & Pricing
+  apartmentDetails: z
+    .object({
+      bedrooms: z.string().optional(),
+      furnished: z.enum(["Fully Furnished", "Semi Furnished", "Unfurnished"]).optional(),
+      kitchenType: z.string().optional(),
+      bathroomType: z.string().optional(),
+      balcony: z.boolean().optional(),
+      parking: z.string().optional(),
+      floorNumber: z.preprocess((val) => (val === "" || val === undefined ? undefined : Number(val)), z.number().optional()),
+      totalFloors: z.preprocess((val) => (val === "" || val === undefined ? undefined : Number(val)), z.number().optional()),
+      liftAvailable: z.boolean().optional(),
+      powerBackup: z.boolean().optional(),
+      security: z.boolean().optional(),
+    })
+    .optional(),
+
+  apartmentPricing: z
+    .object({
+      monthlyRent: z.preprocess((val) => (val === "" || val === undefined ? undefined : Number(val)), z.number().optional()),
+      securityDeposit: z.preprocess((val) => (val === "" || val === undefined ? 0 : Number(val)), z.number().optional()),
+      maintenance: z.preprocess((val) => (val === "" || val === undefined ? 0 : Number(val)), z.number().optional()),
+      electricityIncluded: z.boolean().optional(),
+      waterIncluded: z.boolean().optional(),
+      brokerage: z.string().optional(),
+      availabilityDate: z.string().optional(),
+    })
+    .optional(),
 
   // Step 4: Amenities
   propertyManagementType: z.string().optional(),
   foodType: z.string().optional(),
   amenities: z.array(z.string()).optional(),
-  rules: z.object({
-    smokingAllowed: z.boolean().optional(),
-    drinkingAllowed: z.boolean().optional(),
-    visitorsAllowed: z.boolean().optional(),
-    petsAllowed: z.boolean().optional(),
-    loudMusicAllowed: z.boolean().optional(),
-    gateClosingEnabled: z.boolean().optional(),
-    gateClosingTime: z.string().optional(),
-  }).optional(),
+  rules: z
+    .object({
+      smokingAllowed: z.boolean().optional(),
+      drinkingAllowed: z.boolean().optional(),
+      visitorsAllowed: z.boolean().optional(),
+      petsAllowed: z.boolean().optional(),
+      loudMusicAllowed: z.boolean().optional(),
+      gateClosingEnabled: z.boolean().optional(),
+      gateClosingTime: z.string().optional(),
+    })
+    .optional(),
   nearby: z.array(z.string()).optional(),
 
   // Step 5: Photos & Videos
-  images: z.array(z.object({
-    id: z.string(),
-    url: z.string(),
-    name: z.string(),
-    isCover: z.boolean(),
-  })).min(5, "At least 5 images are required"),
-  video: z.object({
-    url: z.string(),
-    name: z.string(),
-    size: z.number().optional(),
-  }).nullable().optional(),
+  images: z
+    .array(
+      z.object({
+        id: z.string(),
+        url: z.string(),
+        name: z.string(),
+        isCover: z.boolean(),
+      })
+    )
+    .min(5, "At least 5 images are required"),
+  video: z
+    .object({
+      url: z.string(),
+      name: z.string(),
+      size: z.number().optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export type PropertyWizardFormValues = z.infer<typeof propertyWizardSchema>;
@@ -233,9 +299,11 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
 
         form.reset({
           ...found,
+          propertyType: (found.propertyType as any) || "Hostel",
+          gender: (found.gender as any) || "Boys",
           rooms: normalizedRooms,
           images: restoredImgs,
-        });
+        } as any);
         hydratedIdRef.current = editPropertyId;
       }
     } else {
@@ -260,7 +328,7 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
         form.reset({
           ...draft.formValues,
           images: restoredImgs,
-        });
+        } as any);
         if (draft.currentStep && !searchParams.get("step")) {
           setStep(draft.currentStep);
         }
@@ -441,6 +509,11 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
     } else {
       PropertyService.createProperty(payload);
       toast.success("Your property has been published successfully.");
+      if (typeof window !== "undefined") {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("roofonclick_trigger_review_modal"));
+        }, 1200);
+      }
     }
     
     PropertyService.clearDraft();

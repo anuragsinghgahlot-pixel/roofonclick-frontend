@@ -6,6 +6,7 @@ import { MessageSquare, User, Phone, X, CheckCircle, Send } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { EnquiryService } from "@/services/enquiry";
 import { showToast } from "@/lib/toast";
+import { Portal } from "@/components/shared/portal";
 
 interface SendEnquiryModalProps {
   isOpen: boolean;
@@ -30,11 +31,21 @@ export function SendEnquiryModal({
 }: SendEnquiryModalProps) {
   const { user } = useAuth();
 
-  const [message, setMessage] = React.useState("");
   const [name, setName] = React.useState(user?.name || "");
   const [phone, setPhone] = React.useState(user?.phone || "");
+  const [message, setMessage] = React.useState("");
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Lock body scroll when open
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -50,18 +61,18 @@ export function SendEnquiryModal({
     e.preventDefault();
     setError(null);
 
-    if (!message.trim()) {
-      setError("Please enter your message or select a quick question.");
-      return;
-    }
-
     if (!name.trim()) {
       setError("Please enter your name.");
       return;
     }
 
     if (!phone.trim()) {
-      setError("Please enter your phone number.");
+      setError("Please enter your contact phone number.");
+      return;
+    }
+
+    if (!message.trim()) {
+      setError("Please write your message or questions.");
       return;
     }
 
@@ -80,14 +91,16 @@ export function SendEnquiryModal({
   };
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-card border border-border/80 p-6 sm:p-8 rounded-3xl max-w-lg w-full shadow-premium text-left space-y-6 relative"
-        >
+    <Portal>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[1200] bg-background/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto overscroll-contain">
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 30, scale: 0.96 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="bg-card border border-border/80 p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl max-w-lg w-full shadow-2xl text-left space-y-5 relative max-h-[90vh] overflow-y-auto custom-scrollbar my-0 sm:my-auto"
+          >
           {/* Close button */}
           <button
             type="button"
@@ -245,5 +258,6 @@ export function SendEnquiryModal({
         </motion.div>
       </div>
     </AnimatePresence>
+  </Portal>
   );
 }

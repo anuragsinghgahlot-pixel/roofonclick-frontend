@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useWizard } from "./wizard-context";
+import { useWizard, isApartmentType } from "./wizard-context";
 import { Upload, X, ArrowLeft, ArrowRight, Star, FileVideo, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -123,6 +123,9 @@ export function StepPhotos() {
     setValue("images", updated, { shouldValidate: true });
   };
 
+  const propertyType = watch("propertyType") || "Hostel";
+  const isApartment = isApartmentType(propertyType);
+
   return (
     <div className="flex flex-col gap-8 text-left">
       
@@ -131,12 +134,16 @@ export function StepPhotos() {
         <div className="space-y-2">
           <h4 className="font-heading text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
             <AlertCircle className="w-4 h-4 text-secondary shrink-0" />
-            Upload Guidelines
+            Upload Guidelines ({propertyType})
           </h4>
           <ul className="list-disc pl-4 font-body text-[11px] text-muted-foreground space-y-1">
             <li>Upload at least 5 clear photos of rooms & amenities.</li>
+            {isApartment ? (
+              <li>Recommended shots: Living Room, Bedrooms, Kitchen, Balcony, Bathrooms, & Building Exterior.</li>
+            ) : (
+              <li>Recommended shots: Bedrooms, Mess & Dining Area, Bathrooms, Study Zone, & Building Front.</li>
+            )}
             <li>Landscape aspect ratio (16:9) is highly recommended.</li>
-            <li>Avoid blurry, low-lighting, or pixelated screenshots.</li>
           </ul>
         </div>
         <div className="space-y-2 border-t md:border-t-0 md:border-l border-border/60 pt-3 md:pt-0 md:pl-5">

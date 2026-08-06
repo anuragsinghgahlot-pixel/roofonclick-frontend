@@ -162,48 +162,104 @@ export function StepReview() {
           </div>
         )}
 
-        {/* Room Configurations Summary */}
+        {/* Room Configurations / Apartment Summary */}
         <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 sm:p-5 space-y-3">
           <h4 className="font-heading text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-1.5 border-b border-border/40 pb-2">
-            ₹ Pricing & Room Configurations
+            ₹ Pricing & Property Configuration
           </h4>
-          <div className="space-y-3">
-            {(values.rooms || []).map((room: RoomConfiguration, idx: number) => {
-              const sharing = room.sharingType || room.roomType || "Single";
-              const rent = room.monthlyRent ?? room.rent ?? 0;
-              const deposit = room.securityDeposit ?? 0;
-              const total = room.totalRooms ?? 1;
-              const avail = room.availableRooms ?? 1;
-              const roomGender = room.gender || "Boys";
-              const bath = room.attachedBathroom ? "Attached Bath" : "Shared Bath";
-              const furnished = room.furnished || "Fully Furnished";
 
-              return (
-                <div key={idx} className="flex flex-col gap-2 bg-card border border-border/45 p-3 rounded-xl text-left">
-                  <div className="space-y-0.5">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-heading text-xs font-bold text-primary">{sharing}</span>
-                      <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-md">
-                        {roomGender}
-                      </span>
-                      <span className="text-[10px] font-semibold bg-muted text-muted-foreground px-2 py-0.5 rounded-md">
-                        {bath}
+          {values.apartmentPricing?.monthlyRent || (values.propertyType && ["Studio Apartment", "RK", "1 BHK", "2 BHK", "3 BHK", "4+ BHK"].includes(values.propertyType)) ? (
+            <div className="space-y-3 font-body text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-card border border-border/45 p-3.5 rounded-xl">
+                <div>
+                  <span className="text-[10px] font-semibold text-muted-foreground block">Monthly Rent</span>
+                  <span className="font-heading text-sm font-extrabold text-emerald-600 block">
+                    ₹{(values.apartmentPricing?.monthlyRent || values.rooms?.[0]?.monthlyRent || 0).toLocaleString()} / month
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold text-muted-foreground block">Security Deposit</span>
+                  <span className="font-heading text-xs font-bold text-primary block">
+                    ₹{(values.apartmentPricing?.securityDeposit || values.rooms?.[0]?.securityDeposit || 0).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold text-muted-foreground block">Furnishing & Layout</span>
+                  <span className="font-bold text-primary block">
+                    {values.apartmentDetails?.furnished || values.rooms?.[0]?.furnished || "Fully Furnished"} ({values.propertyType})
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold text-muted-foreground block">Kitchen & Bathroom</span>
+                  <span className="font-bold text-primary block">
+                    {values.apartmentDetails?.kitchenType || "Modular Kitchen"} • {values.apartmentDetails?.bathroomType || "Attached"} Bath
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold text-muted-foreground block">Balcony & Parking</span>
+                  <span className="font-bold text-primary block">
+                    {values.apartmentDetails?.balcony ? "Balcony Included" : "No Balcony"} • {values.apartmentDetails?.parking || "Car & Bike"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold text-muted-foreground block">Floor & Infrastructure</span>
+                  <span className="font-bold text-primary block">
+                    Floor {values.apartmentDetails?.floorNumber || 2} of {values.apartmentDetails?.totalFloors || 5} • {values.apartmentDetails?.liftAvailable ? "Lift Available" : "Stairs Only"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold text-muted-foreground block">Brokerage & Maintenance</span>
+                  <span className="font-bold text-secondary block">
+                    {values.apartmentPricing?.brokerage || "Zero Brokerage"} • ₹{values.apartmentPricing?.maintenance || 0}/mo Maint.
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold text-muted-foreground block">Utilities & Availability</span>
+                  <span className="font-bold text-emerald-600 block">
+                    {values.apartmentPricing?.electricityIncluded ? "Electricity Free" : "Electricity Extra"} • Available {values.apartmentPricing?.availabilityDate || "Immediately"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {(values.rooms || []).map((room: RoomConfiguration, idx: number) => {
+                const sharing = room.sharingType || room.roomType || "Single";
+                const rent = room.monthlyRent ?? room.rent ?? 0;
+                const deposit = room.securityDeposit ?? 0;
+                const total = room.totalRooms ?? 1;
+                const avail = room.availableRooms ?? 1;
+                const roomGender = room.gender || "Boys";
+                const bath = room.attachedBathroom ? "Attached Bath" : "Shared Bath";
+                const furnished = room.furnished || "Fully Furnished";
+
+                return (
+                  <div key={idx} className="flex flex-col gap-2 bg-card border border-border/45 p-3 rounded-xl text-left">
+                    <div className="space-y-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-heading text-xs font-bold text-primary">{sharing}</span>
+                        <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-md">
+                          {roomGender}
+                        </span>
+                        <span className="text-[10px] font-semibold bg-muted text-muted-foreground px-2 py-0.5 rounded-md">
+                          {bath}
+                        </span>
+                      </div>
+                      <span className="font-body text-[10px] text-muted-foreground block">
+                        {avail}/{total} Rooms Available • {furnished}
                       </span>
                     </div>
-                    <span className="font-body text-[10px] text-muted-foreground block">
-                      {avail}/{total} Rooms Available • {furnished}
-                    </span>
+                    <div>
+                      <span className="font-heading text-xs font-extrabold text-emerald-500 block">₹{rent.toLocaleString()} / month</span>
+                      <span className="font-body text-[9px] text-muted-foreground block">
+                        Security Deposit: ₹{deposit.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-heading text-xs font-extrabold text-emerald-500 block">₹{rent.toLocaleString()} / month</span>
-                    <span className="font-body text-[9px] text-muted-foreground block">
-                      Security Deposit: ₹{deposit.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Photo Gallery Summary */}

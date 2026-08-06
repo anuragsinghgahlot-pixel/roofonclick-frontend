@@ -6,6 +6,8 @@ import { X, Copy, Check, Share2, Mail, Send } from "lucide-react";
 import { copyToClipboard, getSocialShareLinks, ShareData } from "@/lib/share-utils";
 import { cn } from "@/lib/utils";
 
+import { Portal } from "@/components/shared/portal";
+
 interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -32,7 +34,8 @@ export function ShareModal({ isOpen, onClose, shareData }: ShareModalProps) {
   if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
+    <Portal>
+      <AnimatePresence>
       <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -170,5 +173,6 @@ export function ShareModal({ isOpen, onClose, shareData }: ShareModalProps) {
         </motion.div>
       </div>
     </AnimatePresence>
-  );
+  </Portal>
+);
 }

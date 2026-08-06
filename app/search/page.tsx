@@ -59,6 +59,7 @@ function SearchPageContent() {
   const [isSaveModalOpen, setIsSaveModalOpen] = React.useState(false);
   const [selectedGenders, setSelectedGenders] = React.useState<string[]>([]);
   const [selectedSidebarTypes, setSelectedSidebarTypes] = React.useState<string[]>([]);
+  const [selectedBhk, setSelectedBhk] = React.useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = React.useState<string | null>(null);
   const [selectedAmenities, setSelectedAmenities] = React.useState<string[]>([]);
   const [selectedSharing, setSelectedSharing] = React.useState<string[]>([]);
@@ -96,6 +97,14 @@ function SearchPageContent() {
     );
   }, []);
 
+  const handleBhkChange = React.useCallback((bhk: string) => {
+    setSelectedBhk((prev) =>
+      prev.includes(bhk)
+        ? prev.filter((b) => b !== bhk)
+        : [...prev, bhk]
+    );
+  }, []);
+
   const handleBudgetChange = React.useCallback((budget: string | null) => {
     setSelectedBudget((prev) => (prev === budget ? null : budget));
   }, []);
@@ -119,6 +128,7 @@ function SearchPageContent() {
   const handleClearAll = React.useCallback(() => {
     setSelectedGenders([]);
     setSelectedSidebarTypes([]);
+    setSelectedBhk([]);
     setSelectedBudget(null);
     setSelectedAmenities([]);
     setSelectedSharing([]);
@@ -128,13 +138,14 @@ function SearchPageContent() {
     return (
       selectedGenders.length > 0 ||
       selectedSidebarTypes.length > 0 ||
+      selectedBhk.length > 0 ||
       selectedBudget !== null ||
       selectedAmenities.length > 0 ||
       selectedSharing.length > 0
     );
-  }, [selectedGenders, selectedSidebarTypes, selectedBudget, selectedAmenities, selectedSharing]);
+  }, [selectedGenders, selectedSidebarTypes, selectedBhk, selectedBudget, selectedAmenities, selectedSharing]);
 
-  // Filter properties based on URL slug, selected top type, selected genders, selected sidebar types, budget range, selected amenities AND sharing options
+  // Filter properties based on URL slug, selected top type, selected genders, selected sidebar types, bhk tags, budget range, selected amenities AND sharing options
   const filteredProperties = React.useMemo(() => {
     let result = [...MOCK_PROPERTIES];
 
@@ -172,6 +183,23 @@ function SearchPageContent() {
     // 4. Filter by selected sidebar property types (PG / Hostel)
     if (selectedSidebarTypes.length > 0) {
       result = result.filter((p) => selectedSidebarTypes.includes(p.propertyTypeGroup));
+    }
+
+    // 4.5. Filter by BHK configuration tags (RK, Studio, 1 BHK, 2 BHK, 3 BHK, 4+ BHK)
+    if (selectedBhk.length > 0) {
+      result = result.filter((p) => {
+        const pText = (p.name + " " + p.type + " " + ((p as { bhk?: string }).bhk || "")).toLowerCase();
+        return selectedBhk.some((bhk) => {
+          const bLower = bhk.toLowerCase();
+          if (bLower === "rk") return pText.includes("rk") || pText.includes("1rk");
+          if (bLower === "studio") return pText.includes("studio");
+          if (bLower === "1 bhk") return pText.includes("1 bhk") || pText.includes("1bhk");
+          if (bLower === "2 bhk") return pText.includes("2 bhk") || pText.includes("2bhk");
+          if (bLower === "3 bhk") return pText.includes("3 bhk") || pText.includes("3bhk");
+          if (bLower === "4+ bhk") return pText.includes("4 bhk") || pText.includes("4bhk");
+          return pText.includes(bLower);
+        });
+      });
     }
 
     // 5. Filter by budget range (Budget pill chips)
@@ -220,7 +248,7 @@ function SearchPageContent() {
   }, [locationSlug]);
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
+    <div className="relative flex flex-col min-h-[100dvh] bg-background">
       <Navbar />
       <main className="flex-1 flex flex-col">
         <Section className="bg-muted/10 pt-4 sm:pt-6 lg:pt-8 pb-8 sm:pb-12 relative overflow-hidden">
@@ -264,12 +292,15 @@ function SearchPageContent() {
                 onGenderChange={handleGenderChange}
                 selectedTypes={selectedSidebarTypes}
                 onTypeChange={handleSidebarTypeChange}
+                selectedBhk={selectedBhk}
+                onBhkChange={handleBhkChange}
                 selectedBudget={selectedBudget}
                 onBudgetChange={handleBudgetChange}
                 selectedAmenities={selectedAmenities}
                 onAmenityChange={handleAmenityChange}
                 selectedSharing={selectedSharing}
                 onSharingChange={handleSharingChange}
+                onClearAll={handleClearAll}
               />
 
               {/* Right Column: Grid or Empty State */}
@@ -345,7 +376,7 @@ import { SearchPageSkeleton } from "@/components/shared/skeletons";
 export default function SearchResultsPage() {
   return (
     <Suspense fallback={
-      <div className="relative flex min-h-screen flex-col bg-background">
+      <div className="relative flex flex-col min-h-[100dvh] bg-background">
         <Navbar />
         <main className="flex-1" data-no-intercept="true">
           <Section className="bg-background relative overflow-hidden text-left pt-6 pb-20">

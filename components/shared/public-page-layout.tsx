@@ -14,6 +14,8 @@ interface PublicPageLayoutProps {
   withContainer?: boolean;
 }
 
+
+
 export function PublicPageLayout({
   children,
   className,
@@ -22,9 +24,9 @@ export function PublicPageLayout({
   withContainer = true,
 }: PublicPageLayoutProps) {
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
+    <div className="relative flex flex-col min-h-[100dvh] bg-background">
       <Navbar />
-      <main className={cn("flex-1 text-left pt-4 sm:pt-6 lg:pt-8 pb-16 sm:pb-24", className)} data-no-intercept="true">
+      <main className={cn("flex-1 text-left pt-4 sm:pt-6 lg:pt-8 pb-6 sm:pb-10", className)} data-no-intercept="true">
         {withContainer ? (
           <Container className={containerClassName}>{children}</Container>
         ) : (

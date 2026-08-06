@@ -5,25 +5,30 @@ import { useWizard } from "./wizard-context";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const PROPERTY_TYPES = [
-  { value: "PG", label: "PG (Paying Guest)" },
-  { value: "Hostel", label: "Hostel" },
-  { value: "Co-living", label: "Co-living" },
-  { value: "Apartment", label: "Apartment" },
+const PROPERTY_TYPE_CARDS = [
+  { value: "Hostel", label: "Hostel", desc: "Student & shared stays", icon: "🏢" },
+  { value: "PG", label: "PG (Paying Guest)", desc: "Shared rooms with mess", icon: "🏠" },
+  { value: "Studio Apartment", label: "Studio Apartment", desc: "Single open layout flat", icon: "🛋️" },
+  { value: "RK", label: "RK", desc: "Room + Kitchen unit", icon: "🍳" },
+  { value: "1 BHK", label: "1 BHK", desc: "1 Bed, Hall & Kitchen", icon: "🛏️" },
+  { value: "2 BHK", label: "2 BHK", desc: "2 Bed, Hall & Kitchen", icon: "🛋️" },
+  { value: "3 BHK", label: "3 BHK", desc: "3 Bed, Hall & Kitchen", icon: "🏰" },
+  { value: "4+ BHK", label: "4+ BHK", desc: "Large luxury apartments", icon: "🏙️" },
 ];
 
 const GENDER_OPTIONS = [
   { value: "Boys", label: "Boys Only", emoji: "👦" },
   { value: "Girls", label: "Girls Only", emoji: "👧" },
-  { value: "Unisex", label: "Unisex / Co-ed", emoji: "👥" },
+  { value: "Unisex", label: "Unisex / Family", emoji: "👥" },
 ];
 
 export function StepBasicDetails() {
   const { form } = useWizard();
   const { register, watch, setValue } = form;
 
+  const propertyTypeValue = watch("propertyType") || "Hostel";
   const descriptionValue = watch("description") || "";
-  const genderValue = watch("gender");
+  const genderValue = watch("gender") || "Boys";
 
   return (
     <div className="flex flex-col gap-6">
@@ -36,28 +41,55 @@ export function StepBasicDetails() {
           type="text"
           required
           {...register("propertyName")}
-          placeholder="e.g. Skyline Elite Premium PG"
+          placeholder="e.g. Skyline Elite 2 BHK Flat or Premium PG"
           className="w-full bg-card border border-border/80 rounded-xl px-4.5 py-3.5 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/45 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
         />
       </div>
 
-      {/* Property Type */}
-      <div className="flex flex-col gap-1.5">
-        <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-          Property Type
-        </label>
-        <div className="relative flex items-center">
-          <select
-            {...register("propertyType")}
-            className="w-full bg-card border border-border/80 rounded-xl px-4.5 py-3.5 text-sm font-semibold font-body text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300 appearance-none cursor-pointer"
-          >
-            {PROPERTY_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-4 w-4 h-4 text-muted-foreground pointer-events-none" />
+      {/* Property Type — Card Grid Selector */}
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center justify-between pl-1">
+          <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider">
+            Property Type <span className="text-rose-500">*</span>
+          </label>
+          <span className="text-[11px] font-bold text-secondary">
+            {propertyTypeValue} Selected
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {PROPERTY_TYPE_CARDS.map((type) => {
+            const isSelected = propertyTypeValue === type.value;
+            return (
+              <button
+                key={type.value}
+                type="button"
+                data-no-intercept="true"
+                onClick={() => {
+                  setValue("propertyType", type.value as any, { shouldValidate: true });
+                }}
+                className={cn(
+                  "flex flex-col items-start p-3 sm:p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer select-none relative overflow-hidden group",
+                  isSelected
+                    ? "border-primary bg-primary/10 text-primary shadow-sm font-bold ring-1 ring-primary/30"
+                    : "border-border/80 bg-card hover:border-primary/50 text-foreground hover:bg-muted/30"
+                )}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="text-xl select-none">{type.icon}</span>
+                  {isSelected && (
+                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  )}
+                </div>
+                <span className="font-heading text-xs font-bold truncate w-full">
+                  {type.label}
+                </span>
+                <span className="font-body text-[10px] text-muted-foreground truncate w-full mt-0.5">
+                  {type.desc}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

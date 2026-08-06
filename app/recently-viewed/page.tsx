@@ -10,7 +10,7 @@ import { RecentlyViewedSection } from "@/components/property/recently-viewed-sec
 
 export default function RecentlyViewedPage() {
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
+    <div className="relative flex flex-col min-h-[100dvh] bg-background">
       <Navbar />
 
       <main className="flex-1" data-no-intercept="true">

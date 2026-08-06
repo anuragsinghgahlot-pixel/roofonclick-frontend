@@ -252,108 +252,14 @@ export function ReviewsSection({ propertyId = "p1", className }: ReviewsSectionP
           description="No tenant reviews match your active filter or search keywords."
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           {sortedReviews.slice(0, visibleCount).map((review) => (
-            <div
+            <ReviewCardItem
               key={review.id}
-              className="bg-card/70 border border-border/70 p-5 sm:p-6 rounded-3xl space-y-4 shadow-xs text-left"
-            >
-              {/* User Header */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={review.userAvatar}
-                    alt={review.userName}
-                    className="w-10 h-10 rounded-full border border-border/80 object-cover shrink-0"
-                  />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-heading text-sm font-bold text-foreground">{review.userName}</h4>
-                      {review.isVerifiedStay && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-heading font-extrabold uppercase">
-                          <CheckCircle2 className="w-3 h-3" /> Verified Stay
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[11px] font-body text-muted-foreground">{review.date}</span>
-                  </div>
-                </div>
-
-                {/* Rating Stars */}
-                <div className="flex items-center gap-1 text-amber-500">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star
-                      key={s}
-                      className={cn(
-                        "w-4 h-4 fill-amber-400 text-amber-400",
-                        s > review.rating && "fill-muted text-muted"
-                      )}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Review Text */}
-              <p className="font-body text-xs sm:text-sm text-foreground/90 leading-relaxed">
-                {review.content}
-              </p>
-
-              {/* Photo Gallery Thumbnails */}
-              {review.images && review.images.length > 0 && (
-                <div className="flex items-center gap-2 pt-1">
-                  {review.images.map((imgUrl, idx) => (
-                    <img
-                      key={idx}
-                      src={imgUrl}
-                      alt={`Review photo ${idx + 1}`}
-                      onClick={() => setActiveLightboxImg(imgUrl)}
-                      className="w-16 h-16 rounded-xl object-cover border border-border/80 cursor-pointer hover:opacity-90 transition-opacity"
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Helpful CTA Button */}
-              <div className="flex items-center justify-between border-t border-border/60 pt-3">
-                <button
-                  type="button"
-                  data-no-intercept="true"
-                  onClick={() => handleHelpfulClick(review.id)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl border text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5",
-                    review.isHelpfulClicked
-                      ? "bg-primary/10 border-primary text-primary"
-                      : "bg-muted/40 border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <ThumbsUp className="w-3.5 h-3.5" />
-                  <span>Helpful ({review.helpfulCount})</span>
-                </button>
-              </div>
-
-              {/* Owner Reply Block */}
-              {review.ownerReply && (
-                <div className="mt-4 bg-muted/40 border border-border/60 p-4 rounded-2xl space-y-1.5 ml-4 sm:ml-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="w-3.5 h-3.5 text-secondary" />
-                      <span className="font-heading text-xs font-extrabold text-primary">Owner Reply</span>
-                      {review.ownerReply.isVerifiedOwner && (
-                        <span className="bg-secondary/10 text-secondary text-[9px] font-extrabold px-1.5 py-0.5 rounded-md border border-secondary/20 uppercase">
-                          Verified Owner
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[10px] font-body text-muted-foreground">
-                      {review.ownerReply.replyDate}
-                    </span>
-                  </div>
-                  <p className="font-body text-xs text-muted-foreground leading-relaxed">
-                    {review.ownerReply.replyText}
-                  </p>
-                </div>
-              )}
-            </div>
+              review={review}
+              onHelpfulClick={handleHelpfulClick}
+              onLightboxImg={setActiveLightboxImg}
+            />
           ))}
 
           {/* Load More Button */}
@@ -399,6 +305,138 @@ export function ReviewsSection({ propertyId = "p1", className }: ReviewsSectionP
         propertyId={propertyId}
         onSuccess={refreshList}
       />
+    </div>
+  );
+}
+
+function ReviewCardItem({
+  review,
+  onHelpfulClick,
+  onLightboxImg,
+}: {
+  review: ReviewItem;
+  onHelpfulClick: (id: string) => void;
+  onLightboxImg: (url: string) => void;
+}) {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isReplyOpen, setIsReplyOpen] = React.useState(false);
+
+  return (
+    <div className="bg-card/60 border border-border/60 px-3.5 py-3 sm:px-4 sm:py-3.5 rounded-xl space-y-2 text-left">
+      {/* ── Compact Header: Avatar | Name+Badge+Date | Stars ── */}
+      <div className="flex items-center gap-2">
+        <img
+          src={review.userAvatar}
+          alt={review.userName}
+          className="w-7 h-7 rounded-full border border-border/60 object-cover shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-heading text-xs font-bold text-foreground truncate">{review.userName}</span>
+            {review.isVerifiedStay && (
+              <span className="inline-flex items-center gap-0.5 px-1 py-px rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[8px] font-heading font-extrabold uppercase leading-none">
+                <CheckCircle2 className="w-2.5 h-2.5" /> Verified
+              </span>
+            )}
+            <span className="text-[10px] text-muted-foreground">·</span>
+            <span className="text-[10px] font-body text-muted-foreground">{review.date}</span>
+          </div>
+        </div>
+        {/* Rating Stars */}
+        <div className="flex items-center gap-px shrink-0">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <Star
+              key={s}
+              className={cn(
+                "w-3 h-3 fill-amber-400 text-amber-400",
+                s > review.rating && "fill-muted text-muted"
+              )}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Review Text (3-line clamp with inline Read More) ── */}
+      <div>
+        <p className={cn("font-body text-[11px] sm:text-xs text-foreground/85 leading-relaxed", !isExpanded && "line-clamp-3")}>
+          {review.content}
+        </p>
+        {review.content.length > 120 && (
+          <button
+            type="button"
+            data-no-intercept="true"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="font-heading text-[10px] font-bold text-primary hover:text-secondary transition-colors cursor-pointer mt-0.5"
+          >
+            {isExpanded ? "Show less" : "Read more"}
+          </button>
+        )}
+      </div>
+
+      {/* ── Photo Thumbnails (smaller) ── */}
+      {review.images && review.images.length > 0 && (
+        <div className="flex items-center gap-1.5">
+          {review.images.map((imgUrl, idx) => (
+            <img
+              key={idx}
+              src={imgUrl}
+              alt={`Photo ${idx + 1}`}
+              onClick={() => onLightboxImg(imgUrl)}
+              className="w-10 h-10 rounded-lg object-cover border border-border/60 cursor-pointer hover:opacity-80 transition-opacity"
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── Footer: Helpful + Owner Reply Toggle ── */}
+      <div className="flex items-center justify-between pt-1 border-t border-border/40">
+        <button
+          type="button"
+          data-no-intercept="true"
+          onClick={() => onHelpfulClick(review.id)}
+          className={cn(
+            "px-2 py-0.5 rounded-lg border text-[10px] font-heading font-bold transition-all cursor-pointer inline-flex items-center gap-1",
+            review.isHelpfulClicked
+              ? "bg-primary/10 border-primary/60 text-primary"
+              : "bg-transparent border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/30"
+          )}
+        >
+          <ThumbsUp className="w-2.5 h-2.5" />
+          <span>{review.helpfulCount}</span>
+        </button>
+
+        {review.ownerReply && (
+          <button
+            type="button"
+            data-no-intercept="true"
+            onClick={() => setIsReplyOpen((prev) => !prev)}
+            className="font-heading text-[10px] font-bold text-secondary/80 hover:text-secondary flex items-center gap-1 cursor-pointer"
+          >
+            <MessageSquare className="w-2.5 h-2.5" />
+            <span>{isReplyOpen ? "Hide reply" : "Owner reply"}</span>
+            <ChevronDown className={cn("w-2.5 h-2.5 transition-transform", isReplyOpen && "rotate-180")} />
+          </button>
+        )}
+      </div>
+
+      {/* ── Collapsible Owner Reply ── */}
+      {review.ownerReply && isReplyOpen && (
+        <div className="bg-muted/30 border border-border/40 px-3 py-2 rounded-lg text-[11px]">
+          <div className="flex items-center gap-1.5 mb-1">
+            <MessageSquare className="w-3 h-3 text-secondary" />
+            <span className="font-heading text-[11px] font-extrabold text-primary">Owner</span>
+            {review.ownerReply.isVerifiedOwner && (
+              <span className="bg-secondary/10 text-secondary text-[8px] font-extrabold px-1 py-px rounded border border-secondary/20 uppercase leading-none">
+                Verified
+              </span>
+            )}
+            <span className="ml-auto text-[9px] font-body text-muted-foreground">{review.ownerReply.replyDate}</span>
+          </div>
+          <p className="font-body text-[11px] text-muted-foreground leading-relaxed">
+            {review.ownerReply.replyText}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

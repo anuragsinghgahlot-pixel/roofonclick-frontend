@@ -59,7 +59,7 @@ export default function ComparePage() {
 
   if (compareProperties.length === 0) {
     return (
-      <div className="relative flex min-h-screen flex-col bg-background">
+      <div className="relative flex flex-col min-h-[100dvh] bg-background">
         <Navbar />
         <main className="flex-1" data-no-intercept="true">
           <Section className="bg-background relative overflow-hidden text-left pt-4 sm:pt-6 lg:pt-8 pb-20">
@@ -87,7 +87,7 @@ export default function ComparePage() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
+    <div className="relative flex flex-col min-h-[100dvh] bg-background">
       <Navbar />
 
       <main className="flex-1" data-no-intercept="true">

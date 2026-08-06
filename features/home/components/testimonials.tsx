@@ -82,9 +82,13 @@ const MOCK_TESTIMONIALS: TestimonialItem[] = [
 
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 
+import { cn } from "@/lib/utils";
+
 function TestimonialCard({ t }: { t: TestimonialItem }) {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
   return (
-    <div className="flex flex-col gap-5 p-6 sm:p-7 rounded-[24px] bg-card/65 backdrop-blur-md border border-border/80 hover:border-border hover:shadow-xl transition-all duration-300 cursor-default relative overflow-hidden h-full">
+    <div className="flex flex-col gap-3.5 p-4 sm:p-5 rounded-2xl bg-card/65 backdrop-blur-md border border-border/80 hover:border-border hover:shadow-lg transition-all duration-300 cursor-default relative overflow-hidden h-full">
       <div className="absolute inset-0 bg-gradient-to-br from-card/[0.03] to-transparent pointer-events-none" />
       {/* Rating & Quote */}
       <div className="flex items-start justify-between relative z-10">
@@ -96,23 +100,33 @@ function TestimonialCard({ t }: { t: TestimonialItem }) {
             />
           ))}
         </div>
-        <Quote className="w-6 h-6 text-secondary/20 shrink-0" />
+        <Quote className="w-5 h-5 text-secondary/20 shrink-0" />
       </div>
       {/* Review */}
-      <p className="font-body text-sm text-foreground/80 leading-relaxed flex-1 relative z-10">
-        &ldquo;{t.review}&rdquo;
-      </p>
+      <div className="flex flex-col gap-1 relative z-10 flex-1">
+        <p className={cn("font-body text-xs text-foreground/80 leading-relaxed", !isExpanded && "line-clamp-3")}>
+          &ldquo;{t.review}&rdquo;
+        </p>
+        {t.review.length > 90 && (
+          <button
+            type="button"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="font-heading text-[11px] font-extrabold text-primary hover:text-secondary transition-colors cursor-pointer text-left self-start"
+          >
+            {isExpanded ? "Show Less" : "Read More"}
+          </button>
+        )}
+      </div>
       {/* Divider */}
-      <div className="h-px w-full bg-border/60 relative z-10" />
+      <div className="h-px w-full bg-border/60 relative z-10 mt-auto" />
       {/* Reviewer */}
-      <div className="flex items-center gap-3.5 relative z-10">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-heading text-xs font-extrabold border shrink-0 ${t.avatarBg}`}>
+      <div className="flex items-center gap-3 relative z-10">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-heading text-[11px] font-extrabold border shrink-0 ${t.avatarBg}`}>
           {t.initials}
         </div>
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <span className="font-heading text-sm font-bold text-primary truncate">{t.name}</span>
-          <span className="font-body text-[11px] text-muted-foreground truncate">{t.occupation}</span>
-          <span className="font-body text-[10px] text-muted-foreground/75 truncate">📍 {t.location}, Indore</span>
+        <div className="flex flex-col min-w-0">
+          <span className="font-heading text-xs font-bold text-primary truncate">{t.name}</span>
+          <span className="font-body text-[10px] text-muted-foreground truncate">{t.occupation} • 📍 {t.location}</span>
         </div>
       </div>
     </div>

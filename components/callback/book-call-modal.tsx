@@ -30,6 +30,8 @@ const TIME_SLOTS = [
   "Evening (4 PM - 8 PM)",
 ];
 
+import { Portal } from "@/components/shared/portal";
+
 export function BookCallModal({
   isOpen,
   onClose,
@@ -47,6 +49,16 @@ export function BookCallModal({
 
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Lock body scroll when open
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, [isOpen]);
 
   // Today in YYYY-MM-DD format for min date
   const todayISO = React.useMemo(() => {
@@ -105,14 +117,16 @@ export function BookCallModal({
   };
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-card border border-border/80 p-6 sm:p-8 rounded-3xl max-w-lg w-full shadow-premium text-left relative space-y-6 max-h-[90vh] overflow-y-auto"
-        >
+    <Portal>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[1200] bg-background/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto overscroll-contain">
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 30, scale: 0.96 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="bg-card border border-border/80 p-5 sm:p-7 rounded-t-3xl sm:rounded-3xl max-w-lg w-full shadow-2xl text-left relative space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar my-0 sm:my-auto"
+          >
           {/* Close Button */}
           <button
             type="button"
@@ -301,5 +315,6 @@ export function BookCallModal({
         </motion.div>
       </div>
     </AnimatePresence>
+  </Portal>
   );
 }

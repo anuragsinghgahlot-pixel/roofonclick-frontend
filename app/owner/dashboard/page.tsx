@@ -143,18 +143,18 @@ export default function OwnerDashboardPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
+    <div className="relative flex flex-col min-h-[100dvh] bg-background">
       <Navbar />
 
-      <main className="flex-1" data-no-intercept="true">
-        <Section className="bg-muted/10 pt-8 sm:py-12 relative overflow-hidden text-left">
+      <main className="flex-1 text-left" data-no-intercept="true">
+        <div className="bg-muted/10 pt-4 sm:pt-6 lg:pt-8 pb-12 sm:pb-16 relative overflow-hidden">
           {/* Background glows */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
           <Container>
             {/* Header / Welcome Row */}
-            <div className="flex flex-col gap-4 border-b border-border/80 pb-6 mb-8 sm:mb-10">
+            <div className="flex flex-col gap-3 border-b border-border/70 pb-5 mb-6 sm:mb-8">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div>
                   <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary block mb-1">
@@ -569,7 +569,7 @@ export default function OwnerDashboardPage() {
             </AnimatePresence>
 
           </Container>
-        </Section>
+        </div>
       </main>
 
       <Footer />

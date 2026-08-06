@@ -13,6 +13,7 @@ import { ProfileDropdown, NotificationsButton, ProfileAvatar } from "./profile-d
 import { NotificationDropdown } from "./notification-dropdown";
 import { Portal } from "@/components/shared/portal";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { BrandLogo } from "@/components/shared/brand-logo";
 import { toast } from "sonner";
 
 export const INDORE_AREAS = [
@@ -33,8 +34,11 @@ export const INDORE_AREAS = [
 export const SERVICES_ITEMS = [
   { label: "Hostels", description: "Budget & premium student hostels", filterType: "Hostel", icon: "🏢" },
   { label: "PGs", description: "Paying guest stays with food & laundry", filterType: "PG", icon: "🏠" },
-  { label: "Studio / RK", description: "Independent 1RK & studio apartments", filterType: "Studio/RK", icon: "🚪" },
-  { label: "BHKs", description: "1BHK, 2BHK & 3BHK full apartments", filterType: "Apartment", icon: "🏬" },
+  { label: "Studio Apartments", description: "Independent single layout flats", filterType: "Studio Apartment", icon: "🛋️" },
+  { label: "RK Units", description: "Room + Kitchen self-contained units", filterType: "RK", icon: "🍳" },
+  { label: "1 BHK Flats", description: "1 Bed, Hall & Kitchen apartments", filterType: "1 BHK", icon: "🛏️" },
+  { label: "2 BHK Flats", description: "2 Bed, Hall & Kitchen family flats", filterType: "2 BHK", icon: "🛋️" },
+  { label: "3 BHK & 4+ BHK", description: "Spacious luxury apartments", filterType: "3 BHK", icon: "🏰" },
 ];
 
 export default function Navbar() {
@@ -206,9 +210,7 @@ export default function Navbar() {
           <div className="flex h-12 items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center">
-              <span className="font-heading text-xl sm:text-2xl font-extrabold text-primary tracking-tight select-none cursor-pointer">
-                RoofOnClick
-              </span>
+              <BrandLogo />
             </Link>
 
             {/* Desktop Navigation Links */}
@@ -476,9 +478,7 @@ export default function Navbar() {
             >
               <div className="flex justify-between items-center mb-6 mt-1">
                 <Link href="/" onClick={() => setIsOpen(false)} data-no-intercept="true">
-                  <span className="font-heading text-xl sm:text-2xl font-extrabold text-primary tracking-tight select-none">
-                    RoofOnClick
-                  </span>
+                  <BrandLogo />
                 </Link>
                 <div className="flex items-center gap-2">
                   <ThemeToggle />

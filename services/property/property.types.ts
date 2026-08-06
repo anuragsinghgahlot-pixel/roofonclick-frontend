@@ -48,11 +48,46 @@ export interface Owner {
   avatarUrl?: string;
 }
 
+export interface ApartmentDetails {
+  bedrooms?: "Studio" | "RK" | "1" | "2" | "3" | "4+" | string;
+  furnished?: "Fully Furnished" | "Semi Furnished" | "Unfurnished" | string;
+  kitchenType?: "Attached Kitchen" | "Modular Kitchen" | "Open Kitchen" | "None" | string;
+  bathroomType?: "Attached" | "Common" | string;
+  balcony?: boolean;
+  parking?: "Bike" | "Car" | "Both" | "None" | string;
+  floorNumber?: number;
+  totalFloors?: number;
+  liftAvailable?: boolean;
+  powerBackup?: boolean;
+  security?: boolean;
+}
+
+export interface ApartmentPricing {
+  monthlyRent: number;
+  securityDeposit: number;
+  maintenance?: number;
+  electricityIncluded?: boolean;
+  waterIncluded?: boolean;
+  brokerage?: string;
+  availabilityDate?: string;
+}
+
 export interface Property {
   id: string;
   propertyName: string;
-  propertyType: "PG" | "Hostel" | "Co-living" | "Apartment";
-  gender: "Boys" | "Girls" | "Unisex";
+  propertyType:
+    | "PG"
+    | "Hostel"
+    | "Co-living"
+    | "Apartment"
+    | "Studio Apartment"
+    | "RK"
+    | "1 BHK"
+    | "2 BHK"
+    | "3 BHK"
+    | "4+ BHK"
+    | string;
+  gender: "Boys" | "Girls" | "Unisex" | string;
   description?: string;
   city: string;
   area: string;
@@ -61,6 +96,9 @@ export interface Property {
   mapsLink?: string;
   rooms: RoomConfiguration[];
   roomConfigurations?: RoomConfiguration[];
+  apartmentDetails?: ApartmentDetails;
+  apartmentPricing?: ApartmentPricing;
+  bhkConfig?: string;
   amenities: string[];
   rules: HouseRules;
   nearby: string[];
