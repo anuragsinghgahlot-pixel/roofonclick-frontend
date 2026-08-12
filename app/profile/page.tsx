@@ -118,7 +118,7 @@ export default function ProfilePage() {
 
   const handleSaveAvatar = () => {
     if (!previewDataUrl) return;
-    updateUser({ avatarUrl: previewDataUrl });
+    updateUser({ avatarUrl: previewDataUrl, avatar: previewDataUrl });
     setPreviewDataUrl(null);
     setAvatarError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -132,7 +132,7 @@ export default function ProfilePage() {
   };
 
   const handleRemoveAvatar = () => {
-    updateUser({ avatarUrl: undefined });
+    updateUser({ avatarUrl: "", avatar: "" });
     setPreviewDataUrl(null);
     setAvatarError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";

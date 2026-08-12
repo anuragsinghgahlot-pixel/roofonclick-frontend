@@ -133,24 +133,28 @@ export function WriteReviewModal({ isOpen, onClose, propertyId, onSuccess }: Wri
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      ReviewService.addReview(propertyId, {
-        userName: user?.name || user?.email?.split("@")[0] || "Verified Stayyer",
-        userAvatarUrl: user?.avatarUrl || `https://api.dicebear.com/8.x/lorelei/svg?seed=${user?.name || "Stayyer"}`,
-        rating: overallRating,
-        title: title.trim(),
-        text: content.trim(),
-        stayDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
-        recommend,
-        isVerifiedStay: true,
-        images: imageUrls.length > 0 ? imageUrls : undefined,
-      });
-
-      setIsSubmitting(false);
-      showToast.success("Review Submitted! 🎉", "Thank you for sharing your complete verified stay feedback.");
-      onClose();
-      if (onSuccess) onSuccess();
-    }, 500);
+    (async () => {
+      try {
+        await ReviewService.addReviewAsync(propertyId, {
+          userName: user?.name || user?.email?.split("@")[0] || "Verified Stayyer",
+          userAvatarUrl: user?.avatarUrl || `https://api.dicebear.com/8.x/lorelei/svg?seed=${user?.name || "Stayyer"}`,
+          rating: overallRating,
+          title: title.trim(),
+          text: content.trim(),
+          stayDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+          recommend,
+          isVerifiedStay: true,
+          images: imageUrls.length > 0 ? imageUrls : undefined,
+        });
+        showToast.success("Review Submitted! 🎉", "Thank you for sharing your stay feedback.");
+        onClose();
+        if (onSuccess) onSuccess();
+      } catch (err: any) {
+        showToast.error("Submission Error", err?.message || "Failed to submit review. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    })();
   };
 
   return (

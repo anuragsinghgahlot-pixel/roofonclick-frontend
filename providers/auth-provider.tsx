@@ -209,9 +209,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // ── Update user (local only — for profile edits) ────────────────────────────
-  const updateUser = React.useCallback((fields: Partial<User>) => {
-    setUser((prev) => (prev ? { ...prev, ...fields } : (fields as User)));
+  // ── Update user (local + backend DB sync) ──────────────────────────────────
+  const updateUser = React.useCallback(async (fields: Partial<User>) => {
+    // 1. Optimistic state update
+    setUser((prev) => {
+      if (!prev) return null;
+      const avatarVal = fields.avatarUrl !== undefined ? fields.avatarUrl : (fields.avatar !== undefined ? fields.avatar : prev.avatar);
+      return {
+        ...prev,
+        ...fields,
+        avatar: avatarVal,
+        avatarUrl: avatarVal,
+      };
+    });
+
+    // 2. Sync changes with backend database
+    try {
+      const payload: Record<string, any> = {};
+      if (fields.name !== undefined) payload.name = fields.name;
+      if (fields.phone !== undefined || fields.phoneNumber !== undefined) {
+        payload.phone = fields.phone || fields.phoneNumber;
+      }
+      if (fields.avatarUrl !== undefined || fields.avatar !== undefined) {
+        payload.avatar = fields.avatarUrl !== undefined ? fields.avatarUrl : fields.avatar;
+      }
+
+      if (Object.keys(payload).length > 0) {
+        const res = await apiClient.put<{ user: BackendUser }>("/api/users/profile", payload);
+        if (res.data?.user) {
+          setUser(normalizeUser(res.data.user));
+        }
+      }
+    } catch (err: any) {
+      console.error("[AuthProvider] Profile update failed:", err?.message || err);
+      showToast.error("Update Failed", "Could not save profile changes to server.");
+    }
   }, []);
 
   // ── Legacy compat: setRole ─────────────────────────────────────────────────
