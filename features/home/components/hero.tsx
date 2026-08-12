@@ -18,12 +18,22 @@ const SEARCH_SUGGESTIONS = [
   { label: "C21 Mall", category: "Landmark", description: "Luxury stays nearby", badge: "Lifestyle" },
 ];
 
+const ROTATING_WORDS = ["Roof", "PG", "Hostel", "Room", "Flat", "Space"];
+
 export function Hero() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [searchError, setSearchError] = React.useState<string | null>(null);
+  const [wordIndex, setWordIndex] = React.useState(0);
   const searchRef = React.useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setWordIndex((prev) => (prev + 1) % ROTATING_WORDS.length);
+    }, 2200);
+    return () => clearInterval(timer);
+  }, []);
 
   const navigateToSearch = React.useCallback(
     (location?: string) => {
@@ -118,10 +128,29 @@ export function Hero() {
               className="font-heading text-[1.875rem] sm:text-5xl lg:text-6xl xl:text-[4.25rem] font-extrabold text-primary tracking-tight leading-[1.08] mb-5 sm:mb-6 drop-shadow-sm"
             >
               <span className="block">Find Your Perfect</span>
-              <span className="relative inline-block mt-3 sm:mt-4 leading-[1.3] text-transparent bg-clip-text bg-gradient-to-r from-secondary to-secondary/80">
-                <span>Roof On</span>
-                <span className="ml-2 sm:ml-3">Click</span>
-                <span className="absolute bottom-1 sm:bottom-2 left-0 w-full h-[3px] sm:h-[4px] bg-secondary/20 rounded-full" />
+              <span className="relative inline-flex items-baseline flex-wrap gap-x-2.5 sm:gap-x-3.5 mt-3 sm:mt-4 leading-[1.25] text-secondary">
+                <motion.span 
+                  layout
+                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  className="relative inline-flex overflow-y-hidden py-1 justify-start items-baseline"
+                >
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={ROTATING_WORDS[wordIndex]}
+                      initial={{ y: "100%", opacity: 0, filter: "blur(4px)" }}
+                      animate={{ y: "0%", opacity: 1, filter: "blur(0px)" }}
+                      exit={{ y: "-100%", opacity: 0, filter: "blur(4px)" }}
+                      transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                      className="inline-block font-extrabold tracking-tight text-secondary pr-1"
+                    >
+                      {ROTATING_WORDS[wordIndex]}
+                    </motion.span>
+                  </AnimatePresence>
+                </motion.span>
+                <span className="font-extrabold text-secondary">
+                  On Click
+                </span>
+                <span className="absolute bottom-0 left-0 w-full h-[3px] sm:h-[4px] bg-secondary/20 rounded-full" />
               </span>
             </motion.h1>
 
