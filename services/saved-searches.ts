@@ -25,45 +25,24 @@ export function buildSearchSummary(filters: Partial<SavedSearch>): string {
 
 const STORAGE_KEY = "stayynest_saved_searches";
 
-const MOCK_SAVED_SEARCHES: SavedSearch[] = [
-  {
-    id: "saved-1",
-    name: "Indore Student PGs",
-    location: "Vijay Nagar",
-    minRent: 5000,
-    maxRent: 9000,
-    propertyType: "PG",
-    gender: "Female Only",
-    sharingType: "Single",
-    amenities: ["WiFi", "AC", "Food Included"],
-    createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-  },
-  {
-    id: "saved-2",
-    name: "Affordable Boys Hostels",
-    location: "Bhawarkua",
-    minRent: 4000,
-    maxRent: 7000,
-    propertyType: "Hostel",
-    gender: "Male Only",
-    sharingType: "Double",
-    amenities: ["WiFi", "Laundry", "3-Time Meal"],
-    createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-  },
-];
+const MOCK_SAVED_SEARCHES: SavedSearch[] = [];
 
 export const SavedSearchService = {
   getSavedSearches: (): SavedSearch[] => {
-    if (typeof window === "undefined") return MOCK_SAVED_SEARCHES;
+    if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.some(s => s.id.startsWith("saved-1") || s.id.startsWith("saved-2"))) {
+          localStorage.removeItem(STORAGE_KEY);
+          return [];
+        }
+        return parsed;
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_SAVED_SEARCHES));
-      return MOCK_SAVED_SEARCHES;
+      return [];
     } catch {
-      return MOCK_SAVED_SEARCHES;
+      return [];
     }
   },
 

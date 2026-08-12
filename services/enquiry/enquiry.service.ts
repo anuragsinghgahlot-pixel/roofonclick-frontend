@@ -1,121 +1,137 @@
-import { EnquiryRequest, RequestStatus } from "./enquiry.types";
+/**
+ * Enquiry service — replaced with real backend API calls.
+ * Removes all localStorage mock data.
+ */
 
-const ENQUIRIES_STORAGE_KEY = "roofonclick_enquiries";
+import { apiClient } from "@/lib/api-client";
 
-const INITIAL_MOCK_ENQUIRIES: EnquiryRequest[] = [
-  {
-    id: "enq-101",
-    propertyId: "serene-oasis",
-    propertyName: "Serene Oasis PG for Boys",
-    buyerName: "Rahul Sharma",
-    buyerEmail: "rahul.sharma@example.com",
-    buyerPhone: "+91 98765 12345",
-    requestType: "Visit",
-    status: "Pending",
-    preferredDate: "2026-07-25",
-    preferredTime: "11:00 AM",
-    notes: "I want to inspect the Double Sharing room with attached bathroom.",
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-    updatedAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-  },
-  {
-    id: "enq-102",
-    propertyId: "skyline-co-living",
-    propertyName: "Skyline Luxury Co-Living Hostel",
-    buyerName: "Ananya Roy",
-    buyerEmail: "ananya.roy@example.com",
-    buyerPhone: "+91 91234 56789",
-    requestType: "Enquiry",
-    status: "Pending",
-    message: "Is food included in the monthly rent for Single Sharing rooms?",
-    createdAt: new Date(Date.now() - 3600000 * 18).toISOString(),
-    updatedAt: new Date(Date.now() - 3600000 * 18).toISOString(),
-  },
-];
-
-class EnquiryServiceImpl {
-  private safeGet(): EnquiryRequest[] {
-    if (typeof window === "undefined") return INITIAL_MOCK_ENQUIRIES;
-    try {
-      const stored = localStorage.getItem(ENQUIRIES_STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
-      localStorage.setItem(ENQUIRIES_STORAGE_KEY, JSON.stringify(INITIAL_MOCK_ENQUIRIES));
-      return INITIAL_MOCK_ENQUIRIES;
-    } catch {
-      return INITIAL_MOCK_ENQUIRIES;
-    }
-  }
-
-  private safeSet(data: EnquiryRequest[]): void {
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.setItem(ENQUIRIES_STORAGE_KEY, JSON.stringify(data));
-    } catch {
-      // Ignore storage write errors
-    }
-  }
-
-  public getAllRequests(): EnquiryRequest[] {
-    return this.safeGet();
-  }
-
-  public getRequestsForProperty(propertyId: string): EnquiryRequest[] {
-    return this.safeGet().filter((r) => r.propertyId === propertyId);
-  }
-
-  public createRequest(data: Partial<EnquiryRequest>): EnquiryRequest {
-    const list = this.safeGet();
-    const id = `req-${Math.random().toString(36).substring(2, 9)}`;
-    const now = new Date().toISOString();
-
-    const newRequest: EnquiryRequest = {
-      id,
-      propertyId: data.propertyId || "general",
-      propertyName: data.propertyName || "RoofOnClick Property",
-      buyerName: data.buyerName || "Anonymous Buyer",
-      buyerEmail: data.buyerEmail || "",
-      buyerPhone: data.buyerPhone || "",
-      requestType: data.requestType || "Enquiry",
-      status: "Pending",
-      preferredDate: data.preferredDate,
-      preferredTime: data.preferredTime,
-      notes: data.notes,
-      message: data.message,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    list.unshift(newRequest);
-    this.safeSet(list);
-    return newRequest;
-  }
-
-  public updateRequestStatus(
-    id: string,
-    status: RequestStatus,
-    updatedDetails?: { preferredDate?: string; preferredTime?: string; notes?: string }
-  ): EnquiryRequest | null {
-    const list = this.safeGet();
-    const index = list.findIndex((r) => r.id === id);
-    if (index === -1) return null;
-
-    const updated: EnquiryRequest = {
-      ...list[index],
-      status,
-      preferredDate: updatedDetails?.preferredDate || list[index].preferredDate,
-      preferredTime: updatedDetails?.preferredTime || list[index].preferredTime,
-      notes: updatedDetails?.notes || list[index].notes,
-      updatedAt: new Date().toISOString(),
-    };
-
-    list[index] = updated;
-    this.safeSet(list);
-    return updated;
-  }
-
-  public getPendingCount(): number {
-    return this.safeGet().filter((r) => r.status === "Pending").length;
-  }
+export interface EnquirySubmission {
+  name: string;
+  phone: string;
+  message?: string;
+  requestType?: "Visit" | "Enquiry";
+  preferredDate?: string;
+  preferredTime?: string;
+  notes?: string;
 }
 
-export const EnquiryService = new EnquiryServiceImpl();
+export interface BackendEnquiry {
+  _id: string;
+  listing: { _id: string; title: string; "address.area"?: string } | string;
+  seeker?: { _id: string; name: string; email: string } | null;
+  name: string;
+  phone: string;
+  message?: string;
+  requestType?: "Visit" | "Enquiry";
+  preferredDate?: string;
+  preferredTime?: string;
+  notes?: string;
+  status: "new" | "seen" | "closed" | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type EnquiryStatus = "new" | "seen" | "closed";
+
+// Backwards-compat UI status types (old mock statuses kept for existing components)
+export type RequestStatus = "Pending" | "Approved" | "Rejected" | "Rescheduled" | "Seen" | "Closed" | "new" | "seen" | "closed";
+
+// Backwards-compat UI enquiry shape (old components use this shape)
+export interface EnquiryRequest {
+  id: string;
+  propertyId: string;
+  propertyName: string;
+  buyerName: string;
+  buyerEmail?: string;
+  buyerPhone: string;
+  requestType: "Visit" | "Enquiry";
+  status: RequestStatus;
+  preferredDate?: string;
+  preferredTime?: string;
+  notes?: string;
+  message?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const EnquiryService = {
+  /**
+   * Backwards-compat: get all enquiries for the owner (async).
+   * Old components called getAllRequests() synchronously — wrap in useEffect.
+   */
+  async getAllRequests(): Promise<BackendEnquiry[]> {
+    const { enquiries } = await EnquiryService.getReceivedEnquiries({ limit: 50 });
+    return enquiries;
+  },
+
+  /**
+   * Submit a new enquiry for a listing (public endpoint, optional auth).
+   */
+  async createRequest(listingId: string, data: EnquirySubmission): Promise<BackendEnquiry> {
+    const res = await apiClient.post<{ enquiry: BackendEnquiry }>(
+      `/api/enquiries/${listingId}`,
+      data
+    );
+    return res.data!.enquiry;
+  },
+
+  /**
+   * Owner: get all received enquiries with optional filters.
+   */
+  async getReceivedEnquiries(params?: {
+    listingId?: string;
+    status?: EnquiryStatus;
+    page?: number;
+    limit?: number;
+  }): Promise<{ enquiries: BackendEnquiry[]; pagination: any }> {
+    const query = new URLSearchParams();
+    if (params?.listingId) query.set("listingId", params.listingId);
+    if (params?.status) query.set("status", params.status);
+    if (params?.page) query.set("page", String(params.page));
+    if (params?.limit) query.set("limit", String(params.limit));
+    const path = `/api/enquiries/received${query.toString() ? `?${query}` : ""}`;
+    const res = await apiClient.get<{ enquiries: BackendEnquiry[] }>(path);
+    return {
+      enquiries: res.data?.enquiries ?? [],
+      pagination: res.pagination,
+    };
+  },
+
+  /**
+   * Owner: update enquiry status (new → seen → closed).
+   */
+  async updateRequestStatus(enquiryId: string, status: string, _extra?: any): Promise<BackendEnquiry> {
+    // Map old UI status to backend status
+    const statusMap: Record<string, EnquiryStatus> = {
+      Approved: "seen",
+      Rejected: "closed",
+      Rescheduled: "seen",
+      Seen: "seen",
+      Closed: "closed",
+      Pending: "new",
+    };
+    const backendStatus: EnquiryStatus = (statusMap[status] || status) as EnquiryStatus;
+    const res = await apiClient.put<{ enquiry: BackendEnquiry }>(
+      `/api/enquiries/${enquiryId}/status`,
+      { status: backendStatus }
+    );
+    return res.data!.enquiry;
+  },
+
+  /**
+   * Count pending (new) enquiries — synchronous fallback (returns 0).
+   * Call fetchPendingCount() for the real async count.
+   */
+  getPendingCount(): number {
+    return 0; // Sync fallback; real count fetched by fetchPendingCount()
+  },
+
+  async fetchPendingCount(): Promise<number> {
+    try {
+      const { pagination } = await EnquiryService.getReceivedEnquiries({ status: "new", limit: 1 });
+      return pagination?.total ?? 0;
+    } catch {
+      return 0;
+    }
+  },
+};

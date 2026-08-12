@@ -55,90 +55,11 @@ export interface GrowthQuickStats {
   budgetSpent: number; // ₹
 }
 
-/* ─── Mock Data ─── */
-const MOCK_CAMPAIGNS: MarketingCampaign[] = [
-  {
-    id: "CAMP-101",
-    title: "Indore Student Admission Rush 2026",
-    type: "Festival Campaign",
-    targetAudience: "Buyers / Students",
-    status: "Running",
-    budget: 150000,
-    spent: 85000,
-    ctr: 6.8,
-    conversions: 420,
-    revenueGenerated: 3570000,
-    startDate: "2026-07-15",
-    endDate: "2026-08-31",
-  },
-  {
-    id: "CAMP-102",
-    title: "Vijay Nagar Early Bird Discount (FEST500)",
-    type: "Homepage Banner",
-    targetAudience: "All Users",
-    status: "Running",
-    budget: 50000,
-    spent: 32000,
-    ctr: 8.2,
-    conversions: 180,
-    revenueGenerated: 1530000,
-    startDate: "2026-08-01",
-    endDate: "2026-08-15",
-  },
-  {
-    id: "CAMP-103",
-    title: "WhatsApp Move-in Checklist Broadcast",
-    type: "WhatsApp",
-    targetAudience: "Buyers / Students",
-    status: "Scheduled",
-    budget: 20000,
-    spent: 0,
-    ctr: 0,
-    conversions: 0,
-    revenueGenerated: 0,
-    startDate: "2026-08-05",
-    endDate: "2026-08-06",
-  },
-];
-
-const MOCK_COUPONS: CouponItem[] = [
-  {
-    id: "COUP-1",
-    code: "WELCOME500",
-    discountType: "Flat",
-    discountValue: 500,
-    minBookingValue: 5000,
-    usageLimit: 1000,
-    usedCount: 412,
-    applicableCities: ["Indore", "Bhopal"],
-    validUntil: "2026-08-31",
-    status: "Active",
-  },
-  {
-    id: "COUP-2",
-    code: "STAYY10",
-    discountType: "Percentage",
-    discountValue: 10,
-    minBookingValue: 8000,
-    usageLimit: 500,
-    usedCount: 198,
-    applicableCities: ["All Cities"],
-    validUntil: "2026-08-15",
-    status: "Active",
-  },
-];
-
-const MOCK_LOYALTY_TIERS: LoyaltyTier[] = [
-  { name: "Silver", pointsRequired: 0, cashbackRate: 1, perks: ["Standard Support", "1% Cashback"], activeUsersCount: 1240 },
-  { name: "Gold", pointsRequired: 500, cashbackRate: 3, perks: ["Priority Support", "3% Cashback", "Free Move-in Kit"], activeUsersCount: 380 },
-  { name: "Platinum", pointsRequired: 1500, cashbackRate: 5, perks: ["Dedicated Account Mgr", "5% Cashback", "Zero Deposit Guarantee"], activeUsersCount: 95 },
-];
-
-const MOCK_SEGMENTS: UserSegment[] = [
-  { id: "SEG-1", name: "High-Budget Tech Workers", criteria: "Rent > ₹12,000 & Company Tech", userCount: 450 },
-  { id: "SEG-2", name: "Indore IIM & DAVV Students", criteria: "Institution: IIM/DAVV", userCount: 820 },
-  { id: "SEG-3", name: "Inactive 30+ Days", criteria: "Last Active > 30 days", userCount: 310 },
-];
+/* ─── Data ─── */
+const MOCK_CAMPAIGNS: MarketingCampaign[] = [];
+const MOCK_COUPONS: CouponItem[] = [];
+const MOCK_LOYALTY_TIERS: LoyaltyTier[] = [];
+const MOCK_SEGMENTS: UserSegment[] = [];
 
 /* ─── Admin Growth Service Class ─── */
 export class AdminGrowthService {
@@ -146,12 +67,12 @@ export class AdminGrowthService {
     return {
       campaignsRunning: MOCK_CAMPAIGNS.filter((c) => c.status === "Running").length,
       activeCoupons: MOCK_COUPONS.filter((c) => c.status === "Active").length,
-      referralUsers: 1420,
-      conversionRate: 4.8,
-      ctr: 7.2,
-      revenueGenerated: 5100000,
-      campaignRoi: 420,
-      budgetSpent: 117000,
+      referralUsers: 0,
+      conversionRate: 0,
+      ctr: 0,
+      revenueGenerated: 0,
+      campaignRoi: 0,
+      budgetSpent: 0,
     };
   }
 

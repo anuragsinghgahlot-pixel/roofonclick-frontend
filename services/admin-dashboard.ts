@@ -251,64 +251,7 @@ const MOCK_CHARTS: ChartData[] = [
   },
 ];
 
-const MOCK_ACTIVITIES: ActivityItem[] = [
-  {
-    id: "a1",
-    type: "property_submitted",
-    message: "New property submitted: Sunshine PG, Vijay Nagar",
-    timestamp: "2026-08-02T19:15:00Z",
-    relativeTime: "2 min ago",
-  },
-  {
-    id: "a2",
-    type: "owner_verified",
-    message: "Owner verified: Priya Sharma (ID: OWN-4521)",
-    timestamp: "2026-08-02T19:00:00Z",
-    relativeTime: "17 min ago",
-  },
-  {
-    id: "a3",
-    type: "booking_confirmed",
-    message: "Booking confirmed: Elite Residency — Anurag S. (#ROC-1087)",
-    timestamp: "2026-08-02T18:45:00Z",
-    relativeTime: "32 min ago",
-  },
-  {
-    id: "a4",
-    type: "review_reported",
-    message: "Review flagged on Comfort Stay Hostel — profanity detected",
-    timestamp: "2026-08-02T18:20:00Z",
-    relativeTime: "57 min ago",
-  },
-  {
-    id: "a5",
-    type: "support_ticket",
-    message: "Support ticket raised: Payment issue — Buyer #4201",
-    timestamp: "2026-08-02T18:05:00Z",
-    relativeTime: "1 hour ago",
-  },
-  {
-    id: "a6",
-    type: "payment_received",
-    message: "Payment received: ₹15,000 — Booking #ROC-1042",
-    timestamp: "2026-08-02T17:30:00Z",
-    relativeTime: "1.5 hours ago",
-  },
-  {
-    id: "a7",
-    type: "user_registered",
-    message: "New buyer registered: Rahul Verma (rahul@email.com)",
-    timestamp: "2026-08-02T17:00:00Z",
-    relativeTime: "2 hours ago",
-  },
-  {
-    id: "a8",
-    type: "property_approved",
-    message: "Property approved: Green Meadows Hostel, AB Road",
-    timestamp: "2026-08-02T16:30:00Z",
-    relativeTime: "2.5 hours ago",
-  },
-];
+const MOCK_ACTIVITIES: ActivityItem[] = [];
 
 const MOCK_QUICK_ACTIONS: QuickAction[] = [
   {

@@ -101,9 +101,6 @@ class PropertyServiceImpl {
       if (legacyList.length > 0) {
         list = legacyList;
         safeSetItem(STORAGE_KEYS.PROPERTIES, list);
-      } else {
-        list = MOCK_PROPERTIES.map((mp) => convertMockProperty(mp));
-        safeSetItem(STORAGE_KEYS.PROPERTIES, list);
       }
     }
 

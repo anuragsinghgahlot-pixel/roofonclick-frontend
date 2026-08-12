@@ -8,6 +8,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { PropertyService, MediaImage, Property } from "@/services/property";
+import { ListingsAPI } from "@/services/listings/listings.api";
 
 // Zod Schema representing all fields in the multi-step wizard
 export const roomConfigurationSchema = z
@@ -494,30 +495,23 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
     }
   }, [form, setStep]);
 
-  const handlePublish = React.useCallback(() => {
+  const handlePublish = React.useCallback(async () => {
     const values = form.getValues() as Partial<Property>;
-    const propertyId = editPropertyId || values.id || Math.random().toString(36).substring(7);
-    
-    const payload = {
-      ...values,
-      id: propertyId,
-    };
+    const propertyId = editPropertyId || values.id;
 
-    if (editPropertyId || (values.id && PropertyService.getPropertyById(values.id))) {
-      PropertyService.updateProperty(propertyId, payload);
-      toast.success("Your property has been updated successfully.");
-    } else {
-      PropertyService.createProperty(payload);
-      toast.success("Your property has been published successfully.");
-      if (typeof window !== "undefined") {
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent("roofonclick_trigger_review_modal"));
-        }, 1200);
+    try {
+      if (editPropertyId) {
+        await ListingsAPI.updateListing(editPropertyId, values);
+        toast.success("Your property has been updated successfully.");
+      } else {
+        await ListingsAPI.createListing(values);
+        toast.success("Your property has been published successfully.");
       }
+      PropertyService.clearDraft();
+      router.push("/owner/dashboard");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save listing. Please try again.");
     }
-    
-    PropertyService.clearDraft();
-    router.push("/owner/dashboard");
   }, [editPropertyId, form, router]);
 
   return (

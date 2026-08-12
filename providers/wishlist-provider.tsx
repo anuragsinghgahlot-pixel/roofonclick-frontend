@@ -4,6 +4,7 @@ import * as React from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { showToast } from "@/lib/toast";
+import { UserAPI } from "@/services/user/user.api";
 
 interface WishlistContextType {
   wishlist: string[];
@@ -24,19 +25,28 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const userRole = user?.role || role;
   const userKey = user?.email ? `roofonclick_wishlist_${user.email}` : "roofonclick_wishlist_guest";
 
-  // Load user-specific wishlist from storage
+  // Load user-specific wishlist from backend / fallback local storage
   React.useEffect(() => {
     if (typeof window !== "undefined" && isAuthenticated && userRole === "buyer") {
-      try {
-        const stored = localStorage.getItem(userKey);
-        if (stored) {
-          setWishlist(JSON.parse(stored));
-        } else {
-          setWishlist([]);
-        }
-      } catch {
-        setWishlist([]);
-      }
+      let isMounted = true;
+      UserAPI.getSavedListings()
+        .then((props) => {
+          if (isMounted) {
+            const ids = props.map((p) => p.id);
+            setWishlist(ids);
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            try {
+              const stored = localStorage.getItem(userKey);
+              setWishlist(stored ? JSON.parse(stored) : []);
+            } catch {
+              setWishlist([]);
+            }
+          }
+        });
+      return () => { isMounted = false; };
     } else {
       setWishlist([]);
     }
@@ -135,9 +145,11 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         if (isCurrentlySaved) {
           showToast.info("Removed from Wishlist", "Property removed from your saved stays.");
           next = prev.filter((item) => item !== id);
+          UserAPI.unsaveListing(id).catch(() => {});
         } else {
           showToast.success("Added to Wishlist", "Property saved to your Wishlist.");
           next = [...prev, id];
+          UserAPI.saveListing(id).catch(() => {});
         }
         if (typeof window !== "undefined" && userKey) {
           try {

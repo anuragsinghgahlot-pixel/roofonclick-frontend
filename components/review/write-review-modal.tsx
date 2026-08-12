@@ -140,20 +140,10 @@ export function WriteReviewModal({ isOpen, onClose, propertyId, onSuccess }: Wri
         rating: overallRating,
         title: title.trim(),
         text: content.trim(),
-        content: content.trim(),
+        stayDate: new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
         recommend,
         isVerifiedStay: true,
         images: imageUrls.length > 0 ? imageUrls : undefined,
-        categoryRatings: {
-          cleanliness: categoryScores.cleanliness || 5,
-          safety: categoryScores.safety || 5,
-          location: categoryScores.location || 5,
-          valueForMoney: categoryScores.valueForMoney || 5,
-          foodQuality: categoryScores.foodQuality || 4,
-          wifi: categoryScores.wifi || 5,
-          management: categoryScores.management || 5,
-          overall: overallRating,
-        },
       });
 
       setIsSubmitting(false);
