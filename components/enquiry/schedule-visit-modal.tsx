@@ -78,18 +78,13 @@ export function ScheduleVisitModal({
       return;
     }
 
-    const req = EnquiryService.createRequest({
-      propertyId,
-      propertyName,
-      buyerName: name.trim(),
-      buyerPhone: phone.trim(),
-      requestType: "Visit",
-      preferredDate: date,
-      preferredTime: time,
-      notes: notes.trim(),
+    // Fire-and-forget: call real backend enquiry endpoint
+    EnquiryService.createRequest(propertyId, {
+      name: name.trim(),
+      phone: phone.trim(),
+      message: notes.trim(),
     });
 
-    setCreatedRequest(req);
     setIsSubmitted(true);
     showToast.success("Visit Scheduled!", `Inspection request sent for ${propertyName}. The owner will confirm shortly.`);
   };

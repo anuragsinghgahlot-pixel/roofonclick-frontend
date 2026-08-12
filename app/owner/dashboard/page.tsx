@@ -12,6 +12,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
 import { PropertyService, Property } from "@/services/property";
+import { UserAPI } from "@/services/user/user.api";
+import { ListingsAPI } from "@/services/listings/listings.api";
 import { EnquiryService } from "@/services/enquiry";
 import { CallbackService } from "@/services/callback/callback.service";
 import { calculatePropertyAvailability, calculateRoomAvailability } from "@/lib/availability-utils";
@@ -26,20 +28,46 @@ const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 export default function OwnerDashboardPage() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, role, logout } = useAuth();
+  const { user, role, logout, isLoading } = useAuth();
   const [pathnameKey, setPathnameKey] = React.useState(pathname);
 
   const currentRole = user?.role || role;
 
   React.useEffect(() => {
-    if (user && currentRole === "buyer") {
+    if (!isLoading && !user) {
+      router.replace("/login");
+    } else if (user && currentRole === "buyer") {
       router.replace("/");
     }
-  }, [user, currentRole, router]);
-  const [properties, setProperties] = React.useState<Property[]>(() => {
-    return PropertyService.getAllProperties();
-  });
+  }, [user, currentRole, isLoading, router]);
+  const [properties, setProperties] = React.useState<Property[]>([]);
   const [propertyToDelete, setPropertyToDelete] = React.useState<Property | null>(null);
+
+  const fetchOwnerListings = React.useCallback(() => {
+    // Clear legacy mock local storage cache if any
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("roof_on_code_properties");
+        if (stored && stored.includes("Elite Residency")) {
+          localStorage.removeItem("roof_on_code_properties");
+          localStorage.removeItem("roof_on_code_legacy_properties");
+        }
+      } catch {}
+    }
+
+    UserAPI.getMyListings()
+      .then((res) => {
+        setProperties(res.listings || []);
+      })
+      .catch(() => {
+        // Fall back to PropertyService if offline/unauthenticated
+        setProperties(PropertyService.getAllProperties());
+      });
+  }, []);
+
+  React.useEffect(() => {
+    fetchOwnerListings();
+  }, [fetchOwnerListings]);
 
   // Collapsible availability section state per property
   const [expandedAvailability, setExpandedAvailability] = React.useState<Record<string, boolean>>({});
@@ -93,11 +121,11 @@ export default function OwnerDashboardPage() {
   // Re-sync properties on window focus
   React.useEffect(() => {
     const handleFocus = () => {
-      setProperties(PropertyService.getAllProperties());
+      fetchOwnerListings();
     };
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, []);
+  }, [fetchOwnerListings]);
 
   const handleLogout = () => {
     logout();
@@ -110,9 +138,14 @@ export default function OwnerDashboardPage() {
   };
 
   const [activeTab, setActiveTab] = React.useState<"PROPERTIES" | "ENQUIRIES" | "CALLBACKS" | "REVIEWS">("PROPERTIES");
-  const enquiriesList = EnquiryService.getAllRequests();
+  const [enquiriesList, setEnquiriesList] = React.useState<any[]>([]);
+  const [pendingEnquiriesCount, setPendingEnquiriesCount] = React.useState(0);
   const totalEnquiriesCount = enquiriesList.length;
-  const pendingEnquiriesCount = EnquiryService.getPendingCount();
+
+  React.useEffect(() => {
+    EnquiryService.getAllRequests().then(setEnquiriesList).catch(() => setEnquiriesList([]));
+    EnquiryService.fetchPendingCount().then(setPendingEnquiriesCount).catch(() => setPendingEnquiriesCount(0));
+  }, []);
 
   const callbacksList = CallbackService.getAllRequests();
   const totalCallbacksCount = callbacksList.length;
@@ -133,13 +166,18 @@ export default function OwnerDashboardPage() {
   };
 
   // 3. Delete Property Handler & Confirmation
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!propertyToDelete) return;
     const targetId = propertyToDelete.id;
-    PropertyService.deleteProperty(targetId);
-    setProperties(PropertyService.getAllProperties());
-    toast.success("Your property has been deleted successfully.");
-    setPropertyToDelete(null);
+    try {
+      await ListingsAPI.deleteListing(targetId);
+      toast.success("Your property has been deleted successfully.");
+      fetchOwnerListings();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete property.");
+    } finally {
+      setPropertyToDelete(null);
+    }
   };
 
   return (
@@ -222,8 +260,6 @@ export default function OwnerDashboardPage() {
               {([
                 { id: "PROPERTIES", icon: Building, label: "Properties", count: properties.length, badge: null },
                 { id: "ENQUIRIES", icon: Users, label: "Enquiries", count: totalEnquiriesCount, badge: pendingEnquiriesCount > 0 ? pendingEnquiriesCount : null },
-                { id: "CALLBACKS", icon: PhoneCall, label: "Callbacks", count: totalCallbacksCount, badge: pendingCallbacksCount > 0 ? pendingCallbacksCount : null },
-                { id: "REVIEWS", icon: MessageSquare, label: "Reviews", count: null, badge: null },
               ] as const).map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;

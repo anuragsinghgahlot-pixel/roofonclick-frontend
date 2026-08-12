@@ -42,7 +42,7 @@ export function RecommendedSection({ location, propertyType }: RecommendedSectio
           </p>
         </div>
 
-        {recommendations.length === 0 ? (
+        {recommendations.filter(item => Boolean(item?.property)).length === 0 ? (
           <EmptyState
             icon={Compass}
             title="No similar properties found."
@@ -55,7 +55,9 @@ export function RecommendedSection({ location, propertyType }: RecommendedSectio
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             <AnimatePresence>
-              {recommendations.map((item) => (
+              {recommendations
+                .filter((item) => Boolean(item && item.property))
+                .map((item) => (
                 <motion.div
                   key={item.id}
                   initial={{ opacity: 0, y: 15 }}

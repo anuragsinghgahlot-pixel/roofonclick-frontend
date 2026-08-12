@@ -1,3 +1,5 @@
+import { apiClient } from "@/lib/api-client";
+
 export interface PriceBreakdown {
   monthlyRent: number;
   securityDeposit: number;
@@ -59,6 +61,11 @@ export const BookingService = {
       createdAt: new Date().toISOString(),
     };
 
+    // Trigger API call asynchronously to save in DB if connected
+    apiClient
+      .post<{ booking: any }>("/api/bookings", request)
+      .catch((err) => console.log("[BookingService] Offline fallback:", err.message));
+
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("stayynest_booking_reservations") || "[]";
@@ -70,6 +77,34 @@ export const BookingService = {
       }
     }
     return { success: true, reservationId };
+  },
+
+  async createBookingReservationAsync(request: BookingReservationRequest): Promise<BookingReservation> {
+    try {
+      const res = await apiClient.post<{ booking: any }>("/api/bookings", request);
+      const b = res.data!.booking;
+      return {
+        id: b._id,
+        reservationId: b.reservationId,
+        propertyId: b.property?._id || b.property,
+        propertyName: b.propertyName,
+        roomType: b.roomType,
+        moveInDate: b.moveInDate,
+        pricing: b.pricing,
+        guestDetails: b.guestDetails,
+        status: b.status,
+        createdAt: b.createdAt,
+      };
+    } catch {
+      const res = BookingService.createBookingReservation(request);
+      return {
+        ...request,
+        id: `booking-${Date.now()}`,
+        reservationId: res.reservationId,
+        status: "confirmed",
+        createdAt: new Date().toISOString(),
+      };
+    }
   },
 
   getAllBookings: (): BookingReservation[] => {
@@ -101,5 +136,25 @@ export const BookingService = {
         },
       },
     ];
+  },
+
+  async fetchMyBookings(): Promise<BookingReservation[]> {
+    try {
+      const res = await apiClient.get<{ bookings: any[] }>("/api/bookings/my-bookings");
+      return (res.data?.bookings ?? []).map((b) => ({
+        id: b._id,
+        reservationId: b.reservationId,
+        propertyId: b.property?._id || b.property,
+        propertyName: b.propertyName || b.property?.title,
+        roomType: b.roomType,
+        moveInDate: b.moveInDate,
+        pricing: b.pricing,
+        guestDetails: b.guestDetails,
+        status: b.status,
+        createdAt: b.createdAt,
+      }));
+    } catch {
+      return BookingService.getAllBookings();
+    }
   },
 };

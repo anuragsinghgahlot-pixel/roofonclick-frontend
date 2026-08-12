@@ -15,14 +15,10 @@ import { toast } from "sonner";
 export default function VerifyOtpPage() {
   const router = useRouter();
 
-  const [resetState] = React.useState(() => {
-    return AuthService.getActiveResetState();
-  });
-  const emailOrPhone = resetState?.emailOrPhone || resetState?.email || "";
-  const maskedDestination = React.useMemo(() => {
-    if (!resetState) return "your registered account";
-    return AuthService.maskValue(resetState.emailOrPhone, resetState.method);
-  }, [resetState]);
+  // getActiveResetState returns null (OTP reset not yet supported by backend)
+  const resetState = AuthService.getActiveResetState();
+  const emailOrPhone = "";
+  const maskedDestination = "your registered account";
 
   const [otp, setOtp] = React.useState<string[]>(["", "", "", "", "", ""]);
   const [error, setError] = React.useState<string | null>(null);
@@ -102,7 +98,7 @@ export default function VerifyOtpPage() {
     setError(null);
 
     try {
-      const res = await AuthService.resendOTP(emailOrPhone);
+      const res = await AuthService.resendOTP();
       if (res.success) {
         toast.success(res.message);
         setCountdown(30);

@@ -55,9 +55,18 @@ export default function ProfilePage() {
   // Personal Info Edit State
   const [isEditing, setIsEditing] = React.useState(false);
   const [fullName, setFullName] = React.useState(user?.name || "");
-  const [phoneNumber, setPhoneNumber] = React.useState(user?.phone || user?.phoneNumber || "");
+  const [phoneNumber, setPhoneNumber] = React.useState(user?.phone || (user as any)?.phoneNumber || "");
   const [dob, setDob] = React.useState(user?.dob || "1998-08-15");
   const [gender, setGender] = React.useState(user?.gender || "Prefer not to say");
+
+  React.useEffect(() => {
+    if (user) {
+      setFullName(user.name || "");
+      setPhoneNumber(user.phone || (user as any).phoneNumber || "");
+      if (user.dob) setDob(user.dob);
+      if (user.gender) setGender(user.gender);
+    }
+  }, [user]);
 
   // Avatar Upload & Preview State
   const fileInputRef = React.useRef<HTMLInputElement>(null);

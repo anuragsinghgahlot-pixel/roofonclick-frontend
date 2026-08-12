@@ -91,6 +91,7 @@ const MOCK_SIMILAR_PROPERTIES = [
 ];
 
 import { PropertyService, Property, MediaImage, RoomConfiguration } from "@/services/property";
+import { ListingsAPI } from "@/services/listings/listings.api";
 import { ReviewService } from "@/services/reviews";
 import { MOCK_PROPERTIES } from "@/constants/mock-properties";
 
@@ -112,10 +113,24 @@ function PropertyDetailsContent() {
   const propertyId = (params?.id as string) || "";
   const isPreviewMode = searchParams.get("preview") === "owner";
 
-  const [prevId, setPrevId] = React.useState(propertyId);
-  const [property, setProperty] = React.useState<Property | null>(() => {
-    return propertyId ? PropertyService.getPropertyById(propertyId) : null;
-  });
+  const [property, setProperty] = React.useState<Property | null>(null);
+
+  React.useEffect(() => {
+    if (!propertyId) return;
+    let isMounted = true;
+    ListingsAPI.getListingById(propertyId)
+      .then((data) => {
+        if (isMounted) {
+          setProperty(data || PropertyService.getPropertyById(propertyId));
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setProperty(PropertyService.getPropertyById(propertyId));
+        }
+      });
+    return () => { isMounted = false; };
+  }, [propertyId]);
 
   const [reviewsVersion, setReviewsVersion] = React.useState(0);
   const ratingData = React.useMemo(() => {
@@ -146,11 +161,6 @@ function PropertyDetailsContent() {
       setIsShareModalOpen(true);
     }
   };
-
-  if (prevId !== propertyId) {
-    setPrevId(propertyId);
-    setProperty(propertyId ? PropertyService.getPropertyById(propertyId) : null);
-  }
 
   const isUserOwner = user !== null && (user.role === "owner" || role === "owner");
   const isOwnerView = isUserOwner || isPreviewMode;

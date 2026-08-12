@@ -14,7 +14,7 @@ import {
   Camera,
   Filter,
 } from "lucide-react";
-import { ReviewItem, ReviewService, RatingSummary } from "@/services/reviews";
+import { Review, ReviewService } from "@/services/reviews";
 import { EmptyState } from "@/components/shared/empty-state";
 import { showToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -49,8 +49,8 @@ export function ReviewsSection({ propertyId = "p1", className }: ReviewsSectionP
   // Check if buyer has completed a verified stay
   const hasVerifiedStay = true; // Buyers can submit reviews for verified bookings
 
-  const [reviews, setReviews] = React.useState<ReviewItem[]>([]);
-  const [summary, setSummary] = React.useState<RatingSummary | null>(null);
+  const [reviews, setReviews] = React.useState<Review[]>([]);
+  const [summary, setSummary] = React.useState<{ overallRating: number; totalReviews: number; totalVerifiedReviews: number; categoryBreakdown: Record<string, number> } | null>(null);
   const [activeFilter, setActiveFilter] = React.useState<FilterType>("All");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [visibleCount, setVisibleCount] = React.useState(3);
@@ -58,8 +58,15 @@ export function ReviewsSection({ propertyId = "p1", className }: ReviewsSectionP
   const [isWriteModalOpen, setIsWriteModalOpen] = React.useState(false);
 
   const refreshList = React.useCallback(() => {
-    setReviews(ReviewService.getReviews(propertyId));
-    setSummary(ReviewService.getRatingSummary(propertyId));
+    const list = ReviewService.getReviewsByPropertyId(propertyId);
+    setReviews(list);
+    const breakdown = ReviewService.getRatingBreakdown(propertyId);
+    setSummary({
+      overallRating: breakdown.overallRating,
+      totalReviews: breakdown.totalReviews,
+      totalVerifiedReviews: list.filter((r) => r.isVerifiedStay).length,
+      categoryBreakdown: {},
+    });
   }, [propertyId]);
 
   React.useEffect(() => {
@@ -67,7 +74,8 @@ export function ReviewsSection({ propertyId = "p1", className }: ReviewsSectionP
   }, [refreshList]);
 
   const handleHelpfulClick = (reviewId: string) => {
-    ReviewService.toggleHelpful(reviewId);
+    const userEmail = "guest@roofonclick.com";
+    ReviewService.incrementHelpfulCount(reviewId, userEmail);
     refreshList();
     showToast.success("Thanks for your feedback!", "Review marked as helpful.");
   };
@@ -84,9 +92,9 @@ export function ReviewsSection({ propertyId = "p1", className }: ReviewsSectionP
       // Search query logic
       if (searchQuery.trim().length > 0) {
         const query = searchQuery.toLowerCase();
-        const contentMatch = item.content.toLowerCase().includes(query);
+        const textMatch = item.text.toLowerCase().includes(query);
         const nameMatch = item.userName.toLowerCase().includes(query);
-        return contentMatch || nameMatch;
+        return textMatch || nameMatch;
       }
 
       return true;
@@ -314,7 +322,7 @@ function ReviewCardItem({
   onHelpfulClick,
   onLightboxImg,
 }: {
-  review: ReviewItem;
+  review: Review;
   onHelpfulClick: (id: string) => void;
   onLightboxImg: (url: string) => void;
 }) {
@@ -326,7 +334,7 @@ function ReviewCardItem({
       {/* ── Compact Header: Avatar | Name+Badge+Date | Stars ── */}
       <div className="flex items-center gap-2">
         <img
-          src={review.userAvatar}
+          src={review.userAvatarUrl || `https://api.dicebear.com/8.x/lorelei/svg?seed=${encodeURIComponent(review.userName)}`}
           alt={review.userName}
           className="w-7 h-7 rounded-full border border-border/60 object-cover shrink-0"
         />
@@ -338,8 +346,8 @@ function ReviewCardItem({
                 <CheckCircle2 className="w-2.5 h-2.5" /> Verified
               </span>
             )}
-            <span className="text-[10px] text-muted-foreground">·</span>
-            <span className="text-[10px] font-body text-muted-foreground">{review.date}</span>
+            <span className="text-[10px] font-body text-muted-foreground">·</span>
+            <span className="text-[10px] font-body text-muted-foreground">{review.stayDate || new Date(review.createdAt).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}</span>
           </div>
         </div>
         {/* Rating Stars */}
@@ -359,9 +367,9 @@ function ReviewCardItem({
       {/* ── Review Text (3-line clamp with inline Read More) ── */}
       <div>
         <p className={cn("font-body text-[11px] sm:text-xs text-foreground/85 leading-relaxed", !isExpanded && "line-clamp-3")}>
-          {review.content}
+          {review.text}
         </p>
-        {review.content.length > 120 && (
+        {review.text.length > 120 && (
           <button
             type="button"
             data-no-intercept="true"
@@ -376,7 +384,7 @@ function ReviewCardItem({
       {/* ── Photo Thumbnails (smaller) ── */}
       {review.images && review.images.length > 0 && (
         <div className="flex items-center gap-1.5">
-          {review.images.map((imgUrl, idx) => (
+          {review.images.map((imgUrl: string, idx: number) => (
             <img
               key={idx}
               src={imgUrl}
@@ -396,9 +404,7 @@ function ReviewCardItem({
           onClick={() => onHelpfulClick(review.id)}
           className={cn(
             "px-2 py-0.5 rounded-lg border text-[10px] font-heading font-bold transition-all cursor-pointer inline-flex items-center gap-1",
-            review.isHelpfulClicked
-              ? "bg-primary/10 border-primary/60 text-primary"
-              : "bg-transparent border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/30"
+            "bg-transparent border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/30"
           )}
         >
           <ThumbsUp className="w-2.5 h-2.5" />
@@ -425,15 +431,10 @@ function ReviewCardItem({
           <div className="flex items-center gap-1.5 mb-1">
             <MessageSquare className="w-3 h-3 text-secondary" />
             <span className="font-heading text-[11px] font-extrabold text-primary">Owner</span>
-            {review.ownerReply.isVerifiedOwner && (
-              <span className="bg-secondary/10 text-secondary text-[8px] font-extrabold px-1 py-px rounded border border-secondary/20 uppercase leading-none">
-                Verified
-              </span>
-            )}
-            <span className="ml-auto text-[9px] font-body text-muted-foreground">{review.ownerReply.replyDate}</span>
+            <span className="ml-auto text-[9px] font-body text-muted-foreground">{new Date(review.ownerReply.createdAt).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}</span>
           </div>
           <p className="font-body text-[11px] text-muted-foreground leading-relaxed">
-            {review.ownerReply.replyText}
+            {review.ownerReply.text}
           </p>
         </div>
       )}

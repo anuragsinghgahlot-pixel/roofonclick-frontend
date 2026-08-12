@@ -73,8 +73,8 @@ export function FilterSidebar({
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-border/60">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-primary" />
-            <h2 className="font-heading text-sm font-extrabold text-primary">Filters</h2>
+            <Filter className="w-4 h-4 text-primary shrink-0" />
+            <h2 className="font-heading text-sm font-extrabold text-primary mb-0 leading-none">Filters</h2>
           </div>
           {hasActiveFilters && onClearAll && (
             <button

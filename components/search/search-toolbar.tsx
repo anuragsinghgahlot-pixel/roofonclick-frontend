@@ -306,7 +306,7 @@ export function SearchToolbar({
               <div className="px-6 py-4 border-b border-border/60 flex items-center justify-between shrink-0 bg-card">
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="w-4 h-4 text-primary" />
-                  <h2 className="font-heading text-lg font-extrabold text-primary">All Filters</h2>
+                  <h2 className="font-heading text-lg font-extrabold text-primary mb-0 leading-none">All Filters</h2>
                 </div>
                 <div className="flex items-center gap-3">
                   {hasActiveFilters && (

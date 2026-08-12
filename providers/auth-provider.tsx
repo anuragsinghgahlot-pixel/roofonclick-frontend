@@ -1,167 +1,231 @@
 "use client";
 
+/**
+ * AuthProvider — real backend-connected authentication.
+ *
+ * Token strategy (Secure Hybrid):
+ *   - accessToken  → in-memory only via TokenManager (never on disk)
+ *   - refreshToken → localStorage under obfuscated key '_roc_sid'
+ *
+ * On mount: if RT exists in storage, silently refresh to rehydrate session.
+ */
+
 import * as React from "react";
+import { TokenManager } from "@/lib/token-manager";
+import { apiClient } from "@/lib/api-client";
 import { showToast } from "@/lib/toast";
 
+// ─── Lightweight session cookie (readable by Next.js middleware) ──────────────
+// Middleware can't access localStorage, so we set a plain (non-HttpOnly) cookie
+// as a presence indicator. It holds NO sensitive data.
+const SESSION_COOKIE = "_roc_has_session";
+
+function setSessionCookie() {
+  if (typeof document !== "undefined") {
+    document.cookie = `${SESSION_COOKIE}=1; path=/; SameSite=Strict`;
+  }
+}
+
+function clearSessionCookie() {
+  if (typeof document !== "undefined") {
+    document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; SameSite=Strict`;
+  }
+}
+
+// Backend returns role: "seeker" | "owner" | "admin"
+// UI uses: "buyer" | "owner" | "admin" — we map seeker → buyer
+export type BackendRole = "seeker" | "owner" | "admin";
 export type UserRole = "buyer" | "owner" | "admin";
 
 export interface User {
-  id?: string;
-  name?: string;
-  email?: string;
+  id: string;
+  name: string;
+  email: string;
   phone?: string;
+  // Legacy aliases used by profile page
   phoneNumber?: string;
   dob?: string;
   gender?: string;
-  role?: UserRole;
-  avatarUrl?: string;
-  memberSince?: string;
   status?: string;
+  avatar?: string;
+  avatarUrl?: string;
+  role: UserRole;
   isEmailVerified?: boolean;
   isPhoneVerified?: boolean;
+  memberSince?: string;
+}
+
+interface BackendUser {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  avatar?: string;
+  role: BackendRole;
+  createdAt?: string;
+}
+
+interface AuthTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  user: BackendUser;
 }
 
 interface AuthContextType {
   user: User | null;
   role: UserRole | null;
-  setRole: (role: UserRole) => void;
-  signup: (name: string, email: string, phoneNumber?: string, gender?: string, role?: UserRole) => void;
-  login: (email: string) => void;
-  logout: () => void;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string, role?: UserRole) => Promise<void>;
+  loginWithTokens: (accessToken: string, refreshToken: string, backendUser: BackendUser) => void;
+  logout: () => Promise<void>;
   updateUser: (updatedFields: Partial<User>) => void;
+  // Legacy compat
+  setRole: (role: UserRole) => void;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
+// ─── Role mapper ──────────────────────────────────────────────────────────────
+function mapRole(backendRole: BackendRole): UserRole {
+  return backendRole === "seeker" ? "buyer" : backendRole;
+}
+
+function normalizeUser(backendUser: BackendUser): User {
+  return {
+    id: backendUser._id,
+    name: backendUser.name,
+    email: backendUser.email,
+    phone: backendUser.phone,
+    avatar: backendUser.avatar,
+    avatarUrl: backendUser.avatar,
+    role: mapRole(backendUser.role),
+    memberSince: backendUser.createdAt,
+  };
+}
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = React.useState<User | null>(() => {
-    if (typeof window !== "undefined") {
+  const [user, setUser] = React.useState<User | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  // ── On mount: rehydrate session from stored RT ──────────────────────────────
+  React.useEffect(() => {
+    async function rehydrate() {
+      if (!TokenManager.hasSession()) {
+        setIsLoading(false);
+        return;
+      }
       try {
-        const storedUser = localStorage.getItem("auth_user") || sessionStorage.getItem("auth_user");
-        if (storedUser) {
-          return JSON.parse(storedUser);
+        const rt = TokenManager.getRT()!;
+        // Silently refresh to get a new AT
+        const refreshRes = await apiClient.post<{ accessToken: string }>("/api/auth/refresh", {
+          refreshToken: rt,
+        });
+        if (refreshRes.data?.accessToken) {
+          TokenManager.setAT(refreshRes.data.accessToken);
+        }
+        // Fetch user profile
+        const meRes = await apiClient.get<{ user: BackendUser }>("/api/auth/me");
+        if (meRes.data?.user) {
+          setUser(normalizeUser(meRes.data.user));
+          setSessionCookie();
         }
       } catch {
-        return null;
+        // RT expired or invalid — clean up silently
+        TokenManager.clear();
+      } finally {
+        setIsLoading(false);
       }
     }
-    return null;
-  });
+    rehydrate();
+  }, []);
 
-  const [role, setRoleState] = React.useState<UserRole | null>(() => {
-    if (typeof window !== "undefined") {
-      const storedRole = localStorage.getItem("auth_role") || sessionStorage.getItem("auth_role");
-      if (storedRole === "buyer" || storedRole === "owner") {
-        return storedRole as UserRole;
-      }
-    }
-    return null;
-  });
+  // ── Login ───────────────────────────────────────────────────────────────────
+  const login = React.useCallback(async (email: string, password: string) => {
+    const res = await apiClient.post<AuthTokenResponse>("/api/auth/login", { email, password });
+    const payload = res.data!;
+    TokenManager.setAT(payload.accessToken);
+    TokenManager.setRT(payload.refreshToken);
+    const normalized = normalizeUser(payload.user);
+    setUser(normalized);
+    setSessionCookie();
+    showToast.success("Logged In", `Welcome back, ${normalized.name}!`);
+  }, []);
 
-  const signup = React.useCallback((name: string, email: string, phoneNumber?: string, gender?: string, userRole?: UserRole) => {
-    const targetRole: UserRole = userRole || role || "buyer";
-    const newUser: User = { 
-      name, 
-      email, 
-      phone: phoneNumber, 
-      phoneNumber, 
-      gender, 
-      role: targetRole 
-    };
-    setUser(newUser);
-    setRoleState(targetRole);
-
-    if (typeof window !== "undefined") {
-      const json = JSON.stringify(newUser);
-      localStorage.setItem("auth_user", json);
-      sessionStorage.setItem("auth_user", json);
-      localStorage.setItem("auth_role", targetRole);
-      sessionStorage.setItem("auth_role", targetRole);
-    }
-    showToast.success("Account Created", `Welcome to RoofOnClick, ${name}!`);
-  }, [role]);
-
-  const login = React.useCallback((email: string) => {
-    if (typeof window !== "undefined") {
-      let existingUser: User | null = null;
-      try {
-        const storedUser = localStorage.getItem("auth_user") || sessionStorage.getItem("auth_user");
-        if (storedUser) existingUser = JSON.parse(storedUser);
-      } catch {
-        existingUser = null;
-      }
-
-      // Default name derived from email if no previous name exists
-      const defaultName = email.includes("@")
-        ? email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-        : email;
-
-      const storedRole = (localStorage.getItem("auth_role") || sessionStorage.getItem("auth_role")) as UserRole | null;
-      const targetRole: UserRole = existingUser?.role || storedRole || "buyer";
-
-      const loggedInUser: User = {
-        name: (existingUser?.email === email && existingUser?.name) ? existingUser.name : defaultName,
+  // ── Signup ──────────────────────────────────────────────────────────────────
+  const signup = React.useCallback(
+    async (name: string, email: string, password: string, role?: UserRole) => {
+      // Map UI role → backend role
+      const backendRole: BackendRole = role === "owner" ? "owner" : "seeker";
+      const res = await apiClient.post<AuthTokenResponse>("/api/auth/register", {
+        name,
         email,
-        role: targetRole,
-        avatarUrl: existingUser?.email === email ? existingUser?.avatarUrl : undefined,
-      };
-
-      setUser(loggedInUser);
-      setRoleState(targetRole);
-
-      const json = JSON.stringify(loggedInUser);
-      localStorage.setItem("auth_user", json);
-      localStorage.setItem("auth_role", targetRole);
-      sessionStorage.setItem("auth_user", json);
-      sessionStorage.setItem("auth_role", targetRole);
-      showToast.success("Logged In Successfully", `Welcome back, ${loggedInUser.name}!`);
-    }
-  }, []);
-
-  const logout = React.useCallback(() => {
-    setUser(null);
-    setRoleState(null);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("auth_user");
-      localStorage.removeItem("auth_role");
-      sessionStorage.removeItem("auth_user");
-      sessionStorage.removeItem("auth_role");
-    }
-    showToast.info("Logged Out", "You have been logged out securely.");
-  }, []);
-
-  const setRole = React.useCallback((newRole: UserRole) => {
-    setRoleState(newRole);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("auth_role", newRole);
-      sessionStorage.setItem("auth_role", newRole);
-
-      setUser((prev) => {
-        if (!prev) return null;
-        const updated: User = { ...prev, role: newRole };
-        const json = JSON.stringify(updated);
-        localStorage.setItem("auth_user", json);
-        sessionStorage.setItem("auth_user", json);
-        return updated;
+        password,
+        role: backendRole,
       });
+      const payload = res.data!;
+      TokenManager.setAT(payload.accessToken);
+      TokenManager.setRT(payload.refreshToken);
+      const normalized = normalizeUser(payload.user);
+      setUser(normalized);
+      setSessionCookie();
+      showToast.success("Account Created", `Welcome to RoofOnClick, ${normalized.name}!`);
+    },
+    []
+  );
+
+  // ── Login with Tokens (OAuth / direct callback) ───────────────────────────
+  const loginWithTokens = React.useCallback(
+    (accessToken: string, refreshToken: string, backendUser: BackendUser) => {
+      TokenManager.setAT(accessToken);
+      TokenManager.setRT(refreshToken);
+      const normalized = normalizeUser(backendUser);
+      setUser(normalized);
+      setSessionCookie();
+      showToast.success("Welcome!", `Logged in as ${normalized.name}`);
+    },
+    []
+  );
+
+  // ── Logout ──────────────────────────────────────────────────────────────────
+  const logout = React.useCallback(async () => {
+    const rt = TokenManager.getRT();
+    try {
+      // Tell the backend to revoke the AT jti + RT session in Redis
+      await apiClient.post("/api/auth/logout", { refreshToken: rt });
+    } catch {
+      // Non-fatal — clear client-side regardless
+    } finally {
+      TokenManager.clear();
+      clearSessionCookie();
+      setUser(null);
+      showToast.info("Logged Out", "You have been logged out securely.");
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
     }
   }, []);
 
-  const updateUser = React.useCallback((updatedFields: Partial<User>) => {
-    setUser((prev) => {
-      const base: User = prev || { name: "Guest", email: "user@example.com" };
-      const updated: User = { ...base, ...updatedFields };
-      if (typeof window !== "undefined") {
-        const json = JSON.stringify(updated);
-        localStorage.setItem("auth_user", json);
-        sessionStorage.setItem("auth_user", json);
-      }
-      return updated;
-    });
+  // ── Update user (local only — for profile edits) ────────────────────────────
+  const updateUser = React.useCallback((fields: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...fields } : (fields as User)));
   }, []);
+
+  // ── Legacy compat: setRole ─────────────────────────────────────────────────
+  const setRole = React.useCallback((newRole: UserRole) => {
+    setUser((prev) => (prev ? { ...prev, role: newRole } : null));
+  }, []);
+
+  const role = user?.role ?? null;
+  const isAuthenticated = user !== null;
 
   return (
-    <AuthContext.Provider value={{ user, role, setRole, signup, login, logout, updateUser }}>
+    <AuthContext.Provider
+      value={{ user, role, isLoading, isAuthenticated, login, signup, loginWithTokens, logout, updateUser, setRole }}
+    >
       {children}
     </AuthContext.Provider>
   );

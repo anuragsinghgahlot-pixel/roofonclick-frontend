@@ -42,9 +42,9 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${plusJakartaSans.variable} ${inter.variable} min-h-[100dvh] antialiased`}
+      className={`${plusJakartaSans.variable} ${inter.variable} antialiased`}
     >
-      <body className="font-body min-h-[100dvh] bg-background text-foreground flex flex-col">
+      <body className="font-body bg-background text-foreground">
         <NavigationHandler />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>

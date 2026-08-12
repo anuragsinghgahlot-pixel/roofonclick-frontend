@@ -10,32 +10,22 @@ export interface RecentlyViewedItem {
 const STORAGE_KEY = "stayynest_recently_viewed_history";
 const MAX_HISTORY_LIMIT = 10;
 
-const MOCK_RECENT_VIEWED: RecentlyViewedItem[] = [
-  {
-    id: "p1",
-    viewedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-    property: MOCK_PROPERTIES[0] as any,
-  },
-  {
-    id: "p2",
-    viewedAt: new Date(Date.now() - 3600000 * 6).toISOString(),
-    property: MOCK_PROPERTIES[1] as any,
-  },
-];
+const MOCK_RECENT_VIEWED: RecentlyViewedItem[] = [];
 
 export const RecentlyViewedService = {
   getRecentlyViewed: (): RecentlyViewedItem[] => {
-    if (typeof window === "undefined") return MOCK_RECENT_VIEWED;
+    if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((item) => Boolean(item && item.property && (item.property.id || item.property._id)));
+        }
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_RECENT_VIEWED));
-      return MOCK_RECENT_VIEWED;
+      return [];
     } catch {
-      return MOCK_RECENT_VIEWED;
+      return [];
     }
   },
 

@@ -76,13 +76,10 @@ export function SendEnquiryModal({
       return;
     }
 
-    EnquiryService.createRequest({
-      propertyId,
-      propertyName,
-      buyerName: name.trim(),
-      buyerEmail: user?.email || "",
-      buyerPhone: phone.trim(),
-      requestType: "Enquiry",
+    // Fire-and-forget: call real backend enquiry endpoint
+    EnquiryService.createRequest(propertyId, {
+      name: name.trim(),
+      phone: phone.trim(),
       message: message.trim(),
     });
 

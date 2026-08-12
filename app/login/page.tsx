@@ -2,191 +2,178 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Phone } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import Navbar from "@/components/navigation/navbar";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
-  const [identifier, setIdentifier] = React.useState("");
+
+  const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [showToast, setShowToast] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
-
+    setError(null);
     setIsSubmitting(true);
 
-    // Simulate login authentication delay
-    setTimeout(() => {
-      login(identifier);
-      setShowToast(true);
-
-      setTimeout(() => {
-        setIsSubmitting(false);
-        const targetRoute = typeof window !== "undefined" ? sessionStorage.getItem("lastBrowsingRoute") || "/" : "/";
-        router.push(targetRoute);
-      }, 900);
-    }, 700);
+    try {
+      await login(email.trim().toLowerCase(), password);
+      const redirect = searchParams.get("redirect") || "/";
+      router.push(redirect);
+    } catch (err: any) {
+      setError(err?.message || "Sign in failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-  return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 pt-24 relative overflow-hidden">
-      <Navbar />
-      {/* Soft background radial highlights */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse" />
 
-      {/* Main card */}
-      <div className="w-full max-w-md bg-card/85 backdrop-blur-md border border-border/80 p-8 sm:p-10 rounded-[28px] shadow-premium relative z-10 flex flex-col gap-6">
-        <title>Login | RoofOnClick</title>
-        {/* Header */}
-        <div className="flex flex-col gap-2 text-center">
-          <span className="font-heading text-2xl font-extrabold text-primary tracking-tight select-none">
-            RoofOnClick
-          </span>
-          <h1 className="font-heading text-2xl font-extrabold text-primary tracking-tight mt-2">
-            Welcome Back
-          </h1>
-          <p className="font-body text-xs text-muted-foreground">
-            Sign in using your Email or Mobile Number to continue exploring verified PGs & hostels.
+  return (
+    <div className="fixed inset-0 w-full h-full bg-background flex flex-col overflow-hidden z-0">
+      <title>Login | RoofOnClick</title>
+      <Navbar />
+
+      <main className="flex-1 flex flex-col items-center justify-center p-4 pt-16 relative z-10 overflow-hidden">
+        {/* Background glows */}
+        <div className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[350px] h-[350px] bg-secondary/5 rounded-full blur-3xl pointer-events-none animate-pulse" />
+
+        {/* Card */}
+        <div className="w-full max-w-sm bg-card/90 backdrop-blur-md border border-border/80 rounded-2xl shadow-premium relative z-10 p-5 flex flex-col gap-3.5">
+
+          {/* Header */}
+          <div className="text-center">
+            <h1 className="font-heading text-xl font-extrabold text-primary tracking-tight">
+              Welcome Back
+            </h1>
+            <p className="font-body text-[11px] text-muted-foreground mt-0.5">
+              Sign in to explore verified PGs &amp; hostels.
+            </p>
+          </div>
+
+          {/* Error Banner */}
+          {error && (
+            <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg px-3 py-2 text-xs font-semibold">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            {/* Email */}
+            <div className="flex flex-col gap-1 text-left">
+              <label htmlFor="login-email" className="font-heading text-[10px] font-bold text-primary uppercase tracking-wider pl-0.5">
+                Email
+              </label>
+              <div className="relative flex items-center">
+                <Mail className="absolute left-3 w-3.5 h-3.5 text-muted-foreground" />
+                <input
+                  id="login-email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                  className="w-full bg-background border border-border/80 rounded-lg pl-9 pr-3 py-2 text-sm font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                  placeholder="your@email.com"
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div className="flex flex-col gap-1 text-left">
+              <div className="flex justify-between items-center pl-0.5">
+                <label htmlFor="login-password" className="font-heading text-[10px] font-bold text-primary uppercase tracking-wider">
+                  Password
+                </label>
+                <a href="/auth/forgot-password" className="font-body text-[10px] font-bold text-secondary hover:underline">
+                  Forgot?
+                </a>
+              </div>
+              <div className="relative flex items-center">
+                <Lock className="absolute left-3 w-3.5 h-3.5 text-muted-foreground" />
+                <input
+                  id="login-password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                  className="w-full bg-background border border-border/80 rounded-lg pl-9 pr-9 py-2 text-sm font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              id="login-submit-btn"
+              disabled={isSubmitting}
+              className={cn(
+                "w-full bg-primary hover:bg-accent text-primary-foreground hover:text-accent-foreground py-2.5 rounded-lg font-heading text-sm font-bold tracking-wide transition-all duration-200 shadow-sm flex items-center justify-center gap-2 mt-1 select-none",
+                isSubmitting ? "cursor-not-allowed opacity-75" : "cursor-pointer"
+              )}
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Signing In...
+                </>
+              ) : "Sign In"}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-2">
+            <div className="h-px flex-1 bg-border/60" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">or</span>
+            <div className="h-px flex-1 bg-border/60" />
+          </div>
+
+          {/* Google */}
+          <a
+            id="google-oauth-btn"
+            href={process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL || "http://localhost:6969/api/auth/google"}
+            className="w-full flex items-center justify-center gap-2.5 border border-border bg-background hover:bg-muted/50 py-2.5 rounded-lg font-heading text-xs font-bold text-primary tracking-wide transition-all cursor-pointer"
+          >
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+            </svg>
+            Continue with Google
+          </a>
+
+          <p className="text-center text-[11px] text-muted-foreground">
+            No account?{" "}
+            <Link href="/signup" className="font-bold text-secondary hover:underline">
+              Sign Up
+            </Link>
           </p>
         </div>
-
-        {/* Success Toast */}
-        {showToast && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground font-heading text-xs font-extrabold uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-2xl z-50 flex items-center gap-2 select-none">
-            <span>🎉</span> Signed in successfully!
-          </div>
-        )}
-
-        {/* Demo Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* Email or Mobile Number */}
-          <div className="flex flex-col gap-1.5 text-left">
-            <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-              Email or Mobile Number
-            </label>
-            <div className="relative flex items-center">
-              <Mail className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                required
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
-                placeholder="your@email.com or +91 9876543210"
-              />
-            </div>
-          </div>
-
-          {/* Password */}
-          <div className="flex flex-col gap-1.5 text-left">
-            <div className="flex justify-between items-center pl-1 pr-1">
-              <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider">
-                Password
-              </label>
-              <a
-                href="/auth/forgot-password"
-                className="font-body text-[11px] font-bold text-secondary hover:underline"
-              >
-                Forgot Password?
-              </a>
-            </div>
-            <div className="relative flex items-center">
-              <Lock className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-card border border-border/80 rounded-xl pl-11 pr-11 py-3 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
-                placeholder="••••••••"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                title={showPassword ? "Hide password" : "Show password"}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Sign In Button */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            data-no-intercept="true"
-            className={cn(
-              "w-full bg-primary hover:bg-accent text-primary-foreground hover:text-accent-foreground py-3.5 rounded-xl font-heading text-sm font-bold tracking-wide transition-all duration-300 shadow-md flex items-center justify-center gap-2 mt-2 select-none",
-              isSubmitting ? "cursor-not-allowed opacity-80" : "cursor-pointer"
-            )}
-          >
-            {isSubmitting ? (
-              <>
-                <svg className="animate-spin h-4 w-4 text-primary-foreground shrink-0" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                <span>Signing In...</span>
-              </>
-            ) : (
-              "Sign In"
-            )}
-          </button>
-        </form>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-1">
-          <div className="h-px flex-1 bg-border/60" />
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">or</span>
-          <div className="h-px flex-1 bg-border/60" />
-        </div>
-
-        {/* Continue with Google */}
-        <button
-          type="button"
-          onClick={() => window.location.href = "/coming-soon"}
-          className="w-full flex items-center justify-center gap-3 border border-border bg-background hover:bg-card py-3.5 rounded-xl font-heading text-xs font-bold text-primary tracking-wide transition-all duration-300 shadow-sm cursor-pointer"
-        >
-          {/* Custom minimal Google logo */}
-          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              fill="#4285F4"
-            />
-            <path
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              fill="#34A853"
-            />
-            <path
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-              fill="#FBBC05"
-            />
-            <path
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              fill="#EA4335"
-            />
-          </svg>
-          Continue with Google
-        </button>
-
-        {/* Footer Link */}
-        <div className="text-center text-xs mt-2">
-          <span className="text-muted-foreground">Don&apos;t have an account? </span>
-          <Link href="/signup" className="font-bold text-secondary hover:underline">
-            Sign Up
-          </Link>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }

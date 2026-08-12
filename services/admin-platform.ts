@@ -97,11 +97,7 @@ const MOCK_ADMIN_TEAM: AdminUser[] = [
   { id: "ADM-4", name: "Siddharth Jain", email: "siddharth.j@roofonclick.com", role: "Finance", department: "Finance", status: "Active", lastLogin: "Yesterday" },
 ];
 
-const MOCK_AUDIT_LOGS: PlatformAuditLog[] = [
-  { id: "LOG-901", action: "Updated Feature Flag: Coupons (Set to Beta 50%)", performedBy: "Super Admin", module: "Feature Flags", ipAddress: "103.21.12.44", timestamp: "2026-08-03 12:45" },
-  { id: "LOG-902", action: "Approved Property ID: PROP-1001", performedBy: "Rohit Sharma", module: "Properties", ipAddress: "103.21.12.48", timestamp: "2026-08-03 11:20" },
-  { id: "LOG-903", action: "Verified KYC for Owner ID: OWN-4521", performedBy: "Priya Verma", module: "Owners CRM", ipAddress: "103.21.12.50", timestamp: "2026-08-03 10:15" },
-];
+const MOCK_AUDIT_LOGS: PlatformAuditLog[] = [];
 
 /* ─── Admin Platform Service Class ─── */
 export class AdminPlatformService {

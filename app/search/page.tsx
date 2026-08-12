@@ -19,7 +19,8 @@ import { SaveSearchModal } from "@/components/saved-searches/save-search-modal";
 import { SearchHistoryService } from "@/services/search-history";
 import { RecommendedSection } from "@/components/recommendations/recommended-section";
 
-import { MOCK_PROPERTIES } from "@/constants/mock-properties";
+import { ListingsAPI } from "@/services/listings/listings.api";
+import { Property } from "@/services/property/property.types";
 
 // Helper to format slug to title case / display name
 function getDisplayTitle(slug: string): string {
@@ -145,50 +146,64 @@ function SearchPageContent() {
     );
   }, [selectedGenders, selectedSidebarTypes, selectedBhk, selectedBudget, selectedAmenities, selectedSharing]);
 
+  const [dbProperties, setDbProperties] = React.useState<Property[]>([]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    ListingsAPI.getListings()
+      .then((res) => {
+        if (isMounted) setDbProperties(res.listings || []);
+      })
+      .catch(() => {
+        if (isMounted) setDbProperties([]);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
   // Filter properties based on URL slug, selected top type, selected genders, selected sidebar types, bhk tags, budget range, selected amenities AND sharing options
   const filteredProperties = React.useMemo(() => {
-    let result = [...MOCK_PROPERTIES];
+    let result = [...dbProperties];
 
     // 1. Filter by location/area slug
     if (locationSlug) {
       const targetSlug = locationSlug.toLowerCase().trim();
       const targetClean = targetSlug.replace(/[-_]/g, " ");
-      result = result.filter((p) => {
-        const loc = p.location.toLowerCase();
+      result = result.filter((p: any) => {
+        const loc = (p.area || p.location || p.city || "").toLowerCase();
         return loc.includes(targetClean) || targetClean.includes(loc) || loc.replace(/\s+/g, "-") === targetSlug;
       });
     }
 
     // 2. Filter by selected top property type chip
     if (selectedType !== "All") {
-      result = result.filter((p) => p.type === selectedType);
+      result = result.filter((p: any) => (p.propertyType || p.type) === selectedType);
     }
 
     // 3. Filter by selected genders
     if (selectedGenders.length > 0) {
       if (selectedGenders.includes("boys") && selectedGenders.includes("girls")) {
-        // Both selected: show boys, girls, and co-living
         result = result.filter(
-          (p) => p.gender === "boys" || p.gender === "girls" || p.gender === "co-living"
+          (p: any) => {
+            const g = (p.gender || "").toLowerCase();
+            return g.includes("boy") || g.includes("girl") || g.includes("co");
+          }
         );
       } else if (selectedGenders.includes("boys")) {
-        // Only boys selected: show boys only
-        result = result.filter((p) => p.gender === "boys");
+        result = result.filter((p: any) => (p.gender || "").toLowerCase().includes("boy"));
       } else if (selectedGenders.includes("girls")) {
-        // Only girls selected: show girls only
-        result = result.filter((p) => p.gender === "girls");
+        result = result.filter((p: any) => (p.gender || "").toLowerCase().includes("girl"));
       }
     }
 
     // 4. Filter by selected sidebar property types (PG / Hostel)
     if (selectedSidebarTypes.length > 0) {
-      result = result.filter((p) => selectedSidebarTypes.includes(p.propertyTypeGroup));
+      result = result.filter((p: any) => selectedSidebarTypes.includes(p.propertyTypeGroup || p.propertyType || p.type));
     }
 
     // 4.5. Filter by BHK configuration tags (RK, Studio, 1 BHK, 2 BHK, 3 BHK, 4+ BHK)
     if (selectedBhk.length > 0) {
-      result = result.filter((p) => {
-        const pText = (p.name + " " + p.type + " " + ((p as { bhk?: string }).bhk || "")).toLowerCase();
+      result = result.filter((p: any) => {
+        const pText = ((p.propertyName || p.name || "") + " " + (p.propertyType || p.type || "") + " " + (p.bhk || "")).toLowerCase();
         return selectedBhk.some((bhk) => {
           const bLower = bhk.toLowerCase();
           if (bLower === "rk") return pText.includes("rk") || pText.includes("1rk");
@@ -202,42 +217,45 @@ function SearchPageContent() {
       });
     }
 
+    const getPrice = (p: Property) => p.startingRent || p.startingPrice || (p as any).price || 0;
+
     // 5. Filter by budget range (Budget pill chips)
     if (selectedBudget) {
       if (selectedBudget === "Under ₹5,000") {
-        result = result.filter((p) => p.price < 5000);
+        result = result.filter((p) => getPrice(p) < 5000);
       } else if (selectedBudget === "₹5,000 – ₹8,000") {
-        result = result.filter((p) => p.price >= 5000 && p.price <= 8000);
+        result = result.filter((p) => getPrice(p) >= 5000 && getPrice(p) <= 8000);
       } else if (selectedBudget === "₹8,000 – ₹12,000") {
-        result = result.filter((p) => p.price >= 8000 && p.price <= 12000);
+        result = result.filter((p) => getPrice(p) >= 8000 && getPrice(p) <= 12000);
       } else if (selectedBudget === "Above ₹12,000") {
-        result = result.filter((p) => p.price > 12000);
+        result = result.filter((p) => getPrice(p) > 12000);
       }
     }
 
     // 6. Filter by selected amenities (AND logic)
     if (selectedAmenities.length > 0) {
       result = result.filter((p) =>
-        selectedAmenities.every((amenity) => p.amenities.includes(amenity))
+        selectedAmenities.every((amenity) => (p.amenities || []).includes(amenity))
       );
     }
 
     // 7. Filter by sharing options (OR logic)
     if (selectedSharing.length > 0) {
-      result = result.filter((p) =>
-        p.sharing.some((opt) => selectedSharing.includes(opt))
-      );
+      result = result.filter((p: Property) => {
+        const sharingList: string[] = (p as any).sharing || p.rooms?.map((r) => r.sharingType) || [];
+        return sharingList.some((opt: string) => selectedSharing.includes(opt));
+      });
     }
 
     // --- SORTING (happens after filtering) ---
     if (selectedSort === "Price: Low to High") {
-      result.sort((a, b) => a.price - b.price);
+      result.sort((a, b) => getPrice(a) - getPrice(b));
     } else if (selectedSort === "Price: High to Low") {
-      result.sort((a, b) => b.price - a.price);
+      result.sort((a, b) => getPrice(b) - getPrice(a));
     } else if (selectedSort === "Highest Rated") {
-      result.sort((a, b) => b.rating - a.rating);
+      result.sort((a, b) => ((b as any).rating || 0) - ((a as any).rating || 0));
     } else if (selectedSort === "Newest") {
-      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     }
 
     return result;
@@ -324,7 +342,7 @@ function SearchPageContent() {
                 {filteredProperties.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
                     {filteredProperties.map((property) => (
-                      <PropertyCard property={property} key={property.id} />
+                      <PropertyCard property={property as any} key={property.id} />
                     ))}
                   </div>
                 ) : (

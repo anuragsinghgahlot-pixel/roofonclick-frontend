@@ -98,7 +98,9 @@ export function RecentlyViewedSection({
         {/* Responsive Grid / Horizontal Carousel */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
           <AnimatePresence>
-            {items.map((item) => (
+            {items
+              .filter((item) => Boolean(item && item.property))
+              .map((item) => (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 15 }}

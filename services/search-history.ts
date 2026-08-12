@@ -12,44 +12,24 @@ export interface RecentSearchItem {
 
 const HISTORY_STORAGE_KEY = "stayynest_recent_search_history";
 
-const MOCK_RECENT_SEARCHES: RecentSearchItem[] = [
-  {
-    id: "history-1",
-    querySummary: "Girls PG in Vijay Nagar under ₹8,000",
-    location: "Vijay Nagar",
-    propertyType: "PG",
-    maxRent: 8000,
-    gender: "Female Only",
-    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-  },
-  {
-    id: "history-2",
-    querySummary: "Single Room Hostels in Bhawarkua",
-    location: "Bhawarkua",
-    propertyType: "Hostel",
-    sharingType: "Single",
-    timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
-  },
-  {
-    id: "history-3",
-    querySummary: "AC Rooms in Palasia near College",
-    location: "Palasia",
-    timestamp: new Date(Date.now() - 86400000).toISOString(),
-  },
-];
+const MOCK_RECENT_SEARCHES: RecentSearchItem[] = [];
 
 export const SearchHistoryService = {
   getRecentSearches: (): RecentSearchItem[] => {
-    if (typeof window === "undefined") return MOCK_RECENT_SEARCHES;
+    if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.some(h => h.id.startsWith("history-1") || h.id.startsWith("history-2"))) {
+          localStorage.removeItem(HISTORY_STORAGE_KEY);
+          return [];
+        }
+        return parsed;
       }
-      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(MOCK_RECENT_SEARCHES));
-      return MOCK_RECENT_SEARCHES;
+      return [];
     } catch {
-      return MOCK_RECENT_SEARCHES;
+      return [];
     }
   },
 
