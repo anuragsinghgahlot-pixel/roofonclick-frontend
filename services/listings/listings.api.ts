@@ -285,4 +285,33 @@ export const ListingsAPI = {
   async deleteListing(id: string): Promise<void> {
     await apiClient.delete(`/api/listings/${id}`);
   },
+
+  async uploadPhotos(id: string, files: File[]): Promise<Property> {
+    const formData = new FormData();
+    files.forEach((file) => formData.append("photos", file));
+    await apiClient.upload<{ photos: Array<{ url: string; key: string }> }>(
+      `/api/listings/${id}/photos`,
+      formData
+    );
+    const updated = await ListingsAPI.getListingById(id);
+    if (!updated) {
+      throw new Error("Failed to load property after uploading photos.");
+    }
+    return updated;
+  },
+
+  async deletePhoto(id: string, photoKey: string): Promise<void> {
+    await apiClient.delete(`/api/listings/${id}/photos/${encodeURIComponent(photoKey)}`);
+  },
+
+  async uploadSingleImage(file: File): Promise<{ url: string; key: string; name: string; size: number }> {
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await apiClient.upload<{ url: string; key: string; name: string; size: number }>(
+      "/api/upload/image",
+      formData
+    );
+    if (!res.data) throw new Error(res.message || "Failed to upload image.");
+    return res.data;
+  },
 };

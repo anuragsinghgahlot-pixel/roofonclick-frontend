@@ -30,8 +30,13 @@ export interface HouseRules {
 export interface MediaImage {
   id: string;
   url: string;
+  key?: string;
   name: string;
+  size?: number;
   isCover: boolean;
+  status?: "uploading" | "success" | "error";
+  errorReason?: string;
+  rawFile?: File;
 }
 
 export interface MediaVideo {

@@ -157,11 +157,17 @@ export const propertyWizardSchema = z.object({
       z.object({
         id: z.string(),
         url: z.string(),
+        key: z.string().optional(),
         name: z.string(),
+        size: z.number().optional(),
         isCover: z.boolean(),
+        status: z.enum(["uploading", "success", "error"]).optional(),
+        errorReason: z.string().optional(),
+        rawFile: z.any().optional(),
       })
     )
-    .min(5, "At least 5 images are required"),
+    .min(5, "At least 5 images are required")
+    .max(10, "Maximum 10 images allowed"),
   video: z
     .object({
       url: z.string(),
@@ -446,6 +452,27 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
       // Step 4 has no required fields; skip validation to prevent partial rules errors
       fieldsToValidate = [];
     } else if (currentStep === 5) {
+      const images = (form.getValues("images") || []) as any[];
+      const isUploading = images.some((img) => img.status === "uploading");
+      const hasErrors = images.some((img) => img.status === "error");
+      const validCount = images.filter((img) => img.status === "success" || (!img.status && img.url)).length;
+
+      if (isUploading) {
+        toast.error("Please wait for all photos to finish uploading to Cloudflare R2.");
+        return;
+      }
+      if (hasErrors) {
+        toast.error("Please remove or retry failed photos before proceeding.");
+        return;
+      }
+      if (validCount < 5) {
+        toast.error(`You have ${validCount} uploaded photos. At least 5 successfully uploaded photos are required.`);
+        return;
+      }
+      if (validCount > 10) {
+        toast.error(`Maximum 10 photos allowed. You currently have ${validCount}.`);
+        return;
+      }
       fieldsToValidate = ["images", "video"];
     }
 
@@ -497,7 +524,6 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
 
   const handlePublish = React.useCallback(async () => {
     const values = form.getValues() as Partial<Property>;
-    const propertyId = editPropertyId || values.id;
 
     try {
       if (editPropertyId) {
@@ -505,8 +531,9 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
         toast.success("Your property has been updated successfully.");
       } else {
         await ListingsAPI.createListing(values);
-        toast.success("Your property has been published successfully.");
+        toast.success("Your property listing has been published!");
       }
+
       PropertyService.clearDraft();
       router.push("/owner/dashboard");
     } catch (err: any) {

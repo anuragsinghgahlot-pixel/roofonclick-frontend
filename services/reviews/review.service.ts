@@ -1,5 +1,6 @@
 import { Review } from "./review.types";
 import { ReviewStorage } from "./review.storage";
+import { apiClient } from "@/lib/api-client";
 
 // Initial reviews array (empty for production DB mode)
 const INITIAL_REVIEWS: Review[] = [];
@@ -62,6 +63,57 @@ class ReviewServiceImpl {
     allReviews.push(newReview);
     ReviewStorage.saveReviews(allReviews);
     return newReview;
+  }
+
+  public async addReviewAsync(
+    propertyId: string,
+    reviewData: { 
+      userName: string; 
+      userAvatarUrl?: string; 
+      rating: number; 
+      title: string; 
+      text: string; 
+      images?: string[]; 
+      stayDate: string;
+      isVerifiedStay: boolean;
+      recommend: boolean;
+    }
+  ): Promise<Review> {
+    try {
+      const res = await apiClient.post<{ review: any }>(`/api/reviews/${propertyId}`, {
+        rating: reviewData.rating,
+        title: reviewData.title,
+        text: reviewData.text,
+        images: reviewData.images || [],
+        userName: reviewData.userName,
+      });
+      const backendRev = res.data?.review;
+      if (backendRev) {
+        const rev: Review = {
+          id: backendRev._id || backendRev.id,
+          propertyId,
+          userName: backendRev.userName || reviewData.userName,
+          userAvatarUrl: backendRev.userAvatar || reviewData.userAvatarUrl,
+          rating: backendRev.rating || reviewData.rating,
+          title: backendRev.title || reviewData.title,
+          text: backendRev.content || reviewData.text,
+          images: backendRev.images || reviewData.images || [],
+          stayDate: reviewData.stayDate,
+          isVerifiedStay: reviewData.isVerifiedStay,
+          recommend: reviewData.recommend,
+          helpfulCount: 0,
+          helpfulUsers: [],
+          createdAt: backendRev.createdAt || new Date().toISOString(),
+        };
+        const allReviews = ReviewStorage.getReviews();
+        allReviews.push(rev);
+        ReviewStorage.saveReviews(allReviews);
+        return rev;
+      }
+    } catch (e) {
+      console.warn("[ReviewService] Backend review post error", e);
+    }
+    return this.addReview(propertyId, reviewData);
   }
 
   public incrementHelpfulCount(reviewId: string, userEmail: string): { success: boolean; helpfulCount: number; message: string } {
