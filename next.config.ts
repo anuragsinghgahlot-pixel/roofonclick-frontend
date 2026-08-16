@@ -7,21 +7,23 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        source: "/_next/static/(.*)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/((?!_next/static|_next/image|favicon.ico).*)",
         headers: [
           // ── Content Security Policy ───────────────────────────────────────
-          // Tightened to reduce XSS attack surface (defence-in-depth)
           {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Next.js needs unsafe-inline for inline styles/scripts in dev
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              // Allow images from our API, Unsplash, Cloudflare R2, DiceBear
               "img-src 'self' data: blob: https: http:",
-              // Allow connections to backend API + Google OAuth
               `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || "http://localhost:6969"} https://accounts.google.com`,
               "frame-ancestors 'none'",
               "base-uri 'self'",

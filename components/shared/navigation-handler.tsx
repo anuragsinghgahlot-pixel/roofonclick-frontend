@@ -6,6 +6,32 @@ import { useRouter } from "next/navigation";
 export function NavigationHandler() {
   const router = useRouter();
 
+  // ── Auto-recovery for Deployment ChunkLoadErrors ─────────────────────────
+  React.useEffect(() => {
+    const handleChunkError = (event: ErrorEvent | PromiseRejectionEvent) => {
+      const errorMsg =
+        event instanceof ErrorEvent
+          ? event.message
+          : (event.reason?.message || event.reason || "");
+
+      if (/Loading chunk |ChunkLoadError|failed to fetch dynamically imported module/i.test(String(errorMsg))) {
+        const lastReload = sessionStorage.getItem("chunk_reload_ts");
+        const now = Date.now();
+        if (!lastReload || now - Number(lastReload) > 10000) {
+          sessionStorage.setItem("chunk_reload_ts", String(now));
+          window.location.reload();
+        }
+      }
+    };
+
+    window.addEventListener("error", handleChunkError);
+    window.addEventListener("unhandledrejection", handleChunkError);
+    return () => {
+      window.removeEventListener("error", handleChunkError);
+      window.removeEventListener("unhandledrejection", handleChunkError);
+    };
+  }, []);
+
   React.useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
