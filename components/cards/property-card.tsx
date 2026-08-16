@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { ShieldCheck, MapPin, Star, Heart, Share2, Scale } from "lucide-react";
+import { ShieldCheck, MapPin, Star, Heart, Share2, Scale, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWishlist } from "@/providers/wishlist-provider";
 import { useCompare } from "@/providers/compare-provider";
@@ -65,12 +65,19 @@ export function PropertyCard({ property }: PropertyCardProps) {
       className="group bg-card border border-border/80 rounded-2xl overflow-hidden shadow-premium hover:shadow-2xl hover:scale-[1.015] hover:-translate-y-0.5 transition-all duration-250 flex flex-col cursor-pointer"
     >
       {/* Image Container */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
-        <img
-          src={property.image}
-          alt={property.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted flex items-center justify-center">
+        {property.image ? (
+          <img
+            src={property.image}
+            alt={property.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-muted via-muted/80 to-muted/50 flex flex-col items-center justify-center gap-1.5 text-muted-foreground p-4 text-center">
+            <Building className="w-8 h-8 stroke-1 text-primary/40" />
+            <span className="font-heading text-[11px] font-bold text-foreground/70">{property.name}</span>
+          </div>
+        )}
         
         {/* Type Badge */}
         <span className="absolute top-3 left-3 bg-foreground/80 backdrop-blur-md text-background text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-md z-10">

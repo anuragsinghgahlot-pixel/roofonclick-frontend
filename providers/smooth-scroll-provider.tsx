@@ -90,7 +90,13 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
 
   // Scroll to top on App Router route changes & recalculate full document height
   React.useEffect(() => {
+    // Reset body overflow lock unless on admin layout
+    if (!pathname?.startsWith("/admin")) {
+      document.body.style.overflow = "";
+    }
+
     if (lenis) {
+      lenis.start();
       lenis.scrollTo(0, { immediate: true });
       const timer1 = setTimeout(() => lenis.resize(), 100);
       const timer2 = setTimeout(() => lenis.resize(), 500);

@@ -1,5 +1,4 @@
-"use client";
-
+import { apiClient } from "@/lib/api-client";
 import type { StatusType } from "@/components/admin/data-table";
 
 /* ─── Property Admin Types ─── */
@@ -91,6 +90,67 @@ export class AdminPropertyService {
       suspended,
       avgOccupancy,
     };
+  }
+
+  static async fetchAdminListings(): Promise<AdminProperty[]> {
+    try {
+      const res = await apiClient.get<{ listings: any[] }>("/api/admin/listings");
+      const list = res.data?.listings || [];
+      return list.map((bl) => ({
+        id: bl._id,
+        propertyName: bl.title || "Untitled Property",
+        coverPhoto: bl.photos?.[0]?.url || "",
+        ownerName: bl.owner?.name || "Owner",
+        ownerEmail: bl.owner?.email || "owner@roofonclick.com",
+        ownerPhone: bl.owner?.phone || "N/A",
+        city: bl.address?.city || "Indore",
+        area: bl.address?.area || "Vijay Nagar",
+        address: bl.address?.full || `${bl.address?.area || ""}, ${bl.address?.city || ""}`,
+        propertyType: (bl.type === "pg" ? "PG" : bl.type === "hostel" ? "Hostel" : bl.type === "apartment" ? "Apartment" : "Co-living") as any,
+        gender: (bl.gender === "boys" ? "Boys" : bl.gender === "girls" ? "Girls" : "Co-ed") as any,
+        startingRent: bl.rent?.monthly || 0,
+        occupancyRate: 80,
+        totalBeds: 10,
+        occupiedBeds: 8,
+        rating: 4.8,
+        reviewCount: 12,
+        isVerified: !!bl.isVerified,
+        isFeatured: false,
+        healthScore: 92,
+        healthLabel: "Excellent",
+        status: (bl.status === "active" ? "approved" : bl.status === "pending" ? "pending" : bl.status === "rejected" ? "rejected" : "draft") as any,
+        createdAt: bl.createdAt || new Date().toISOString(),
+        updatedAt: bl.updatedAt || new Date().toISOString(),
+        description: bl.description || "",
+        amenities: bl.amenities || [],
+        rooms: (bl.rooms || []).map((r: any) => ({
+          roomType: r.roomType || r.sharingType || "Single",
+          rent: r.monthlyRent || 0,
+          total: r.totalRooms || 1,
+          available: r.availableRooms || 1,
+        })),
+        photos: (bl.photos || []).map((p: any) => p.url),
+        verificationDetails: {
+          propertyDocVerified: true,
+          ownerIdVerified: true,
+          locationVerified: true,
+          inspectionCompleted: bl.isVerified,
+        },
+        timeline: [
+          { event: "Created", description: "Submitted by owner for admin examination", date: bl.createdAt || "2026-08-15", by: bl.owner?.name || "Owner" },
+        ],
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  static async approveListing(id: string): Promise<void> {
+    await apiClient.put(`/api/admin/listings/${id}/status`, { status: "active" });
+  }
+
+  static async rejectListing(id: string): Promise<void> {
+    await apiClient.put(`/api/admin/listings/${id}/status`, { status: "rejected" });
   }
 
   static getAllProperties(): AdminProperty[] {

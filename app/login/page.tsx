@@ -26,9 +26,17 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await login(email.trim().toLowerCase(), password);
-      const redirect = searchParams.get("redirect") || "/";
-      router.push(redirect);
+      const loggedInUser = await login(email.trim().toLowerCase(), password);
+      const redirectParam = searchParams.get("redirect");
+      if (redirectParam) {
+        router.push(redirectParam);
+      } else if (loggedInUser?.role === "admin") {
+        router.push("/admin");
+      } else if (loggedInUser?.role === "owner") {
+        router.push("/owner/dashboard");
+      } else {
+        router.push("/");
+      }
     } catch (err: any) {
       setError(err?.message || "Sign in failed. Please try again.");
     } finally {

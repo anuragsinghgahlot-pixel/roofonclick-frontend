@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Star, BadgeCheck, ArrowRight, Heart } from "lucide-react";
+import { Star, BadgeCheck, ArrowRight, Heart, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWishlist } from "@/providers/wishlist-provider";
 
@@ -87,12 +87,19 @@ export function SimilarProperties({ properties, className }: SimilarPropertiesPr
             <div className="group bg-card rounded-[24px] overflow-hidden border border-border/80 hover:shadow-xl transition-shadow duration-300 flex flex-col relative w-full h-full">
               
               {/* ── Image Block ── */}
-              <div className="relative w-full aspect-[4/3] overflow-hidden bg-muted">
-                <img
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                  src={property.image}
-                  alt={`${property.title} — ${property.type} in ${property.location}`}
-                />
+              <div className="relative w-full aspect-[4/3] overflow-hidden bg-muted flex items-center justify-center">
+                {property.image ? (
+                  <img
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    src={property.image}
+                    alt={`${property.title} — ${property.type} in ${property.location}`}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-muted via-muted/80 to-muted/50 flex flex-col items-center justify-center gap-1.5 text-muted-foreground p-4 text-center">
+                    <Building className="w-8 h-8 stroke-1 text-primary/40" />
+                    <span className="font-heading text-[11px] font-bold text-foreground/70">{property.title}</span>
+                  </div>
+                )}
 
                 {/* Verified Badge overlay */}
                 {property.isVerified && (

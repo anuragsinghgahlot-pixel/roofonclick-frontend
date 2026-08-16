@@ -169,18 +169,16 @@ class PropertyServiceImpl {
       area: data.area || "Vijay Nagar",
       address: data.address || "",
       landmark: data.landmark || "",
-      mapsLink: data.mapsLink || "",
       rooms,
       roomConfigurations: rooms,
       amenities: data.amenities || [],
       rules: data.rules || {},
       nearby: data.nearby || [],
       images: data.images || [],
-      video: data.video || null,
       coverPhoto:
         data.images?.find((img) => img.isCover)?.url ||
         data.images?.[0]?.url ||
-        "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=600&q=80",
+        "",
       startingRent,
       startingPrice: startingRent,
       status: "Published",

@@ -195,13 +195,20 @@ export function PropertyDetailDrawer({
               {/* Tab 1: Overview */}
               {activeTab === "overview" && (
                 <div className="space-y-5">
-                  <div className="rounded-2xl overflow-hidden border border-border/60 aspect-video relative">
-                    {/* eslint-disable-next-html-link, @next/next/no-img-element */}
-                    <img
-                      src={property.coverPhoto}
-                      alt={property.propertyName}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="rounded-2xl overflow-hidden border border-border/60 aspect-video relative flex items-center justify-center bg-muted">
+                    {property.coverPhoto ? (
+                      /* eslint-disable-next-html-link, @next/next/no-img-element */
+                      <img
+                        src={property.coverPhoto}
+                        alt={property.propertyName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-muted-foreground gap-2">
+                        <Building className="w-10 h-10 stroke-1" />
+                        <span className="font-heading text-xs font-semibold">No Cover Photo</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">

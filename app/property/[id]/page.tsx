@@ -45,12 +45,7 @@ import { cn } from "@/lib/utils";
 
 // ─── Fallback Mock Data ─────────────────────────────────────────────────────────
 
-const MOCK_IMAGES = [
-  "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=800&q=80",
-];
+const MOCK_IMAGES: string[] = [];
 
 const MOCK_AMENITIES = [
   { icon: Wifi, title: "High-Speed Wi-Fi", isAvailable: true },
@@ -69,7 +64,7 @@ const MOCK_SIMILAR_PROPERTIES = [
   {
     id: "serene-oasis",
     title: "Serene Oasis PG",
-    image: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=600&q=80",
+    image: "",
     location: "Bhawarkuan, Indore",
     price: 7500,
     rating: 4.9,
@@ -80,7 +75,7 @@ const MOCK_SIMILAR_PROPERTIES = [
   {
     id: "skyline-co-living",
     title: "Skyline Co-Living",
-    image: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80",
+    image: "",
     location: "Palasia, Indore",
     price: 12000,
     rating: 4.7,
@@ -253,9 +248,6 @@ function PropertyDetailsContent() {
             {/* 2. Photo Gallery Showcase */}
             <Gallery
               images={displayImages}
-              videos={[
-                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-              ]}
               altPrefix={displayTitle}
             />
 
@@ -435,11 +427,12 @@ function PropertyDetailsContent() {
                   </div>
                 )}
 
-                {/* Location & Map Section */}
+                {/* Location & Neighborhood Section */}
                 <LocationMap
                   address={displayAddress}
-                  latitude={22.7533}
-                  longitude={75.8937}
+                  area={property?.area}
+                  city={property?.city}
+                  landmark={property?.landmark}
                 />
 
                 {/* Advanced Review & Rating System */}
@@ -486,7 +479,8 @@ function PropertyDetailsContent() {
                       <PricingCard
                         propertyId={property?.id || propertyId}
                         propertyName={displayTitle}
-                        coverPhoto={property?.coverPhoto || property?.images?.[0]?.url || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80"}
+                        address={displayAddress}
+                        coverPhoto={property?.coverPhoto || property?.images?.[0]?.url || ""}
                         monthlyRent={displayRent}
                         securityDeposit={displayDeposit}
                         brokerage={0}

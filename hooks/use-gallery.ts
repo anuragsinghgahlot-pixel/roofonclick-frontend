@@ -2,11 +2,11 @@
 
 import * as React from "react";
 
-export type MediaTab = "photos" | "videos";
+export type MediaTab = "photos";
 
 export interface MediaItem {
   id?: string;
-  type: "image" | "video";
+  type: "image";
   url: string;
   poster?: string;
   title?: string;
@@ -21,19 +21,17 @@ export interface UseGalleryOptions {
 
 export function useGallery({
   images = [],
-  videos = [],
   initialIndex = 0,
-  initialTab = "photos",
 }: UseGalleryOptions) {
-  const [activeTab, setActiveTab] = React.useState<MediaTab>(initialTab);
+  const [activeTab, setActiveTab] = React.useState<MediaTab>("photos");
   const [currentIndex, setCurrentIndex] = React.useState<number>(initialIndex);
   const [isFullscreen, setIsFullscreen] = React.useState<boolean>(false);
   const [zoomLevel, setZoomLevel] = React.useState<number>(1);
 
-  const totalItems = activeTab === "photos" ? images.length : videos.length;
+  const totalItems = images.length;
 
-  const open = React.useCallback((index: number = 0, tab: MediaTab = "photos") => {
-    setActiveTab(tab);
+  const open = React.useCallback((index: number = 0) => {
+    setActiveTab("photos");
     setCurrentIndex(index);
     setZoomLevel(1);
     setIsFullscreen(true);

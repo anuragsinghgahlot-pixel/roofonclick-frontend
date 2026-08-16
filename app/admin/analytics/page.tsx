@@ -44,10 +44,19 @@ export default function AdminAnalyticsPage() {
   const [comparePrevious, setComparePrevious] = React.useState(true);
   const [reportModule, setReportModule] = React.useState("all");
 
-  const kpis: AdminExecutiveSummary = React.useMemo(
-    () => AdminAnalyticsService.getExecutiveSummary(),
-    []
+  const [kpis, setKpis] = React.useState<AdminExecutiveSummary>(() =>
+    AdminAnalyticsService.getExecutiveSummary()
   );
+
+  React.useEffect(() => {
+    let isMounted = true;
+    AdminAnalyticsService.fetchExecutiveSummary().then((data) => {
+      if (isMounted) setKpis(data);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const revenueTrends = React.useMemo(
     () => AdminAnalyticsService.getRevenueTrends(),

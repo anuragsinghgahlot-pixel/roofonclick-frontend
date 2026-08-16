@@ -356,50 +356,256 @@ const MOCK_NOTIFICATIONS: AdminNotification[] = [
   },
 ];
 
+import { apiClient } from "@/lib/api-client";
+
+export interface AdminStatsResponse {
+  kpis: {
+    totalProperties: number;
+    pendingProperties: number;
+    activeProperties: number;
+    rejectedProperties: number;
+    totalUsers: number;
+    totalOwners: number;
+    totalSeekers: number;
+    totalBookings: number;
+    pendingBookings: number;
+    totalReviews: number;
+  };
+}
+
 /* ─── Service Class ─── */
 export class AdminDashboardService {
   static async getKpis(): Promise<KpiStat[]> {
-    // Simulate network delay
-    await new Promise((r) => setTimeout(r, 800));
-    return MOCK_KPIS;
+    try {
+      const res = await apiClient.get<AdminStatsResponse>("/api/admin/stats");
+
+      const kpis = res.data?.kpis || {
+        totalProperties: 0,
+        pendingProperties: 0,
+        activeProperties: 0,
+        rejectedProperties: 0,
+        totalUsers: 0,
+        totalOwners: 0,
+        totalSeekers: 0,
+        totalBookings: 0,
+        pendingBookings: 0,
+        totalReviews: 0,
+      };
+
+      return [
+        {
+          id: "total-properties",
+          label: "Total Properties",
+          value: kpis.totalProperties,
+          formattedValue: String(kpis.totalProperties),
+          change: 100,
+          changeType: "positive",
+          comparisonLabel: "live database count",
+          iconName: "Building",
+        },
+        {
+          id: "pending-approval",
+          label: "Pending Approval",
+          value: kpis.pendingProperties,
+          formattedValue: String(kpis.pendingProperties),
+          change: kpis.pendingProperties > 0 ? 100 : 0,
+          changeType: kpis.pendingProperties > 0 ? "negative" : "neutral",
+          comparisonLabel: "requires admin review",
+          iconName: "Clock",
+        },
+        {
+          id: "active-listings",
+          label: "Published Listings",
+          value: kpis.activeProperties,
+          formattedValue: String(kpis.activeProperties),
+          change: 100,
+          changeType: "positive",
+          comparisonLabel: "active on site",
+          iconName: "CheckCircle",
+        },
+        {
+          id: "verified-owners",
+          label: "Registered Owners",
+          value: kpis.totalOwners,
+          formattedValue: String(kpis.totalOwners),
+          change: 100,
+          changeType: "positive",
+          comparisonLabel: "registered owners",
+          iconName: "UserCheck",
+        },
+        {
+          id: "registered-buyers",
+          label: "Registered Seekers",
+          value: kpis.totalSeekers,
+          formattedValue: String(kpis.totalSeekers),
+          change: 100,
+          changeType: "positive",
+          comparisonLabel: "registered seekers",
+          iconName: "Users",
+        },
+        {
+          id: "total-bookings",
+          label: "Tenant Bookings",
+          value: kpis.totalBookings,
+          formattedValue: String(kpis.totalBookings),
+          change: kpis.pendingBookings > 0 ? 100 : 0,
+          changeType: "neutral",
+          comparisonLabel: `${kpis.pendingBookings} pending`,
+          iconName: "CalendarCheck",
+        },
+      ];
+    } catch {
+      return MOCK_KPIS;
+    }
   }
 
   static async getCharts(): Promise<ChartData[]> {
-    await new Promise((r) => setTimeout(r, 1200));
-    return MOCK_CHARTS;
+    try {
+      const res = await apiClient.get<AdminStatsResponse>("/api/admin/stats");
+
+      const kpis = res.data?.kpis;
+      if (!kpis) return MOCK_CHARTS;
+
+      return [
+        {
+          id: "properties",
+          title: "Listings Overview",
+          subtitle: "Properties by status",
+          total: String(kpis.totalProperties),
+          color: "hsl(155, 43%, 21%)",
+          data: [
+            { label: "Active", value: kpis.activeProperties },
+            { label: "Pending", value: kpis.pendingProperties },
+            { label: "Rejected", value: kpis.rejectedProperties },
+          ],
+        },
+        {
+          id: "users",
+          title: "User Demographics",
+          subtitle: "Registered users by role",
+          total: String(kpis.totalUsers),
+          color: "hsl(144, 33%, 37%)",
+          data: [
+            { label: "Seekers", value: kpis.totalSeekers },
+            { label: "Owners", value: kpis.totalOwners },
+            { label: "Admins", value: Math.max(1, kpis.totalUsers - kpis.totalSeekers - kpis.totalOwners) },
+          ],
+        },
+        {
+          id: "bookings",
+          title: "Bookings Activity",
+          subtitle: "Reservation volume",
+          total: String(kpis.totalBookings),
+          color: "hsl(46, 68%, 47%)",
+          data: [
+            { label: "Total", value: kpis.totalBookings },
+            { label: "Pending", value: kpis.pendingBookings },
+            { label: "Confirmed", value: Math.max(0, kpis.totalBookings - kpis.pendingBookings) },
+          ],
+        },
+      ];
+    } catch {
+      return MOCK_CHARTS;
+    }
   }
 
   static async getActivities(): Promise<ActivityItem[]> {
-    await new Promise((r) => setTimeout(r, 600));
-    return MOCK_ACTIVITIES;
+    try {
+      const res = await apiClient.get<{ listings: any[] }>("/api/admin/listings?limit=5");
+      const listings = res.data?.listings || [];
+
+      return listings.map((item, idx) => ({
+        id: item._id || `act-${idx}`,
+        type: item.status === "pending" ? "property_submitted" : "property_approved",
+        message: item.status === "pending" 
+          ? `New property "${item.title}" submitted for approval in ${item.address?.area || 'Indore'}`
+          : `Property "${item.title}" active in ${item.address?.area || 'Indore'}`,
+        timestamp: item.createdAt || new Date().toISOString(),
+        relativeTime: "Recently",
+      }));
+    } catch {
+      return MOCK_ACTIVITIES;
+    }
   }
 
   static async getQuickActions(): Promise<QuickAction[]> {
-    await new Promise((r) => setTimeout(r, 300));
-    return MOCK_QUICK_ACTIONS;
+    try {
+      const res = await apiClient.get<AdminStatsResponse>("/api/admin/stats");
+      const pendingCount = res.data?.kpis?.pendingProperties || 0;
+
+      return [
+        {
+          id: "qa1",
+          label: "Property Approvals",
+          description: "Review pending submissions",
+          iconName: "CheckCircle",
+          href: "/admin/properties",
+          badge: pendingCount > 0 ? String(pendingCount) : undefined,
+        },
+        {
+          id: "qa2",
+          label: "Manage Owners",
+          description: "View registered property owners",
+          iconName: "UserCheck",
+          href: "/admin/owners",
+        },
+        {
+          id: "qa3",
+          label: "Manage Seekers",
+          description: "View registered property seekers",
+          iconName: "Users",
+          href: "/admin/buyers",
+        },
+        {
+          id: "qa4",
+          label: "Bookings Overview",
+          description: "View tenant reservation requests",
+          iconName: "CalendarCheck",
+          href: "/admin/bookings",
+        },
+        {
+          id: "qa5",
+          label: "Reviews Moderation",
+          description: "Moderate user reviews",
+          iconName: "Star",
+          href: "/admin/reviews",
+        },
+      ];
+    } catch {
+      return MOCK_QUICK_ACTIONS;
+    }
   }
 
   static async getHealthMetrics(): Promise<HealthMetric[]> {
-    await new Promise((r) => setTimeout(r, 500));
-    return MOCK_HEALTH_METRICS;
+    try {
+      const res = await apiClient.get<AdminStatsResponse>("/api/admin/stats");
+      const kpis = res.data?.kpis || { pendingProperties: 0, pendingBookings: 0, totalReviews: 0 };
+
+      return [
+        { id: "h1", label: "Properties Pending Approval", count: kpis.pendingProperties, severity: kpis.pendingProperties > 0 ? "warning" : "info", href: "/admin/properties" },
+        { id: "h2", label: "Pending Bookings", count: kpis.pendingBookings, severity: kpis.pendingBookings > 0 ? "warning" : "info", href: "/admin/bookings" },
+        { id: "h3", label: "Total Reviews", count: kpis.totalReviews, severity: "info", href: "/admin/reviews" },
+      ];
+    } catch {
+      return MOCK_HEALTH_METRICS;
+    }
   }
 
   static async getNotifications(): Promise<AdminNotification[]> {
-    await new Promise((r) => setTimeout(r, 700));
     return MOCK_NOTIFICATIONS;
   }
 
-  /* Synchronous getters for SSR / initial load */
+  /* Synchronous getters for initial state */
   static getKpisSync(): KpiStat[] {
-    return MOCK_KPIS;
+    return [];
   }
 
   static getChartsSync(): ChartData[] {
-    return MOCK_CHARTS;
+    return [];
   }
 
   static getActivitiesSync(): ActivityItem[] {
-    return MOCK_ACTIVITIES;
+    return [];
   }
 
   static getQuickActionsSync(): QuickAction[] {
@@ -407,10 +613,10 @@ export class AdminDashboardService {
   }
 
   static getHealthMetricsSync(): HealthMetric[] {
-    return MOCK_HEALTH_METRICS;
+    return [];
   }
 
   static getNotificationsSync(): AdminNotification[] {
-    return MOCK_NOTIFICATIONS;
+    return [];
   }
 }

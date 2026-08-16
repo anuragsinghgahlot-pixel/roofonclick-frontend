@@ -11,90 +11,67 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCcw,
-  Play,
-  Video,
   Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGallery, MediaTab } from "@/hooks/use-gallery";
 
-// Fallback image placeholder when an image fails to load
 const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80";
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600' viewBox='0 0 800 600' fill='none'><rect width='800' height='600' fill='%2318181B'/><path d='M360 260H440V340H360V260Z' stroke='%2352525B' stroke-width='4'/><path d='M400 200L320 280H480L400 200Z' fill='%233F3F46'/><text x='50%25' y='65%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='18' font-weight='600' fill='%2371717A'>RoofOnClick Property Photo</text></svg>";
 
 export interface GalleryProps {
   /** Array of image URLs to display. */
   images: string[];
-  /** Optional array of video URLs to display. */
-  videos?: string[];
   /** Alt text prefix for accessibility */
   altPrefix?: string;
   /** Optional class override for the root wrapper */
   className?: string;
 }
 
-// ─── Skeleton Component ────────────────────────────────────────────────────────
-
-function GallerySkeleton({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "animate-pulse bg-muted/70 rounded-xl flex items-center justify-center",
-        className
-      )}
-    >
-      <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
-    </div>
-  );
-}
-
-// ─── Smart Image Component with Lazy Loading & Error Fallback ──────────────────
-
-interface SmartImageProps {
+interface SmartImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
   alt: string;
   className?: string;
-  loading?: "lazy" | "eager";
-  onClick?: () => void;
-  onDoubleClick?: () => void;
 }
 
-function SmartImage({ src, alt, className, loading = "lazy", onClick, onDoubleClick }: SmartImageProps) {
-  const [imageSrc, setImageSrc] = React.useState(src);
-  const [isLoaded, setIsLoaded] = React.useState(false);
-  const [hasError, setHasError] = React.useState(false);
+function SmartImage({ src, alt, className, ...props }: SmartImageProps) {
+  const [imgSrc, setImgSrc] = React.useState<string>(src);
+  const [hasError, setHasError] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!src) {
+      setHasError(true);
+      setImgSrc(FALLBACK_IMAGE);
+    } else {
+      setImgSrc(src);
+      setHasError(false);
+    }
+  }, [src]);
+
+  const handleError = () => {
+    if (!hasError) {
+      setHasError(true);
+      setImgSrc(FALLBACK_IMAGE);
+    }
+  };
+
+  if (!imgSrc) return null;
 
   return (
-    <div className={cn("relative w-full h-full overflow-hidden bg-muted/40", className)}>
-      {!isLoaded && !hasError && (
-        <GallerySkeleton className="absolute inset-0 z-10 rounded-none" />
-      )}
-      <img
-        src={imageSrc}
-        alt={alt}
-        loading={loading}
-        onLoad={() => setIsLoaded(true)}
-        onError={() => {
-          setHasError(true);
-          setIsLoaded(true);
-          setImageSrc(FALLBACK_IMAGE);
-        }}
-        onClick={onClick}
-        onDoubleClick={onDoubleClick}
-        className={cn(
-          "w-full h-full object-cover transition-all duration-500",
-          !isLoaded ? "opacity-0 scale-95" : "opacity-100 scale-100"
-        )}
-      />
-    </div>
+    <img
+      src={imgSrc}
+      alt={alt}
+      onError={handleError}
+      className={cn("w-full h-full object-cover", className)}
+      {...props}
+    />
   );
 }
 
-// ─── Fullscreen Lightbox Modal ──────────────────────────────────────────────────
+// ─── Lightbox Fullscreen Modal ───────────────────────────────────────────────
 
-export interface LightboxModalProps {
+interface LightboxModalProps {
   images: string[];
-  videos: string[];
   activeTab: MediaTab;
   setActiveTab: (tab: MediaTab) => void;
   currentIndex: number;
@@ -112,9 +89,6 @@ export interface LightboxModalProps {
 
 export function LightboxModal({
   images,
-  videos,
-  activeTab,
-  setActiveTab,
   currentIndex,
   zoomLevel,
   altPrefix,
@@ -127,12 +101,10 @@ export function LightboxModal({
   onResetZoom,
   onToggleZoom,
 }: LightboxModalProps) {
-  const currentList = activeTab === "photos" ? images : videos;
-  const isVideo = activeTab === "videos";
+  const currentList = images;
 
   // Mouse wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
-    if (isVideo) return;
     if (e.deltaY < 0) {
       onZoomIn();
     } else {
@@ -154,37 +126,11 @@ export function LightboxModal({
         className="w-full flex items-center justify-between p-4 sm:p-6 z-20 bg-gradient-to-b from-black/80 to-transparent"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Left: Tab switchers & counter */}
+        {/* Left: Counter */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl backdrop-blur-md">
-            <button
-              type="button"
-              onClick={() => setActiveTab("photos")}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all flex items-center gap-1.5 cursor-pointer",
-                activeTab === "photos"
-                  ? "bg-white text-black shadow-md"
-                  : "text-white/70 hover:text-white"
-              )}
-            >
-              <Camera className="w-3.5 h-3.5" />
-              <span>Photos ({images.length})</span>
-            </button>
-            {videos.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setActiveTab("videos")}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all flex items-center gap-1.5 cursor-pointer",
-                  activeTab === "videos"
-                    ? "bg-white text-black shadow-md"
-                    : "text-white/70 hover:text-white"
-                )}
-              >
-                <Video className="w-3.5 h-3.5" />
-                <span>Videos ({videos.length})</span>
-              </button>
-            )}
+          <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-xl backdrop-blur-md text-white font-heading text-xs font-bold">
+            <Camera className="w-3.5 h-3.5" />
+            <span>Photos ({images.length})</span>
           </div>
 
           <span className="text-white/70 font-heading text-xs font-bold hidden sm:inline-block">
@@ -192,58 +138,56 @@ export function LightboxModal({
           </span>
         </div>
 
-        {/* Right: Zoom controls & Close */}
+        {/* Right: Zoom & Close Controls */}
         <div className="flex items-center gap-2">
-          {!isVideo && (
-            <div className="hidden sm:flex items-center gap-1 bg-white/10 p-1 rounded-xl backdrop-blur-md border border-white/10">
+          <div className="hidden sm:flex items-center gap-1 bg-white/10 p-1 rounded-xl backdrop-blur-md">
+            <button
+              type="button"
+              onClick={onZoomOut}
+              disabled={zoomLevel <= 1}
+              title="Zoom Out (-)"
+              className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-colors"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <span className="text-white font-mono text-xs px-2 font-semibold">
+              {Math.round(zoomLevel * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={onZoomIn}
+              disabled={zoomLevel >= 3}
+              title="Zoom In (+)"
+              className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-colors"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            {zoomLevel > 1 && (
               <button
                 type="button"
-                onClick={onZoomOut}
-                disabled={zoomLevel <= 1}
-                className="p-1.5 hover:bg-white/20 text-white rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
-                title="Zoom Out (-)"
+                onClick={onResetZoom}
+                title="Reset Zoom (0)"
+                className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 cursor-pointer transition-colors"
               >
-                <ZoomOut className="w-4 h-4" />
+                <RotateCcw className="w-4 h-4" />
               </button>
-              <span className="text-white/90 font-heading text-[11px] font-bold px-2">
-                {Math.round(zoomLevel * 100)}%
-              </span>
-              <button
-                type="button"
-                onClick={onZoomIn}
-                disabled={zoomLevel >= 3}
-                className="p-1.5 hover:bg-white/20 text-white rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
-                title="Zoom In (+)"
-              >
-                <ZoomIn className="w-4 h-4" />
-              </button>
-              {zoomLevel > 1 && (
-                <button
-                  type="button"
-                  onClick={onResetZoom}
-                  className="p-1.5 hover:bg-white/20 text-white rounded-lg transition-colors cursor-pointer"
-                  title="Reset Zoom (0)"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          )}
+            )}
+          </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
-            aria-label="Close"
+            title="Close Lightbox (Esc)"
+            className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
       </div>
 
-      {/* ── Main Content Viewport ── */}
-      <div className="relative flex-1 flex items-center justify-center overflow-hidden p-4">
-        {/* Navigation Arrow Left */}
+      {/* ── Main Media Display Area ── */}
+      <div className="relative flex-1 flex items-center justify-center p-4 overflow-hidden">
+        {/* Previous Button */}
         {currentList.length > 1 && (
           <button
             type="button"
@@ -251,14 +195,14 @@ export function LightboxModal({
               e.stopPropagation();
               onPrev();
             }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/25 backdrop-blur-md rounded-full text-white transition-all cursor-pointer z-30 shadow-lg"
-            aria-label="Previous"
+            title="Previous (Left Arrow)"
+            className="absolute left-4 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all duration-200 cursor-pointer active:scale-90"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
         )}
 
-        {/* Navigation Arrow Right */}
+        {/* Next Button */}
         {currentList.length > 1 && (
           <button
             type="button"
@@ -266,49 +210,33 @@ export function LightboxModal({
               e.stopPropagation();
               onNext();
             }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/25 backdrop-blur-md rounded-full text-white transition-all cursor-pointer z-30 shadow-lg"
-            aria-label="Next"
+            title="Next (Right Arrow)"
+            className="absolute right-4 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all duration-200 cursor-pointer active:scale-90"
           >
             <ChevronRight className="w-6 h-6" />
           </button>
         )}
 
-        {/* Image / Video Display */}
+        {/* Active Media Item */}
         <AnimatePresence mode="wait">
-          {!isVideo ? (
-            <motion.div
-              key={`img-${currentIndex}`}
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: zoomLevel }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="max-w-[90vw] max-h-[75vh] flex items-center justify-center cursor-zoom-in"
-              onClick={(e) => e.stopPropagation()}
-              onDoubleClick={onToggleZoom}
-            >
-              <img
-                src={currentList[currentIndex] || FALLBACK_IMAGE}
-                alt={`${altPrefix} ${currentIndex + 1}`}
-                className="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl transition-transform duration-200"
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key={`vid-${currentIndex}`}
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              className="w-full max-w-4xl aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <video
-                src={currentList[currentIndex]}
-                controls
-                autoPlay
-                className="w-full h-full object-contain"
-              />
-            </motion.div>
-          )}
+          <motion.div
+            key={`img-${currentIndex}`}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: zoomLevel }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.2 }}
+            className="relative flex items-center justify-center max-w-full max-h-full cursor-zoom-in"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleZoom();
+            }}
+          >
+            <SmartImage
+              src={currentList[currentIndex] || FALLBACK_IMAGE}
+              alt={`${altPrefix} ${currentIndex + 1}`}
+              className="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl transition-transform duration-200"
+            />
+          </motion.div>
         </AnimatePresence>
       </div>
 
@@ -324,22 +252,23 @@ export function LightboxModal({
               type="button"
               onClick={() => onGoTo(idx)}
               className={cn(
-                "relative shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer",
+                "relative shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 cursor-pointer",
                 idx === currentIndex
                   ? "border-primary scale-105 shadow-md"
                   : "border-transparent opacity-50 hover:opacity-100"
               )}
             >
-              {!isVideo ? (
-                <img src={src} alt="thumbnail" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-muted/40 flex items-center justify-center text-white">
-                  <Play className="w-5 h-5 fill-current" />
-                </div>
-              )}
+              <SmartImage
+                src={src}
+                alt={`Thumbnail ${idx + 1}`}
+              />
             </button>
           ))}
         </div>
+
+        <span className="text-white/50 text-[10px] font-body">
+          Use ← → arrow keys to navigate, Esc to close
+        </span>
       </div>
     </motion.div>
   );
@@ -349,11 +278,10 @@ export function LightboxModal({
 
 export function Gallery({
   images = [],
-  videos = [],
   altPrefix = "Property photo",
   className,
 }: GalleryProps) {
-  const gallery = useGallery({ images, videos });
+  const gallery = useGallery({ images });
 
   const totalPhotos = images.length;
   const featuredImage = images[0] || FALLBACK_IMAGE;
@@ -371,64 +299,23 @@ export function Gallery({
     setMobileActiveIndex(Math.round(scrollLeft / itemWidth));
   };
 
-  if (!images.length) {
+  if (totalPhotos === 0) {
     return (
-      <div className={cn("w-full", className)}>
-        <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-2 h-[420px] rounded-2xl overflow-hidden">
-          <GallerySkeleton className="col-span-2 row-span-2 rounded-none rounded-l-2xl" />
-          <GallerySkeleton className="rounded-none" />
-          <GallerySkeleton className="rounded-none rounded-tr-2xl" />
-          <GallerySkeleton className="rounded-none" />
-          <GallerySkeleton className="rounded-none rounded-br-2xl" />
-        </div>
-        <div className="md:hidden flex gap-3 overflow-hidden">
-          <GallerySkeleton className="shrink-0 w-[85%] aspect-[4/3] rounded-2xl" />
-          <GallerySkeleton className="shrink-0 w-[85%] aspect-[4/3] rounded-2xl" />
-        </div>
+      <div className={cn("w-full h-64 rounded-3xl bg-muted flex flex-col items-center justify-center gap-2 text-muted-foreground border border-border/60", className)}>
+        <ImageIcon className="w-10 h-10 stroke-1" />
+        <span className="font-heading text-xs font-semibold">No photos available</span>
       </div>
     );
   }
 
   return (
     <div className={cn("w-full space-y-3", className)}>
-      {/* Media Tabs Header (if videos exist) */}
-      {videos.length > 0 && (
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => gallery.setActiveTab("photos")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-xl font-heading text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
-              gallery.activeTab === "photos"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted/50 hover:bg-muted text-muted-foreground"
-            )}
-          >
-            <Camera className="w-3.5 h-3.5" />
-            <span>Photos ({images.length})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => gallery.setActiveTab("videos")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-xl font-heading text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
-              gallery.activeTab === "videos"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted/50 hover:bg-muted text-muted-foreground"
-            )}
-          >
-            <Video className="w-3.5 h-3.5" />
-            <span>Videos ({videos.length})</span>
-          </button>
-        </div>
-      )}
-
       {/* ── Desktop Grid Layout ── */}
       <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-2.5 h-[440px] rounded-3xl overflow-hidden shadow-premium">
         {/* Large Featured Primary Image */}
         <div
           className="col-span-2 row-span-2 relative group overflow-hidden cursor-pointer bg-muted"
-          onClick={() => gallery.open(0, "photos")}
+          onClick={() => gallery.open(0)}
         >
           <SmartImage
             src={featuredImage}
@@ -451,7 +338,7 @@ export function Gallery({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              gallery.open(0, "photos");
+              gallery.open(0);
             }}
             className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/95 hover:bg-white text-primary font-heading text-xs font-bold shadow-lg transition-all duration-200 cursor-pointer active:scale-95"
           >
@@ -469,7 +356,7 @@ export function Gallery({
             <div
               key={i}
               className="relative group overflow-hidden cursor-pointer bg-muted"
-              onClick={() => gallery.open(photoIndex, "photos")}
+              onClick={() => gallery.open(photoIndex)}
             >
               <SmartImage
                 src={src}
@@ -504,7 +391,7 @@ export function Gallery({
             <div
               key={i}
               className="snap-center shrink-0 w-[92vw] sm:w-[88%] aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer relative group bg-muted shadow-md"
-              onClick={() => gallery.open(i, "photos")}
+              onClick={() => gallery.open(i)}
             >
               <SmartImage
                 src={src}
@@ -539,7 +426,6 @@ export function Gallery({
         {gallery.isFullscreen && (
           <LightboxModal
             images={images}
-            videos={videos}
             activeTab={gallery.activeTab}
             setActiveTab={gallery.setActiveTab}
             currentIndex={gallery.currentIndex}

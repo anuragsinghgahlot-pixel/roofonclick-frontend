@@ -5,12 +5,23 @@ import { cn } from "@/lib/utils";
 import { AdminSidebar, AdminMobileSidebar } from "@/components/admin/sidebar";
 import { AdminTopNavbar } from "@/components/admin/top-navbar";
 
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/providers/auth-provider";
+
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isLoading && user && user.role !== "admin") {
+      router.replace("/");
+    }
+  }, [user, isLoading, router]);
 
   /**
    * Disable Lenis smooth-scroll on admin pages.
@@ -25,7 +36,7 @@ export default function AdminLayout({
 
     return () => {
       // Restore so Lenis restarts when navigating away from admin
-      document.body.style.overflow = prev;
+      document.body.style.overflow = "";
     };
   }, []);
 

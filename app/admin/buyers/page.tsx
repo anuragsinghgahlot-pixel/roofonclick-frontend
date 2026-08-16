@@ -41,10 +41,16 @@ import { BuyerProfileDrawer } from "@/components/admin/buyer-profile-drawer";
 
 export default function AdminBuyersPage() {
   /* ─── State ─── */
-  const [buyers, setBuyers] = React.useState<AdminBuyer[]>(() =>
-    AdminBuyerService.getAllBuyers()
-  );
+  const [buyers, setBuyers] = React.useState<AdminBuyer[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [selectedBuyer, setSelectedBuyer] = React.useState<AdminBuyer | null>(null);
+
+  React.useEffect(() => {
+    setIsLoading(true);
+    AdminBuyerService.fetchAdminBuyers()
+      .then(setBuyers)
+      .finally(() => setIsLoading(false));
+  }, []);
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 
   /* Advanced Filter state */

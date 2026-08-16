@@ -81,18 +81,6 @@ export function StepLocation() {
         />
       </div>
 
-      {/* Google Maps Link */}
-      <div className="flex flex-col gap-1.5">
-        <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-          Google Maps Link <span className="text-muted-foreground/50 font-normal">(Optional)</span>
-        </label>
-        <input
-          type="url"
-          {...register("mapsLink")}
-          placeholder="e.g. https://goo.gl/maps/..."
-          className="w-full bg-card border border-border/80 rounded-xl px-4.5 py-3.5 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/45 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
-        />
-      </div>
     </div>
   );
 }

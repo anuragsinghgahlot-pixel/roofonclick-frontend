@@ -115,12 +115,19 @@ export function FeaturedListings() {
                   className="group bg-card border border-border/80 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col"
                 >
                   {/* Image Header */}
-                  <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-                    <img
-                      src={property.coverPhoto || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80"}
-                      alt={property.propertyName}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                  <div className="relative aspect-[16/10] overflow-hidden bg-muted flex items-center justify-center">
+                    {property.coverPhoto ? (
+                      <img
+                        src={property.coverPhoto}
+                        alt={property.propertyName}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-muted via-muted/80 to-muted/50 flex flex-col items-center justify-center gap-1.5 text-muted-foreground p-4 text-center">
+                        <Building2 className="w-8 h-8 stroke-1 text-primary/40" />
+                        <span className="font-heading text-[11px] font-bold text-foreground/70">{property.propertyName}</span>
+                      </div>
+                    )}
 
                     {/* Gender badge */}
                     <div className="absolute top-3 left-3 flex gap-2">

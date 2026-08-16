@@ -97,7 +97,6 @@ export const propertyWizardSchema = z.object({
   area: z.string().min(1, "Area is required"),
   address: z.string().min(1, "Complete Address is required"),
   landmark: z.string().optional(),
-  mapsLink: z.string().optional(),
 
   // Step 3: Rooms & Pricing (Repeatable configurations for Hostel/PG or single configuration for Apartment)
   rooms: z
@@ -168,14 +167,6 @@ export const propertyWizardSchema = z.object({
     )
     .min(5, "At least 5 images are required")
     .max(10, "Maximum 10 images allowed"),
-  video: z
-    .object({
-      url: z.string(),
-      name: z.string(),
-      size: z.number().optional(),
-    })
-    .nullable()
-    .optional(),
 });
 
 export type PropertyWizardFormValues = z.infer<typeof propertyWizardSchema>;
@@ -228,7 +219,6 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
       area: "Vijay Nagar",
       address: "",
       landmark: "",
-      mapsLink: "",
       rooms: [
         {
           sharingType: "Single",
@@ -258,7 +248,6 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
       },
       nearby: [],
       images: [],
-      video: null,
     },
     mode: "onChange",
   });
@@ -277,15 +266,9 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
       // Edit Mode: Read saved property from PropertyService
       const found = PropertyService.getPropertyById(editPropertyId);
       if (found) {
-        const restoredImgs = (found.images || []).map((img: MediaImage, idx: number) => {
+        const restoredImgs = (found.images || []).map((img: MediaImage) => {
           if (!img.url || img.url.startsWith("blob:")) {
-            const mockImages = [
-              "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=600&q=80",
-              "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=600&q=80",
-              "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80",
-              "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=600&q=80",
-            ];
-            return { ...img, url: mockImages[idx % mockImages.length] };
+            return { ...img, url: "" };
           }
           return img;
         });
@@ -320,15 +303,9 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
       const draft = PropertyService.getDraft();
       if (draft && draft.formValues) {
         const draftImgs = (draft.formValues.images as MediaImage[] | undefined) || [];
-        const restoredImgs = draftImgs.map((img: MediaImage, idx: number) => {
+        const restoredImgs = draftImgs.map((img: MediaImage) => {
           if (img.url && img.url.startsWith("blob:")) {
-            const mockImages = [
-              "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=600&q=80",
-              "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=600&q=80",
-              "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80",
-              "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=600&q=80",
-            ];
-            return { ...img, url: mockImages[idx % mockImages.length] };
+            return { ...img, url: "" };
           }
           return img;
         });
@@ -355,9 +332,6 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
           ...img,
           url: img.url && img.url.startsWith("blob:") ? "blob:expired" : img.url,
         })),
-        video: formValues.video && formValues.video.url && formValues.video.url.startsWith("blob:") 
-          ? { ...formValues.video, url: "blob:expired" }
-          : formValues.video,
       };
       PropertyService.saveDraft({
         currentStep,
@@ -445,7 +419,7 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
     if (currentStep === 1) {
       fieldsToValidate = ["propertyName", "propertyType", "gender", "description"];
     } else if (currentStep === 2) {
-      fieldsToValidate = ["city", "area", "address", "landmark", "mapsLink"];
+      fieldsToValidate = ["city", "area", "address", "landmark"];
     } else if (currentStep === 3) {
       fieldsToValidate = ["rooms"];
     } else if (currentStep === 4) {
@@ -473,7 +447,7 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
         toast.error(`Maximum 10 photos allowed. You currently have ${validCount}.`);
         return;
       }
-      fieldsToValidate = ["images", "video"];
+      fieldsToValidate = ["images"];
     }
 
     const isValid = fieldsToValidate.length > 0 
@@ -504,7 +478,6 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
         area: "Vijay Nagar",
         address: "",
         landmark: "",
-        mapsLink: "",
         amenities: [],
         rules: {
           smokingAllowed: false,
@@ -531,7 +504,9 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
         toast.success("Your property has been updated successfully.");
       } else {
         await ListingsAPI.createListing(values);
-        toast.success("Your property listing has been published!");
+        toast.success("Submitted for Admin Approval! 📋", {
+          description: "Your listing has been sent to the RoofOnClick admin team for physical site examination before publishing.",
+        });
       }
 
       PropertyService.clearDraft();

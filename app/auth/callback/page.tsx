@@ -56,17 +56,20 @@ export default function AuthCallbackPage() {
         const meRes = await apiClient.get<{ user: any }>("/api/auth/me");
         const u = meRes.data?.user;
         if (u) {
-          loginWithTokens(accessToken, refreshToken, u);
+          const loggedInUser = loginWithTokens(accessToken, refreshToken, u);
+          const savedRoute = typeof window !== "undefined" ? sessionStorage.getItem("lastBrowsingRoute") : null;
+          if (savedRoute && savedRoute !== "/" && savedRoute !== "/login" && savedRoute !== "/signup") {
+            router.replace(savedRoute);
+          } else if (loggedInUser.role === "admin") {
+            router.replace("/admin");
+          } else if (loggedInUser.role === "owner") {
+            router.replace("/owner/dashboard");
+          } else {
+            router.replace("/");
+          }
         } else {
           throw new Error("User profile not found");
         }
-
-        // Redirect to intended destination or home
-        const redirect =
-          (typeof window !== "undefined" &&
-            sessionStorage.getItem("lastBrowsingRoute")) ||
-          "/";
-        router.replace(redirect);
       } catch {
         TokenManager.clear();
         setErrorMessage("Authentication failed. Please try logging in again.");

@@ -142,7 +142,7 @@ export default function Navbar() {
     }
 
     return () => {
-      document.body.style.overflow = originalStyle;
+      document.body.style.overflow = "";
       window.removeEventListener("keydown", handleKeyDown);
       if (handleTabKey && drawerRef.current) {
         drawerRef.current.removeEventListener("keydown", handleTabKey);
@@ -160,10 +160,13 @@ export default function Navbar() {
       router.push("/search");
     } else if (item === "Owner Dashboard") {
       router.push("/owner/dashboard");
+    } else if (item === "Admin Control Portal") {
+      router.push("/admin");
     }
   };
 
   const getActiveNavItem = () => {
+    if (pathname.startsWith("/admin")) return "Admin Control Portal";
     if (pathname === "/areas") return "Areas";
     if (pathname.startsWith("/search")) return "Services";
     if (pathname.startsWith("/owner/")) return "Owner Dashboard";
@@ -175,9 +178,14 @@ export default function Navbar() {
   const userRole = user?.role || role;
   const isGuest = !isAuthenticated;
   const isOwner = userRole === "owner";
+  const isAdmin = userRole === "admin";
   const isInsideOwnerArea = pathname.startsWith("/owner/");
 
   const visibleNavItems = React.useMemo(() => {
+    if (isAdmin) {
+      return ["Explore", "Areas", "Services", "Admin Control Portal"];
+    }
+
     if (isGuest) {
       // Guest sees: Explore, Areas, Services
       return ["Explore", "Areas", "Services"];
@@ -194,7 +202,7 @@ export default function Navbar() {
 
     // Buyer logged in: Explore, Areas, Services
     return ["Explore", "Areas", "Services"];
-  }, [isGuest, isOwner, isInsideOwnerArea]);
+  }, [isGuest, isOwner, isAdmin, isInsideOwnerArea]);
 
   return (
     <>

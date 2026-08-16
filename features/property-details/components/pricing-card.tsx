@@ -24,6 +24,8 @@ export interface PricingCardProps {
   propertyId?: string;
   /** Property Name */
   propertyName?: string;
+  /** Property Address */
+  address?: string;
   /** Property Cover Photo */
   coverPhoto?: string;
   /** Monthly rent in ₹ */
@@ -116,6 +118,7 @@ function formatDisplayDate(isoStr: string): string {
 export function PricingCard({
   propertyId = "p1",
   propertyName = "StayyNest Property",
+  address,
   coverPhoto,
   monthlyRent,
   securityDeposit,
@@ -422,6 +425,7 @@ export function PricingCard({
       roomType={selectedRoom}
       moveInDate={moveInDate}
       pricing={pricing}
+      propertyAddress={address}
     />
   </>
   );

@@ -85,11 +85,47 @@ const MOCK_REVIEWS: ReviewItem[] = [
   },
 ];
 
+import { apiClient } from "@/lib/api-client";
+
 export default function AdminReviewsPage() {
-  const [reviews, setReviews] = React.useState<ReviewItem[]>(MOCK_REVIEWS);
+  const [reviews, setReviews] = React.useState<ReviewItem[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [selectedReview, setSelectedReview] = React.useState<ReviewItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [replyText, setReplyText] = React.useState("");
+
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadReviews() {
+      try {
+        const res = await apiClient.get<{ reviews: any[] }>("/api/admin/reviews");
+        const items = res.data?.reviews || [];
+        if (isMounted) {
+          setReviews(
+            items.map((r) => ({
+              id: r._id,
+              reviewerName: r.userName || r.user?.name || "Anonymous",
+              reviewerEmail: r.user?.email || "N/A",
+              propertyTitle: r.property?.title || "Listed Stay",
+              rating: r.rating || 5,
+              comment: r.content || r.title || "",
+              ownerReply: r.ownerReply?.replyText,
+              status: "Approved",
+              createdAt: r.createdAt ? new Date(r.createdAt).toISOString().substring(0, 10) : "N/A",
+            }))
+          );
+        }
+      } catch {
+        if (isMounted) setReviews([]);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    loadReviews();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleOpenDrawer = (review: ReviewItem) => {
     setSelectedReview(review);
@@ -111,9 +147,14 @@ export default function AdminReviewsPage() {
     toast.info(`Review ${review.id} hidden from public listing.`);
   };
 
-  const handleDelete = (review: ReviewItem) => {
-    setReviews((prev) => prev.filter((r) => r.id !== review.id));
-    toast.error(`Review ${review.id} deleted.`);
+  const handleDelete = async (review: ReviewItem) => {
+    try {
+      await apiClient.delete(`/api/admin/reviews/${review.id}`);
+      setReviews((prev) => prev.filter((r) => r.id !== review.id));
+      toast.error(`Review deleted.`);
+    } catch {
+      toast.error("Failed to delete review.");
+    }
   };
 
   const columns: ColumnDef<ReviewItem>[] = [
@@ -273,10 +314,11 @@ export default function AdminReviewsPage() {
         <KpiCard label="Approved Rate" value={96} formattedValue="96%" change={1} changeType="positive" comparisonLabel="approval" icon={CheckCircle2} />
       </div>
 
-      {/* Data Table */}
+      {/* ═══ Main Data Table ═══ */}
       <DataTable<ReviewItem>
         columns={columns}
         data={reviews}
+        isLoading={isLoading}
         getRowId={(r) => r.id}
         searchable={true}
         searchPlaceholder="Search reviewer, property title, or comment..."

@@ -210,9 +210,16 @@ export default function SignupPage() {
 
               <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-2">
                 {apiError && (
-                  <div className="flex items-start gap-1.5 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg px-2.5 py-1 text-[11px] font-semibold">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-[1px]" />
-                    <span>{apiError}</span>
+                  <div className="flex items-center justify-between gap-2 bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-xl px-3 py-2 text-xs font-semibold">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{apiError}</span>
+                    </div>
+                    {(apiError.toLowerCase().includes("already exists") || apiError.toLowerCase().includes("log in")) && (
+                      <Link href="/login" className="font-heading font-extrabold underline text-primary hover:text-secondary whitespace-nowrap shrink-0">
+                        Log In →
+                      </Link>
+                    )}
                   </div>
                 )}
 

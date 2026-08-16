@@ -15,9 +15,11 @@ import { PropertyService, Property } from "@/services/property";
 import { UserAPI } from "@/services/user/user.api";
 import { ListingsAPI } from "@/services/listings/listings.api";
 import { EnquiryService } from "@/services/enquiry";
+import { BookingService, BookingReservation } from "@/services/booking";
 import { CallbackService } from "@/services/callback/callback.service";
 import { calculatePropertyAvailability, calculateRoomAvailability } from "@/lib/availability-utils";
 import { OwnerEnquiriesList } from "@/components/owner/enquiries-list";
+import { OwnerBookingsList } from "@/components/owner/bookings-list";
 import { OwnerCallbackList } from "@/components/owner/callback-list";
 import { OwnerReviewsList } from "@/components/owner/reviews-list";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -137,14 +139,24 @@ export default function OwnerDashboardPage() {
     router.push("/owner/property/new?step=1");
   };
 
-  const [activeTab, setActiveTab] = React.useState<"PROPERTIES" | "ENQUIRIES" | "CALLBACKS" | "REVIEWS">("PROPERTIES");
+  const [activeTab, setActiveTab] = React.useState<"PROPERTIES" | "BOOKINGS" | "ENQUIRIES" | "CALLBACKS" | "REVIEWS">("PROPERTIES");
   const [enquiriesList, setEnquiriesList] = React.useState<any[]>([]);
   const [pendingEnquiriesCount, setPendingEnquiriesCount] = React.useState(0);
   const totalEnquiriesCount = enquiriesList.length;
 
+  const [ownerBookings, setOwnerBookings] = React.useState<BookingReservation[]>([]);
+  const [pendingBookingsCount, setPendingBookingsCount] = React.useState(0);
+
   React.useEffect(() => {
     EnquiryService.getAllRequests().then(setEnquiriesList).catch(() => setEnquiriesList([]));
     EnquiryService.fetchPendingCount().then(setPendingEnquiriesCount).catch(() => setPendingEnquiriesCount(0));
+
+    BookingService.fetchOwnerBookings()
+      .then((list) => {
+        setOwnerBookings(list);
+        setPendingBookingsCount(list.filter((b) => b.status === "pending").length);
+      })
+      .catch(() => setOwnerBookings([]));
   }, []);
 
   const callbacksList = CallbackService.getAllRequests();
@@ -231,7 +243,7 @@ export default function OwnerDashboardPage() {
               {[
                 { label: "Listings", value: totalListings.toString(), icon: Building, color: "text-primary bg-primary/10" },
                 { label: "Enquiries", value: totalEnquiriesCount.toString(), icon: Users, color: "text-secondary bg-secondary/10" },
-                { label: "Pending", value: "0", icon: Calendar, color: "text-accent bg-accent/10" },
+                { label: "Pending Bookings", value: pendingBookingsCount.toString(), icon: Calendar, color: "text-amber-500 bg-amber-500/10" },
                 { label: "Views", value: totalViews.toString(), icon: BarChart3, color: "text-muted-foreground bg-muted/70" },
               ].map((stat, idx) => {
                 const Icon = stat.icon;
@@ -259,6 +271,7 @@ export default function OwnerDashboardPage() {
             <div className="flex items-center gap-2 border-b border-border/60 pb-4 mb-6 sm:mb-8 overflow-x-auto scrollbar-none">
               {([
                 { id: "PROPERTIES", icon: Building, label: "Properties", count: properties.length, badge: null },
+                { id: "BOOKINGS", icon: Calendar, label: "Bookings", count: ownerBookings.length, badge: pendingBookingsCount > 0 ? pendingBookingsCount : null },
                 { id: "ENQUIRIES", icon: Users, label: "Enquiries", count: totalEnquiriesCount, badge: pendingEnquiriesCount > 0 ? pendingEnquiriesCount : null },
               ] as const).map((tab) => {
                 const Icon = tab.icon;
@@ -334,12 +347,19 @@ export default function OwnerDashboardPage() {
                           className="bg-card border border-border/80 rounded-2xl overflow-hidden shadow-premium flex flex-col group"
                         >
                           {/* Image Banner */}
-                          <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                            <img
-                              src={prop.coverPhoto}
-                              alt={prop.propertyName}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 select-none"
-                            />
+                          <div className="relative aspect-video w-full overflow-hidden bg-muted flex items-center justify-center">
+                            {prop.coverPhoto ? (
+                              <img
+                                src={prop.coverPhoto}
+                                alt={prop.propertyName}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 select-none"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-muted via-muted/80 to-muted/50 flex flex-col items-center justify-center gap-1.5 text-muted-foreground p-4 text-center">
+                                <Building className="w-8 h-8 stroke-1 text-primary/40" />
+                                <span className="font-heading text-[11px] font-bold text-foreground/70">{prop.propertyName}</span>
+                              </div>
+                            )}
                             {/* Availability Badge */}
                             <div className={cn("absolute top-3 left-3 bg-card/90 backdrop-blur-md px-2.5 py-1 rounded-lg border shadow-md flex items-center gap-1.5 z-10", availability.borderColor)}>
                               <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", availability.dotColor)} />
@@ -348,7 +368,18 @@ export default function OwnerDashboardPage() {
                               </span>
                             </div>
 
-                            <div className="absolute top-3 right-3 bg-emerald-500 text-white font-heading text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-md">
+                            <div
+                              className={cn(
+                                "absolute top-3 right-3 font-heading text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-md backdrop-blur-md border",
+                                prop.status === "Published" || (prop.status as string) === "active"
+                                  ? "bg-emerald-500/90 text-white border-emerald-400/30"
+                                  : prop.status === "Pending Approval" || (prop.status as string) === "pending"
+                                  ? "bg-amber-500/90 text-white border-amber-400/30 animate-pulse"
+                                  : prop.status === "Rejected" || (prop.status as string) === "rejected"
+                                  ? "bg-rose-500/90 text-white border-rose-400/30"
+                                  : "bg-slate-700/90 text-white border-slate-600/30"
+                              )}
+                            >
                               {prop.status}
                             </div>
                             <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white font-heading text-[10px] font-extrabold px-2.5 py-1 rounded-lg">
@@ -531,7 +562,12 @@ export default function OwnerDashboardPage() {
               </>
             )}
 
-            {/* Tab 2: Enquiries & Visit Requests */}
+            {/* Tab 2: Property Bookings */}
+            {activeTab === "BOOKINGS" && (
+              <OwnerBookingsList />
+            )}
+
+            {/* Tab 3: Enquiries & Visit Requests */}
             {activeTab === "ENQUIRIES" && (
               <OwnerEnquiriesList />
             )}
