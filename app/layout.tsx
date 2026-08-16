@@ -32,6 +32,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { CompareProvider } from "@/providers/compare-provider";
 import { CompareBar } from "@/components/compare/compare-bar";
 
+import Script from "next/script";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -43,6 +45,31 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${inter.variable} antialiased`}
     >
+      <head>
+        <Script
+          id="chunk-error-trap"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                window.addEventListener('error', function(e) {
+                  if (e && e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+                    var src = e.target.src || e.target.href || '';
+                    if (src.indexOf('/_next/static/chunks/') !== -1) {
+                      var last = sessionStorage.getItem('chunk_err_reload');
+                      var now = Date.now();
+                      if (!last || now - Number(last) > 8000) {
+                        sessionStorage.setItem('chunk_err_reload', String(now));
+                        window.location.reload();
+                      }
+                    }
+                  }
+                }, true);
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="font-body bg-background text-foreground">
         <NavigationHandler />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
