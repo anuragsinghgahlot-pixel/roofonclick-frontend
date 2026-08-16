@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { CommandPalette } from "@/components/admin/command-palette";
+import { useAuth } from "@/providers/auth-provider";
 
 /* ─── Dynamic Auto-Generated Breadcrumbs ─── */
 export function AdminBreadcrumb({ className }: { className?: string }) {
@@ -77,9 +78,14 @@ export function AdminTopNavbar({
   onOpenMobileSidebar: () => void;
 }) {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = React.useState(false);
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
   const [isNotifOpen, setIsNotifOpen] = React.useState(false);
+
+  const userName = user?.name || "Platform Admin";
+  const userEmail = user?.email || "admin@roofonclick.com";
+  const userInitial = userName.charAt(0).toUpperCase();
 
   const [notifications, setNotifications] = React.useState([
     {
@@ -265,10 +271,10 @@ export function AdminTopNavbar({
               className="flex items-center gap-2 p-1.5 pr-2.5 rounded-xl border border-border/60 bg-card hover:bg-muted/40 transition-all cursor-pointer"
             >
               <div className="w-7 h-7 rounded-lg bg-primary text-primary-foreground font-heading text-xs font-bold flex items-center justify-center">
-                A
+                {userInitial}
               </div>
-              <span className="hidden sm:inline font-heading text-xs font-bold text-foreground">
-                Super Admin
+              <span className="hidden sm:inline font-heading text-xs font-bold text-foreground truncate max-w-[120px]">
+                {userName}
               </span>
             </button>
 
@@ -288,12 +294,12 @@ export function AdminTopNavbar({
                     className="absolute right-0 mt-2 w-56 bg-card border border-border/80 rounded-2xl shadow-xl z-50 p-2 space-y-1 text-xs font-heading font-bold"
                   >
                     <div className="p-2.5 border-b border-border/40 space-y-0.5">
-                      <span className="text-foreground block truncate">Anurag Singh</span>
-                      <span className="text-[10px] font-body text-muted-foreground block truncate">super.admin@roofonclick.com</span>
+                      <span className="text-foreground block truncate">{userName}</span>
+                      <span className="text-[10px] font-body text-muted-foreground block truncate">{userEmail}</span>
                     </div>
 
                     <Link
-                      href="/admin/platform"
+                      href="/admin/settings"
                       onClick={() => setIsProfileOpen(false)}
                       className="flex items-center gap-2 p-2 rounded-xl text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
                     >
@@ -301,18 +307,18 @@ export function AdminTopNavbar({
                     </Link>
 
                     <Link
-                      href="/admin/admins"
+                      href="/admin/owners"
                       onClick={() => setIsProfileOpen(false)}
                       className="flex items-center gap-2 p-2 rounded-xl text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
                     >
-                      <ShieldCheck className="w-4 h-4 text-primary" /> Admin CRM
+                      <ShieldCheck className="w-4 h-4 text-primary" /> Admin Control
                     </Link>
 
                     <button
                       type="button"
                       onClick={() => {
                         setIsProfileOpen(false);
-                        router.push("/login");
+                        logout();
                       }}
                       className="w-full flex items-center gap-2 p-2 rounded-xl text-destructive hover:bg-destructive/10 transition-colors text-left cursor-pointer"
                     >
