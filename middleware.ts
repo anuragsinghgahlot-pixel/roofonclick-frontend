@@ -6,6 +6,7 @@ const PROTECTED_PATHS = [
   "/profile",
   "/settings",
   "/owner",
+  "/admin",
   "/booking",
   "/wishlist",
   "/recently-viewed",

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Scale, X, ArrowRight, Trash2, ShieldCheck } from "lucide-react";
+import { Scale, X, ArrowRight, Trash2, ShieldCheck, Building } from "lucide-react";
 import { useCompare } from "@/providers/compare-provider";
 import { showToast } from "@/lib/toast";
 
@@ -55,13 +55,17 @@ export function CompareBar() {
             {compareProperties.map((property) => (
               <div
                 key={property.id}
-                className="relative group shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden border border-border/80 bg-muted/60"
+                className="relative group shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden border border-border/80 bg-muted/60 flex items-center justify-center"
               >
-                <img
-                  src={property.coverPhoto || property.images?.[0]?.url}
-                  alt={property.propertyName}
-                  className="w-full h-full object-cover"
-                />
+                {(property.coverPhoto || property.images?.[0]?.url) ? (
+                  <img
+                    src={property.coverPhoto || property.images?.[0]?.url}
+                    alt={property.propertyName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Building className="w-5 h-5 text-muted-foreground/50 stroke-1" />
+                )}
                 {((property as any).isVerified ?? true) && (
                   <div className="absolute top-0.5 right-0.5 bg-emerald-500 text-white rounded-full p-0.5 shadow-sm">
                     <ShieldCheck className="w-2.5 h-2.5" />

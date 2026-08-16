@@ -558,9 +558,9 @@ export function DataTable<T>({
                 Array.from({ length: pageSize > 5 ? 5 : pageSize }).map((_, i) => (
                   <tr key={`skeleton-${i}`} className="border-b border-border/20 animate-pulse">
                     {selectable && <td className="px-4 py-3.5"><div className="w-4 h-4 bg-muted rounded-md" /></td>}
-                    {activeColumns.map((col) => (
+                    {activeColumns.map((col, colIdx) => (
                       <td key={col.id} className="px-4 py-3.5">
-                        <div className="h-4 bg-muted rounded-lg" style={{ width: `${40 + Math.random() * 50}%` }} />
+                        <div className="h-4 bg-muted rounded-lg" style={{ width: `${40 + ((i * 13 + colIdx * 17) % 50)}%` }} />
                       </td>
                     ))}
                     {rowActions && <td className="px-4 py-3.5"><div className="w-6 h-4 bg-muted rounded-lg ml-auto" /></td>}

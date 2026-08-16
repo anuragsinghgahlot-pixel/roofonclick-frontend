@@ -34,6 +34,7 @@ interface BookingConfirmationModalProps {
   roomType: string;
   moveInDate: string;
   pricing: PriceBreakdown;
+  propertyAddress?: string;
   onConfirmSuccess?: () => void;
 }
 
@@ -51,10 +52,11 @@ export function BookingConfirmationModal({
   onClose,
   propertyId,
   propertyName,
-  coverImage = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80",
+  coverImage = "",
   roomType,
   moveInDate,
   pricing,
+  propertyAddress,
   onConfirmSuccess,
 }: BookingConfirmationModalProps) {
   const [currentStep, setCurrentStep] = React.useState<number>(2); // Start at Step 2 Details since Step 1 is chosen on card
@@ -67,6 +69,7 @@ export function BookingConfirmationModal({
     fullName: "",
     email: "",
     phone: "",
+    moveInDate: moveInDate || new Date().toISOString().split("T")[0],
     occupation: "Student",
     emergencyContact: "",
     paymentMethod: "online",
@@ -122,7 +125,7 @@ export function BookingConfirmationModal({
         propertyId,
         propertyName,
         roomType,
-        moveInDate,
+        moveInDate: formData.moveInDate || moveInDate,
         pricing,
         guestDetails: {
           fullName: formData.fullName,
@@ -331,6 +334,14 @@ export function BookingConfirmationModal({
                     <span className="text-muted-foreground">Move-in Date</span>
                     <span className="font-bold text-foreground">{moveInDate}</span>
                   </div>
+                  {propertyAddress && (
+                    <div className="pt-2 border-t border-border/60">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block mb-0.5">
+                        📍 Unlocked Full Address:
+                      </span>
+                      <p className="font-bold text-foreground leading-snug">{propertyAddress}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
@@ -429,6 +440,23 @@ export function BookingConfirmationModal({
                         {errors.phone && <p className="text-[10px] text-rose-500 font-body">{errors.phone}</p>}
                       </div>
 
+                      {/* Booking / Move-In Date */}
+                      <div className="space-y-1.5">
+                        <label className="font-heading text-xs font-bold text-foreground flex items-center gap-1">
+                          <span>Booking / Move-In Date</span> <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <input
+                            type="date"
+                            min={new Date().toISOString().split("T")[0]}
+                            value={formData.moveInDate || moveInDate || new Date().toISOString().split("T")[0]}
+                            onChange={(e) => setFormData({ ...formData, moveInDate: e.target.value })}
+                            className="w-full pl-9 pr-4 py-2.5 rounded-2xl border border-border/80 bg-card text-foreground font-body text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all cursor-pointer"
+                          />
+                        </div>
+                      </div>
+
                       {/* Occupation Dropdown */}
                       <div className="space-y-1.5">
                         <label className="font-heading text-xs font-bold text-foreground">
@@ -525,11 +553,17 @@ export function BookingConfirmationModal({
 
                     {/* Property Card */}
                     <div className="flex items-center gap-3">
-                      <img
-                        src={coverImage}
-                        alt={propertyName}
-                        className="w-16 h-16 rounded-2xl object-cover border border-border/60 shrink-0"
-                      />
+                      {coverImage ? (
+                        <img
+                          src={coverImage}
+                          alt={propertyName}
+                          className="w-16 h-16 rounded-2xl object-cover border border-border/60 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-2xl bg-muted border border-border/60 shrink-0 flex items-center justify-center text-muted-foreground">
+                          <Building className="w-6 h-6 stroke-1 text-primary/40" />
+                        </div>
+                      )}
                       <div className="space-y-0.5 min-w-0">
                         <h5 className="font-heading text-xs font-extrabold text-primary truncate">
                           {propertyName}

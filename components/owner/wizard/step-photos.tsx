@@ -1,6 +1,6 @@
 import * as React from "react";
-import { useWizard, isApartmentType } from "./wizard-context";
-import { Upload, X, ArrowLeft, ArrowRight, Star, FileVideo, AlertCircle, RefreshCw, CheckCircle2, Loader2 } from "lucide-react";
+import { useWizard } from "./wizard-context";
+import { Upload, X, Star, AlertCircle, RefreshCw, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { MediaImage } from "@/services/property";
@@ -15,19 +15,10 @@ export function StepPhotos() {
   const { watch, setValue } = form;
 
   const images: MediaImage[] = watch("images") || [];
-  const video = watch("video") || null;
-
   const [isDragOverImages, setIsDragOverImages] = React.useState(false);
-  const [isDragOverVideo, setIsDragOverVideo] = React.useState(false);
-  
-  // Simulated video upload progress state
-  const [videoProgress, setVideoProgress] = React.useState<number | null>(null);
-
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const videoInputRef = React.useRef<HTMLInputElement>(null);
 
   const triggerImageUpload = () => fileInputRef.current?.click();
-  const triggerVideoUpload = () => videoInputRef.current?.click();
 
   // Upload a single file to Cloudflare R2 and update item state
   const executeSingleUpload = React.useCallback(async (item: MediaImage) => {
@@ -141,146 +132,89 @@ export function StepPhotos() {
     handleAddImages(e.dataTransfer.files);
   };
 
-  // Add video file (simulating upload progress)
-  const handleAddVideo = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const file = files[0];
-    if (file.type !== "video/mp4") {
-      showToast.error("Invalid Video Format", "Please upload a valid MP4 video file under 50MB.");
-      return;
-    }
-
-    setVideoProgress(0);
-    const interval = setInterval(() => {
-      setVideoProgress((prev) => {
-        if (prev === null || prev >= 100) {
-          clearInterval(interval);
-          setValue("video", {
-            url: URL.createObjectURL(file),
-            name: file.name,
-            size: Number((file.size / (1024 * 1024)).toFixed(1)),
-          }, { shouldValidate: true });
-          return null;
-        }
-        return prev + 20;
-      });
-    }, 200);
-  };
-
-  // Drag and drop video handlers
-  const handleVideoDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOverVideo(false);
-    handleAddVideo(e.dataTransfer.files);
-  };
-
-  // Remove image
-  const handleRemoveImage = (id: string) => {
-    const updated = images.filter((img: MediaImage) => img.id !== id);
-    
-    // If we removed the cover, set the new first image as cover
-    const wasCover = images.find((img: MediaImage) => img.id === id)?.isCover;
-    if (wasCover && updated.length > 0) {
-      updated[0].isCover = true;
-    }
-    
-    setValue("images", updated, { shouldValidate: true });
-  };
-
-  // Set cover photo
+  // Set selected photo as cover photo
   const handleSetCover = (id: string) => {
-    const target = images.find((img) => img.id === id);
-    if (target?.status === "error") {
-      showToast.error("Cannot Set Cover", "Please fix or remove broken photos before setting as cover.");
-      return;
-    }
-    const updated = images.map((img: MediaImage) => ({
+    const updated = images.map((img) => ({
       ...img,
       isCover: img.id === id,
     }));
     setValue("images", updated, { shouldValidate: true });
+    showToast.success("Cover Photo Updated", "This image will be shown as the primary listing card banner.");
   };
 
-  // Reorder image: move index left (-1) or right (+1)
-  const handleReorder = (index: number, direction: -1 | 1) => {
-    const nextIndex = index + direction;
-    if (nextIndex < 0 || nextIndex >= images.length) return;
+  // Remove photo item from gallery and delete from Cloudflare R2 if uploaded
+  const handleRemoveImage = async (id: string) => {
+    const target = images.find((img) => img.id === id);
+    
+    // Delete from R2 if key exists
+    if (target?.key) {
+      try {
+        await ListingsAPI.deletePhoto(form.getValues("id") || "", target.key);
+      } catch (e) {
+        console.warn("R2 photo delete error:", e);
+      }
+    }
 
-    const updated = [...images];
-    const temp = updated[index];
-    updated[index] = updated[nextIndex];
-    updated[nextIndex] = temp;
-
+    const updated = images.filter((img) => img.id !== id);
+    if (target?.isCover && updated.length > 0) {
+      updated[0].isCover = true;
+    }
     setValue("images", updated, { shouldValidate: true });
   };
 
-  const propertyType = watch("propertyType") || "Hostel";
-  const isApartment = isApartmentType(propertyType);
-  const isMaxReached = images.length >= MAX_PHOTOS;
-  const validUploadedCount = images.filter((img) => img.status === "success" || (!img.status && img.url)).length;
-  const errorCount = images.filter((img) => img.status === "error").length;
-  const uploadingCount = images.filter((img) => img.status === "uploading").length;
+  const validPhotosCount = images.filter(img => img.status === "success" || (!img.status && img.url)).length;
+  const errorPhotosCount = images.filter(img => img.status === "error").length;
 
   return (
-    <div className="flex flex-col gap-8 text-left">
-      
-      {/* Upload Guidelines */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/40 border border-border/80 p-5 rounded-2xl">
-        <div className="space-y-2">
-          <h4 className="font-heading text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
-            <AlertCircle className="w-4 h-4 text-secondary shrink-0" />
-            Upload Guidelines ({propertyType})
-          </h4>
-          <ul className="list-disc pl-4 font-body text-[11px] text-muted-foreground space-y-1">
-            <li>Upload between <strong>5 and 10 clear photos</strong> (JPEG, PNG, WebP up to 5MB each).</li>
-            {isApartment ? (
-              <li>Recommended shots: Living Room, Bedrooms, Kitchen, Balcony, Bathrooms, & Building Exterior.</li>
-            ) : (
-              <li>Recommended shots: Bedrooms, Mess & Dining Area, Bathrooms, Study Zone, & Building Front.</li>
-            )}
-            <li>Landscape aspect ratio (16:9) is highly recommended.</li>
-          </ul>
-        </div>
-        <div className="space-y-2 border-t md:border-t-0 md:border-l border-border/60 pt-3 md:pt-0 md:pl-5">
-          <h4 className="font-heading text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
-            <Star className="w-4 h-4 text-emerald-500 shrink-0" />
-            Cover Image Detail
-          </h4>
-          <p className="font-body text-[11px] text-muted-foreground leading-relaxed">
-            The Cover Photo will serve as the primary banner image on Indore&apos;s Search Results list and Similar Stays cards. Click the star icon to select your preferred cover banner.
-          </p>
-        </div>
+    <div className="space-y-6 text-left">
+
+      {/* Step Header */}
+      <div className="space-y-1">
+        <h2 className="font-heading text-lg sm:text-xl font-extrabold text-primary tracking-tight">
+          Property Photos & Gallery
+        </h2>
+        <p className="font-body text-xs sm:text-sm text-muted-foreground">
+          Upload clear high-quality photos of bedrooms, common areas, bathrooms, and exterior.
+        </p>
       </div>
 
-      {/* Image Upload Zone */}
+      {/* Photos Dropzone Box */}
       <div className="space-y-3">
         <div className="flex items-center justify-between pl-1">
-          <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider">
-            Photos <span className="text-rose-500">*</span>
-            <span className="text-[10px] font-semibold text-muted-foreground normal-case ml-2">
-              ({validUploadedCount} uploaded — min. {MIN_PHOTOS}, max. {MAX_PHOTOS})
+          <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+            <span>Property Gallery</span>
+            <span className="text-rose-500">*</span>
+            <span className="text-muted-foreground/80 font-semibold normal-case text-[11px]">
+              (Min {MIN_PHOTOS}, Max {MAX_PHOTOS} photos)
             </span>
           </label>
-          {errorCount > 0 && (
-            <span className="text-[10px] font-bold text-rose-500 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" />
-              {errorCount} image(s) failed validation
-            </span>
-          )}
+          <span className={cn(
+            "font-heading text-xs font-bold px-2 py-0.5 rounded-md border",
+            validPhotosCount >= MIN_PHOTOS 
+              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
+              : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+          )}>
+            {validPhotosCount} / {MAX_PHOTOS} Uploaded
+          </span>
         </div>
 
         <div
-          onDragOver={(e) => { e.preventDefault(); if (!isMaxReached) setIsDragOverImages(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (images.length < MAX_PHOTOS) setIsDragOverImages(true);
+          }}
           onDragLeave={() => setIsDragOverImages(false)}
-          onDrop={(e) => { if (!isMaxReached) handleImageDrop(e); }}
-          onClick={() => { if (!isMaxReached) triggerImageUpload(); }}
+          onDrop={handleImageDrop}
+          onClick={() => {
+            if (images.length < MAX_PHOTOS) triggerImageUpload();
+          }}
           className={cn(
             "border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-2 transition-all duration-300 select-none text-center bg-card/65",
-            isMaxReached
+            images.length >= MAX_PHOTOS
               ? "opacity-50 cursor-not-allowed border-border"
               : "cursor-pointer",
-            isDragOverImages && !isMaxReached
-              ? "border-primary bg-primary/5 shadow-inner scale-[0.99]"
+            isDragOverImages && images.length < MAX_PHOTOS
+              ? "border-primary bg-primary/5 scale-[0.99]"
               : "border-border hover:border-primary hover:bg-muted/10"
           )}
         >
@@ -289,42 +223,46 @@ export function StepPhotos() {
             multiple
             accept="image/jpeg,image/png,image/webp"
             ref={fileInputRef}
-            disabled={isMaxReached}
+            disabled={images.length >= MAX_PHOTOS}
             onChange={(e) => handleAddImages(e.target.files)}
             className="hidden"
           />
+
           <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary shadow-sm">
-            <Upload className="w-5.5 h-5.5" />
+            <Upload className="w-6 h-6" />
           </div>
+
           <div className="space-y-1">
             <p className="font-heading text-xs font-bold text-primary">
-              {isMaxReached ? "Maximum 10 photos reached" : "Drag & drop photos here or click to browse"}
+              {images.length >= MAX_PHOTOS 
+                ? "Maximum 10 photos limit reached" 
+                : "Drag & drop photos or click to browse"}
             </p>
-            <p className="font-body text-[10px] text-muted-foreground">
-              Supports JPEG, PNG, WEBP formats up to 5MB per file (Max 10 photos)
+            <p className="font-body text-[11px] text-muted-foreground">
+              Supports JPEG, PNG, WEBP formats up to 5MB per file
             </p>
           </div>
         </div>
       </div>
 
-      {/* Image Gallery with Status Badges */}
+      {/* Uploaded Photos Grid */}
       {images.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between pl-1">
-            <span className="font-heading text-[10px] font-extrabold uppercase tracking-widest text-secondary">
-              Photo Upload Status ({validUploadedCount}/{images.length} Ready)
-            </span>
-            {uploadingCount > 0 && (
-              <span className="text-[10px] font-bold text-sky-500 animate-pulse flex items-center gap-1">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Uploading {uploadingCount} image(s)...
+            <p className="font-heading text-xs font-bold text-primary uppercase tracking-wider">
+              Uploaded Photos
+            </p>
+            {errorPhotosCount > 0 && (
+              <span className="bg-rose-500/10 text-rose-600 border border-rose-500/20 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {errorPhotosCount} Photo(s) Failed Validation
               </span>
             )}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             <AnimatePresence initial={false}>
-              {images.map((img: MediaImage, index: number) => {
+              {images.map((img) => {
                 const isError = img.status === "error";
                 const isUploading = img.status === "uploading";
                 const isSuccess = img.status === "success" || (!img.status && Boolean(img.url));
@@ -347,7 +285,6 @@ export function StepPhotos() {
                         : "border-border/80"
                     )}
                   >
-                    {/* Thumbnail Preview */}
                     <img
                       src={img.url}
                       alt={img.name}
@@ -358,34 +295,34 @@ export function StepPhotos() {
                       )}
                     />
 
-                    {/* Status Badge Overlays */}
+                    {/* Uploading Spinner Badge */}
                     {isUploading && (
                       <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex flex-col items-center justify-center p-2 text-center space-y-1">
                         <Loader2 className="w-6 h-6 text-sky-400 animate-spin" />
-                        <span className="font-heading text-[9px] font-bold text-white uppercase tracking-wider">
-                          Uploading...
-                        </span>
+                        <span className="font-heading text-[9px] font-bold text-white uppercase">Uploading...</span>
                       </div>
                     )}
 
+                    {/* Success Badge */}
                     {isSuccess && (
-                      <div className="absolute top-2 right-2 bg-emerald-500/90 text-white font-heading text-[8px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md shadow-md flex items-center gap-1 select-none backdrop-blur-sm">
+                      <div className="absolute top-2 right-2 bg-emerald-500/90 text-white font-heading text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded-md shadow-md flex items-center gap-1">
                         <CheckCircle2 className="w-2.5 h-2.5" />
                         Uploaded
                       </div>
                     )}
 
+                    {/* Error Overlay with Reason and Controls */}
                     {isError && (
                       <div className="absolute inset-0 bg-rose-950/80 backdrop-blur-sm p-3 flex flex-col items-center justify-center text-center space-y-1.5">
                         <AlertCircle className="w-6 h-6 text-rose-400 shrink-0" />
-                        <span className="font-heading text-[9px] font-extrabold text-rose-200 uppercase tracking-wider line-clamp-2">
+                        <span className="font-heading text-[9px] font-extrabold text-rose-200 uppercase line-clamp-2">
                           {img.errorReason || "Upload Failed"}
                         </span>
                         <div className="flex items-center gap-1.5 pt-1">
                           <button
                             type="button"
                             onClick={() => executeSingleUpload(img)}
-                            className="px-2 py-1 rounded-md bg-rose-600 hover:bg-rose-500 text-white font-heading text-[9px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 cursor-pointer"
+                            className="px-2 py-1 rounded-md bg-rose-600 hover:bg-rose-500 text-white font-heading text-[9px] font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer"
                           >
                             <RefreshCw className="w-2.5 h-2.5" />
                             Retry
@@ -393,7 +330,7 @@ export function StepPhotos() {
                           <button
                             type="button"
                             onClick={() => handleRemoveImage(img.id)}
-                            className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white font-heading text-[9px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 cursor-pointer"
+                            className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white font-heading text-[9px] font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer"
                           >
                             <X className="w-2.5 h-2.5" />
                             Remove
@@ -402,55 +339,32 @@ export function StepPhotos() {
                       </div>
                     )}
 
-                    {/* Cover Badge Overlay */}
+                    {/* Cover Photo Badge */}
                     {img.isCover && !isError && (
-                      <div className="absolute top-2 left-2 bg-primary text-primary-foreground font-heading text-[8px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md shadow-md flex items-center gap-1 select-none">
+                      <div className="absolute top-2 left-2 bg-primary text-primary-foreground font-heading text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-md flex items-center gap-1">
                         <Star className="w-2.5 h-2.5 fill-current" />
                         Cover
                       </div>
                     )}
 
-                    {/* Action overlays for successful images */}
+                    {/* Hover Action Overlay */}
                     {isSuccess && (
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-1.5">
                         {!img.isCover && (
                           <button
                             type="button"
                             onClick={() => handleSetCover(img.id)}
-                            title="Set as Cover"
-                            className="p-1.5 rounded-lg bg-card border border-border text-muted-foreground hover:text-emerald-500 transition-colors duration-200 cursor-pointer"
+                            title="Set as Cover Photo"
+                            className="p-1.5 rounded-lg bg-card border border-border text-muted-foreground hover:text-emerald-500 transition-colors cursor-pointer"
                           >
                             <Star className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        
-                        {index > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => handleReorder(index, -1)}
-                            title="Move Left"
-                            className="p-1.5 rounded-lg bg-card border border-border text-muted-foreground hover:text-primary transition-colors duration-200 cursor-pointer"
-                          >
-                            <ArrowLeft className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-
-                        {index < images.length - 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleReorder(index, 1)}
-                            title="Move Right"
-                            className="p-1.5 rounded-lg bg-card border border-border text-muted-foreground hover:text-primary transition-colors duration-200 cursor-pointer"
-                          >
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-
                         <button
                           type="button"
                           onClick={() => handleRemoveImage(img.id)}
-                          title="Remove Photo"
-                          className="p-1.5 rounded-lg bg-card border border-border text-muted-foreground hover:text-rose-500 transition-colors duration-200 cursor-pointer"
+                          title="Delete Photo"
+                          className="p-1.5 rounded-lg bg-card border border-border text-muted-foreground hover:text-rose-500 transition-colors cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -464,89 +378,8 @@ export function StepPhotos() {
         </div>
       )}
 
-      {/* Video Upload Section */}
-      <div className="space-y-3 pt-2">
-        <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-          Walkthrough Video <span className="text-muted-foreground/50 font-normal normal-case ml-2">(Optional)</span>
-        </label>
-
-        {!video && videoProgress === null ? (
-          <div
-            onDragOver={(e) => { e.preventDefault(); setIsDragOverVideo(true); }}
-            onDragLeave={() => setIsDragOverVideo(false)}
-            onDrop={handleVideoDrop}
-            onClick={triggerVideoUpload}
-            className={cn(
-              "border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all duration-300 select-none text-center bg-card/65",
-              isDragOverVideo
-                ? "border-primary bg-primary/5 scale-[0.99]"
-                : "border-border hover:border-primary hover:bg-muted/10"
-            )}
-          >
-            <input
-              type="file"
-              accept="video/mp4"
-              ref={videoInputRef}
-              onChange={(e) => handleAddVideo(e.target.files)}
-              className="hidden"
-            />
-            <FileVideo className="w-8 h-8 text-muted-foreground" />
-            <div className="space-y-0.5">
-              <p className="font-heading text-xs font-bold text-primary">
-                Upload a property tour video
-              </p>
-              <p className="font-body text-[10px] text-muted-foreground">
-                MP4 format only, maximum size limit 50MB
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-card/75 border border-border/80 rounded-2xl p-5 shadow-sm">
-            {videoProgress !== null ? (
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-xs font-bold font-heading">
-                  <span className="text-primary">Uploading tour video...</span>
-                  <span className="text-secondary">{videoProgress}%</span>
-                </div>
-                <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary transition-all duration-300"
-                    style={{ width: `${videoProgress}%` }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
-                    <FileVideo className="w-6 h-6" />
-                  </div>
-                  <div className="text-left space-y-0.5">
-                    <h5 className="font-heading text-xs font-bold text-primary truncate max-w-[200px] sm:max-w-sm">
-                      {video?.name}
-                    </h5>
-                    <span className="font-body text-[10px] text-muted-foreground block">
-                      Size: {video?.size} MB • Ready to upload
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setValue("video", null, { shouldValidate: true })}
-                    className="w-full sm:w-auto px-4 py-2 rounded-xl border border-border bg-card hover:bg-muted/40 text-rose-500 text-xs font-bold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    Remove
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
     </div>
   );
 }
+
 export default StepPhotos;

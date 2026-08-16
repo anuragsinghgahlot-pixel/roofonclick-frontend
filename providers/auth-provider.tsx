@@ -77,9 +77,9 @@ interface AuthContextType {
   role: UserRole | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string, role?: UserRole) => Promise<void>;
-  loginWithTokens: (accessToken: string, refreshToken: string, backendUser: BackendUser) => void;
+  login: (email: string, password: string) => Promise<User>;
+  signup: (name: string, email: string, password: string, role?: UserRole) => Promise<User>;
+  loginWithTokens: (accessToken: string, refreshToken: string, backendUser: BackendUser) => User;
   logout: () => Promise<void>;
   updateUser: (updatedFields: Partial<User>) => void;
   // Legacy compat
@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // ── Login ───────────────────────────────────────────────────────────────────
-  const login = React.useCallback(async (email: string, password: string) => {
+  const login = React.useCallback(async (email: string, password: string): Promise<User> => {
     const res = await apiClient.post<AuthTokenResponse>("/api/auth/login", { email, password });
     const payload = res.data!;
     TokenManager.setAT(payload.accessToken);
@@ -153,11 +153,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(normalized);
     setSessionCookie();
     showToast.success("Logged In", `Welcome back, ${normalized.name}!`);
+    return normalized;
   }, []);
 
   // ── Signup ──────────────────────────────────────────────────────────────────
   const signup = React.useCallback(
-    async (name: string, email: string, password: string, role?: UserRole) => {
+    async (name: string, email: string, password: string, role?: UserRole): Promise<User> => {
       // Map UI role → backend role
       const backendRole: BackendRole = role === "owner" ? "owner" : "seeker";
       const res = await apiClient.post<AuthTokenResponse>("/api/auth/register", {
@@ -173,19 +174,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(normalized);
       setSessionCookie();
       showToast.success("Account Created", `Welcome to RoofOnClick, ${normalized.name}!`);
+      return normalized;
     },
     []
   );
 
   // ── Login with Tokens (OAuth / direct callback) ───────────────────────────
   const loginWithTokens = React.useCallback(
-    (accessToken: string, refreshToken: string, backendUser: BackendUser) => {
+    (accessToken: string, refreshToken: string, backendUser: BackendUser): User => {
       TokenManager.setAT(accessToken);
       TokenManager.setRT(refreshToken);
       const normalized = normalizeUser(backendUser);
       setUser(normalized);
       setSessionCookie();
       showToast.success("Welcome!", `Logged in as ${normalized.name}`);
+      return normalized;
     },
     []
   );

@@ -1,5 +1,4 @@
-"use client";
-
+import { apiClient } from "@/lib/api-client";
 import type { StatusType } from "@/components/admin/data-table";
 
 /* ─── Buyer Admin Types ─── */
@@ -109,6 +108,40 @@ export class AdminBuyerService {
       totalBookings,
       avgLifetimeValue,
     };
+  }
+
+  static async fetchAdminBuyers(): Promise<AdminBuyer[]> {
+    try {
+      const res = await apiClient.get<{ users: any[] }>("/api/admin/users?role=seeker");
+      const list = res.data?.users || [];
+      return list.map((u) => ({
+        id: u._id,
+        name: u.name || "Seeker User",
+        email: u.email || "",
+        phone: u.phone || "N/A",
+        avatar: u.avatar || `https://api.dicebear.com/8.x/lorelei/svg?seed=${encodeURIComponent(u.name || "Seeker")}`,
+        city: "Indore",
+        institutionOrCompany: "DAVV Indore",
+        bookingsCount: (u.bookings || []).length,
+        wishlistCount: (u.wishlist || []).length,
+        reviewsCount: 0,
+        lifetimeValue: 8500,
+        verificationStatus: "verified",
+        accountStatus: "active",
+        joinedDate: u.createdAt || "2026-08-15",
+        lastActive: u.updatedAt || "2026-08-15",
+        bookings: [],
+        wishlist: [],
+        recentlyViewed: [],
+        savedSearches: [],
+        reviews: [],
+        payments: [],
+        supportTickets: [],
+        timeline: [{ event: "Joined Platform", description: "Registered account", date: u.createdAt || "2026-08-15" }],
+      }));
+    } catch {
+      return [];
+    }
   }
 
   static getAllBuyers(): AdminBuyer[] {

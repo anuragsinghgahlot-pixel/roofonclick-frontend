@@ -163,7 +163,7 @@ export default function AdminDashboardPage() {
       {/* ═══ KPI Cards (Row 1) ═══ */}
       <motion.div variants={fadeUp}>
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {kpis
+          {kpis && kpis.length > 0
             ? kpis.map((kpi) => (
                 <KpiCard
                   key={kpi.id}
@@ -185,7 +185,7 @@ export default function AdminDashboardPage() {
       {/* ═══ Charts (Row 2) ═══ */}
       <motion.div variants={fadeUp}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {charts
+          {charts && charts.length > 0
             ? <>
                 <AreaChart chartData={charts[0]} />
                 <BarChart chartData={charts[1]} />

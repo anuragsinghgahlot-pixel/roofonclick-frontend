@@ -38,11 +38,24 @@ import { BookingDetailDrawer } from "@/components/admin/booking-detail-drawer";
 
 export default function AdminBookingsPage() {
   /* ─── State ─── */
-  const [bookings, setBookings] = React.useState<AdminBooking[]>(() =>
-    AdminBookingService.getAllBookings()
-  );
+  const [bookings, setBookings] = React.useState<AdminBooking[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [selectedBooking, setSelectedBooking] = React.useState<AdminBooking | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+
+  /* Load real bookings from MongoDB */
+  React.useEffect(() => {
+    let isMounted = true;
+    AdminBookingService.fetchAdminBookings().then((data) => {
+      if (isMounted) {
+        setBookings(data);
+        setIsLoading(false);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   /* Advanced Filter state */
   const [showAdvancedFilters, setShowAdvancedFilters] = React.useState(false);
@@ -529,6 +542,7 @@ export default function AdminBookingsPage() {
       <DataTable<AdminBooking>
         columns={columns}
         data={filteredBookings}
+        isLoading={isLoading}
         getRowId={(b) => b.id}
         searchable={true}
         searchPlaceholder="Search booking ID, student, owner, property, city..."

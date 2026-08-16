@@ -20,6 +20,7 @@ import {
   Scale,
   Sun,
   Moon,
+  ShieldCheck,
 } from "lucide-react";
 import { useAuth, UserRole } from "@/providers/auth-provider";
 import { EnquiryService } from "@/services/enquiry";
@@ -186,6 +187,7 @@ export function ProfileDropdown() {
   const activeRole: UserRole = user?.role || role || "buyer";
   const displayName = user?.name || (user?.email ? user.email.split("@")[0] : "User");
   const isOwner = activeRole === "owner";
+  const isAdmin = activeRole === "admin";
 
   // Outside click listener & ESC key support
   React.useEffect(() => {
@@ -341,13 +343,15 @@ export function ProfileDropdown() {
                   <span
                     className={cn(
                       "inline-flex items-center gap-1 font-heading text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border",
-                      isOwner
+                      isAdmin
+                        ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                        : isOwner
                         ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
                         : "bg-primary/10 text-primary border-primary/20"
                     )}
                   >
-                    <span>{isOwner ? "🏢" : "👤"}</span>
-                    <span>{isOwner ? "Owner" : "Buyer"}</span>
+                    <span>{isAdmin ? "🛡️" : isOwner ? "🏢" : "👤"}</span>
+                    <span>{isAdmin ? "Admin" : isOwner ? "Owner" : "Buyer"}</span>
                   </span>
                 </div>
               </div>
@@ -357,7 +361,49 @@ export function ProfileDropdown() {
 
             {/* Menu Links */}
             <div className="flex flex-col gap-0.5">
-              {isOwner ? (
+              {isAdmin ? (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => handleNavigate("/admin")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-bold text-white bg-primary hover:bg-primary/90 transition-all duration-200 cursor-pointer text-left focus:outline-none shadow-sm mb-1"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Admin Control Portal</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => handleNavigate("/admin/properties")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200 cursor-pointer text-left focus:outline-none focus:bg-primary/5 focus:text-primary"
+                  >
+                    <Building className="w-4 h-4 text-secondary shrink-0" />
+                    <span>Property Approvals</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => handleNavigate("/profile")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200 cursor-pointer text-left focus:outline-none focus:bg-primary/5 focus:text-primary"
+                  >
+                    <UserIcon className="w-4 h-4 text-primary shrink-0" />
+                    <span>Admin Profile</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => handleNavigate("/settings")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200 cursor-pointer text-left focus:outline-none focus:bg-primary/5 focus:text-primary"
+                  >
+                    <Settings className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span>Platform Settings</span>
+                  </button>
+                </>
+              ) : isOwner ? (
                 <>
                   <button
                     type="button"

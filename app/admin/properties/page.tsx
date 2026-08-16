@@ -41,11 +41,21 @@ import { PropertyDetailDrawer } from "@/components/admin/property-detail-drawer"
 
 export default function AdminPropertiesPage() {
   /* ─── State ─── */
-  const [properties, setProperties] = React.useState<AdminProperty[]>(() =>
-    AdminPropertyService.getAllProperties()
-  );
+  const [properties, setProperties] = React.useState<AdminProperty[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [selectedProperty, setSelectedProperty] = React.useState<AdminProperty | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+
+  const loadData = React.useCallback(() => {
+    setIsLoading(true);
+    AdminPropertyService.fetchAdminListings()
+      .then(setProperties)
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  React.useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   /* Advanced Filter state */
   const [showAdvancedFilters, setShowAdvancedFilters] = React.useState(false);
@@ -65,18 +75,28 @@ export default function AdminPropertiesPage() {
     setIsDrawerOpen(true);
   };
 
-  const handleApprove = (prop: AdminProperty) => {
-    setProperties((prev) =>
-      prev.map((p) => (p.id === prop.id ? { ...p, status: "approved", isVerified: true } : p))
-    );
-    toast.success(`Property ${prop.id} approved successfully.`);
+  const handleApprove = async (prop: AdminProperty) => {
+    try {
+      await AdminPropertyService.approveListing(prop.id);
+      setProperties((prev) =>
+        prev.map((p) => (p.id === prop.id ? { ...p, status: "approved", isVerified: true } : p))
+      );
+      toast.success(`Property ${prop.propertyName} approved & published!`);
+    } catch {
+      toast.error("Failed to approve property.");
+    }
   };
 
-  const handleReject = (prop: AdminProperty) => {
-    setProperties((prev) =>
-      prev.map((p) => (p.id === prop.id ? { ...p, status: "rejected" } : p))
-    );
-    toast.error(`Property ${prop.id} rejected.`);
+  const handleReject = async (prop: AdminProperty) => {
+    try {
+      await AdminPropertyService.rejectListing(prop.id);
+      setProperties((prev) =>
+        prev.map((p) => (p.id === prop.id ? { ...p, status: "rejected", isVerified: false } : p))
+      );
+      toast.error(`Property ${prop.propertyName} rejected.`);
+    } catch {
+      toast.error("Failed to reject property.");
+    }
   };
 
   const handleFeatureToggle = (prop: AdminProperty) => {
@@ -152,13 +172,17 @@ export default function AdminPropertiesPage() {
       minWidth: "70px",
       accessor: (row) => row.coverPhoto,
       cell: (val, row) => (
-        <div className="w-11 h-11 rounded-xl overflow-hidden border border-border/60 shrink-0 bg-muted/40">
-          {/* eslint-disable-next-html-link, @next/next/no-img-element */}
-          <img
-            src={String(val)}
-            alt={row.propertyName}
-            className="w-full h-full object-cover"
-          />
+        <div className="w-11 h-11 rounded-xl overflow-hidden border border-border/60 shrink-0 bg-muted/40 flex items-center justify-center">
+          {val ? (
+            /* eslint-disable-next-html-link, @next/next/no-img-element */
+            <img
+              src={String(val)}
+              alt={row.propertyName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <Building className="w-5 h-5 text-muted-foreground/50 stroke-1" />
+          )}
         </div>
       ),
     },

@@ -97,9 +97,13 @@ export function BarChart({
   chartData,
   className,
 }: {
-  chartData: ChartData;
+  chartData?: ChartData;
   className?: string;
 }) {
+  if (!chartData || !chartData.data || chartData.data.length === 0) {
+    return <ChartSkeleton className={className} />;
+  }
+
   const { data, color, title, subtitle, total } = chartData;
   const max = Math.max(...data.map((d) => d.value));
   const [hoveredIdx, setHoveredIdx] = React.useState<number | null>(null);
@@ -177,9 +181,13 @@ export function AreaChart({
   chartData,
   className,
 }: {
-  chartData: ChartData;
+  chartData?: ChartData;
   className?: string;
 }) {
+  if (!chartData || !chartData.data || chartData.data.length === 0) {
+    return <ChartSkeleton className={className} />;
+  }
+
   const { data, color, title, subtitle, total } = chartData;
   const max = Math.max(...data.map((d) => d.value));
   const min = Math.min(...data.map((d) => d.value));
@@ -405,7 +413,7 @@ export function ChartSkeleton({ className }: { className?: string }) {
           <div
             key={i}
             className="flex-1 bg-muted rounded-t-md"
-            style={{ height: `${30 + Math.random() * 60}%` }}
+            style={{ height: `${30 + ((i * 17) % 60)}%` }}
           />
         ))}
       </div>
@@ -429,7 +437,7 @@ export function SectionSkeleton({ rows = 5, className }: { rows?: number; classN
       <div className="p-5 space-y-3">
         {Array.from({ length: rows }).map((_, i) => (
           <div key={i} className="flex items-center justify-between gap-3 py-2">
-            <div className="h-3 bg-muted rounded-lg" style={{ width: `${50 + Math.random() * 40}%` }} />
+            <div className="h-3 bg-muted rounded-lg" style={{ width: `${50 + ((i * 19) % 40)}%` }} />
             <div className="h-3 w-16 bg-muted rounded-lg shrink-0" />
           </div>
         ))}

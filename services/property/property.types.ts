@@ -39,12 +39,6 @@ export interface MediaImage {
   rawFile?: File;
 }
 
-export interface MediaVideo {
-  url: string;
-  name: string;
-  size?: number;
-}
-
 export interface Owner {
   id?: string;
   name: string;
@@ -80,6 +74,7 @@ export interface ApartmentPricing {
 export interface Property {
   id: string;
   propertyName: string;
+  title?: string;
   propertyType:
     | "PG"
     | "Hostel"
@@ -98,7 +93,6 @@ export interface Property {
   area: string;
   address: string;
   landmark?: string;
-  mapsLink?: string;
   rooms: RoomConfiguration[];
   roomConfigurations?: RoomConfiguration[];
   apartmentDetails?: ApartmentDetails;
@@ -108,11 +102,11 @@ export interface Property {
   rules: HouseRules;
   nearby: string[];
   images: MediaImage[];
-  video?: MediaVideo | null;
+  photos?: any[];
   coverPhoto: string;
   startingRent: number;
   startingPrice?: number;
-  status: "Published" | "Draft" | "Archived";
+  status: "Published" | "Draft" | "Archived" | "Pending Approval" | "Rejected";
   views: number;
   enquiries: number;
   ownerId?: string;

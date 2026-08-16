@@ -42,10 +42,16 @@ import { OwnerProfileDrawer } from "@/components/admin/owner-profile-drawer";
 
 export default function AdminOwnersPage() {
   /* ─── State ─── */
-  const [owners, setOwners] = React.useState<AdminOwner[]>(() =>
-    AdminOwnerService.getAllOwners()
-  );
+  const [owners, setOwners] = React.useState<AdminOwner[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [selectedOwner, setSelectedOwner] = React.useState<AdminOwner | null>(null);
+
+  React.useEffect(() => {
+    setIsLoading(true);
+    AdminOwnerService.fetchAdminOwners()
+      .then(setOwners)
+      .finally(() => setIsLoading(false));
+  }, []);
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 
   /* Advanced Filter state */

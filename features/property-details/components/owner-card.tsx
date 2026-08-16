@@ -84,7 +84,7 @@ export function OwnerCard({
         {/* Avatar */}
         <div className="relative shrink-0 w-16 h-16 rounded-full overflow-hidden border border-border bg-muted">
           <img
-            src={ownerImage}
+            src={ownerImage || `https://api.dicebear.com/8.x/lorelei/svg?seed=${encodeURIComponent(ownerName)}`}
             alt={`${ownerName} avatar`}
             className="w-full h-full object-cover"
           />

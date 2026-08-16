@@ -86,10 +86,66 @@ export interface AdminBookingQuickStats {
 /* ─── Data ─── */
 const MOCK_ADMIN_BOOKINGS: AdminBooking[] = [];
 
+import { apiClient } from "@/lib/api-client";
+
 /* ─── Admin Booking Service ─── */
 export class AdminBookingService {
+  static async fetchAdminBookings(): Promise<AdminBooking[]> {
+    try {
+      const res = await apiClient.get<{ bookings: any[] }>("/api/admin/bookings");
+      const bookingsData = res.data?.bookings || [];
+
+      return bookingsData.map((b) => ({
+        id: b.reservationId || b._id,
+        buyerId: b.user?._id || "",
+        buyerName: b.guestDetails?.fullName || b.user?.name || "Seeker Guest",
+        buyerPhone: b.guestDetails?.phone || b.user?.phone || "N/A",
+        buyerEmail: b.guestDetails?.email || b.user?.email || "N/A",
+        buyerInstitution: b.guestDetails?.occupation || "Student",
+        ownerId: b.property?.owner?._id || "",
+        ownerName: b.property?.owner?.name || "Property Owner",
+        ownerPhone: b.property?.owner?.phone || "N/A",
+        ownerEmail: b.property?.owner?.email || "N/A",
+        propertyId: b.property?._id || "",
+        propertyTitle: b.propertyName || b.property?.title || "Listed Property",
+        propertyPhoto: b.property?.images?.[0] || "",
+        propertyAddress: b.property?.address?.area || "Indore",
+        city: b.property?.address?.city || "Indore",
+        roomType: b.roomType || "Standard Room",
+        moveInDate: b.moveInDate || new Date().toISOString().substring(0, 10),
+        monthlyRent: b.pricing?.monthlyRent || 0,
+        securityDeposit: b.pricing?.securityDeposit || 0,
+        platformFee: b.pricing?.platformFee || 0,
+        totalAmount: b.pricing?.totalDueNow || (b.pricing?.monthlyRent || 0),
+        paymentStatus: b.status === "confirmed" || b.status === "completed" ? "Paid" : "Pending",
+        bookingStatus: b.status === "pending" ? "Requested" : b.status === "confirmed" ? "Confirmed" : b.status === "cancelled" ? "Cancelled" : "Completed",
+        createdAt: b.createdAt || new Date().toISOString(),
+        paymentDetails: {
+          rentPaid: b.pricing?.monthlyRent || 0,
+          depositPaid: b.pricing?.securityDeposit || 0,
+          feePaid: b.pricing?.platformFee || 0,
+          invoiceNo: `INV-${b.reservationId || b._id.substring(0, 6)}`,
+          receiptNo: `REC-${b.reservationId || b._id.substring(0, 6)}`,
+          refundStatus: "Not Applicable",
+        },
+        timeline: [
+          {
+            event: "Booking Created",
+            description: "Reservation submitted by tenant",
+            date: b.createdAt || new Date().toISOString(),
+            by: b.guestDetails?.fullName || b.user?.name || "Tenant",
+          },
+        ],
+        documents: [],
+        internalNotes: [],
+      }));
+    } catch {
+      return MOCK_ADMIN_BOOKINGS;
+    }
+  }
+
   static getQuickStats(bookings: AdminBooking[] = MOCK_ADMIN_BOOKINGS): AdminBookingQuickStats {
-    const todaysBookings = bookings.filter((b) => b.createdAt.startsWith("2026-08-03") || b.createdAt.startsWith("2026-08-02")).length;
+    const todaysBookings = bookings.length;
     const upcomingMoveIns = bookings.filter((b) => b.bookingStatus === "Move-in Scheduled" || b.bookingStatus === "Confirmed").length;
     const pendingConfirmation = bookings.filter((b) => b.bookingStatus === "Requested" || b.bookingStatus === "Pending Payment").length;
     const completed = bookings.filter((b) => b.bookingStatus === "Completed" || b.bookingStatus === "Checked In").length;

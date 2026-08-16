@@ -57,7 +57,7 @@ export const BookingService = {
       ...request,
       id: `booking-${Date.now()}`,
       reservationId,
-      status: "confirmed",
+      status: "pending",
       createdAt: new Date().toISOString(),
     };
 
@@ -101,7 +101,7 @@ export const BookingService = {
         ...request,
         id: `booking-${Date.now()}`,
         reservationId: res.reservationId,
-        status: "confirmed",
+        status: "pending",
         createdAt: new Date().toISOString(),
       };
     }
@@ -156,5 +156,42 @@ export const BookingService = {
     } catch {
       return BookingService.getAllBookings();
     }
+  },
+
+  async fetchOwnerBookings(): Promise<BookingReservation[]> {
+    try {
+      const res = await apiClient.get<{ bookings: any[] }>("/api/bookings/received");
+      return (res.data?.bookings ?? []).map((b) => ({
+        id: b._id,
+        reservationId: b.reservationId,
+        propertyId: b.property?._id || b.property,
+        propertyName: b.propertyName || b.property?.title,
+        roomType: b.roomType,
+        moveInDate: b.moveInDate,
+        pricing: b.pricing,
+        guestDetails: b.guestDetails,
+        status: b.status,
+        createdAt: b.createdAt,
+      }));
+    } catch {
+      return BookingService.getAllBookings();
+    }
+  },
+
+  async updateBookingStatus(bookingId: string, status: string): Promise<BookingReservation> {
+    const res = await apiClient.put<{ booking: any }>(`/api/bookings/${bookingId}/status`, { status });
+    const b = res.data!.booking;
+    return {
+      id: b._id,
+      reservationId: b.reservationId,
+      propertyId: b.property?._id || b.property,
+      propertyName: b.propertyName,
+      roomType: b.roomType,
+      moveInDate: b.moveInDate,
+      pricing: b.pricing,
+      guestDetails: b.guestDetails,
+      status: b.status,
+      createdAt: b.createdAt,
+    };
   },
 };

@@ -26,7 +26,6 @@ export const metadata: Metadata = {
   description: "Modern accommodation discovery platform helping students and working professionals find premium hostels and PGs in Indore.",
 };
 
-import { AIAssistantWidget } from "@/components/ai/ai-assistant-widget";
 import { GuestAuthPromptModal } from "@/components/modals/guest-auth-prompt-modal";
 import { PlatformReviewModal } from "@/components/modals/platform-review-modal";
 import { Toaster } from "@/components/ui/toaster";
@@ -54,7 +53,6 @@ export default function RootLayout({
                   <Suspense fallback={null}>
                     <NavigationProvider>
                       {children}
-                      <AIAssistantWidget />
                       <CompareBar />
                       <GuestAuthPromptModal />
                       <PlatformReviewModal />

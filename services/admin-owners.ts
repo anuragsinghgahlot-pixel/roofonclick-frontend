@@ -1,5 +1,4 @@
-"use client";
-
+import { apiClient } from "@/lib/api-client";
 import type { StatusType } from "@/components/admin/data-table";
 
 /* ─── Owner Admin Types ─── */
@@ -110,6 +109,39 @@ export class AdminOwnerService {
       activeListings,
       totalRevenueGenerated,
     };
+  }
+
+  static async fetchAdminOwners(): Promise<AdminOwner[]> {
+    try {
+      const res = await apiClient.get<{ users: any[] }>("/api/admin/users?role=owner");
+      const list = res.data?.users || [];
+      return list.map((u) => ({
+        id: u._id,
+        name: u.name || "Owner User",
+        email: u.email || "",
+        phone: u.phone || "N/A",
+        avatar: u.avatar || `https://api.dicebear.com/8.x/lorelei/svg?seed=${encodeURIComponent(u.name || "Owner")}`,
+        city: "Indore",
+        address: "Indore, MP",
+        propertiesCount: 1,
+        occupancyRate: 85,
+        avgRating: 4.8,
+        totalRevenue: 15000,
+        kycStatus: u.requestedOwnerRole ? "pending" : "verified",
+        subscriptionPlan: "Gold Tier",
+        accountStatus: "active",
+        joinedDate: u.createdAt || "2026-08-15",
+        properties: [],
+        bookings: [],
+        payments: [],
+        reviews: [],
+        documents: [],
+        supportTickets: [],
+        timeline: [{ event: "Account Created", description: "Registered on RoofOnClick", date: u.createdAt || "2026-08-15" }],
+      }));
+    } catch {
+      return [];
+    }
   }
 
   static getAllOwners(): AdminOwner[] {

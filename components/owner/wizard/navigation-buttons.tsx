@@ -22,7 +22,7 @@ export function NavigationButtons() {
   const finalButtonText = isLastStep
     ? isEditMode
       ? "Save Changes"
-      : "Publish Property"
+      : "Submit for Admin Examination"
     : "Next";
 
   return (

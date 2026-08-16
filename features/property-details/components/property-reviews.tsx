@@ -810,7 +810,6 @@ export function PropertyReviews({ propertyId, onReviewChange, isOwnerView = fals
         {lightboxImages && lightboxImages.length > 0 && (
           <LightboxModal
             images={lightboxImages}
-            videos={[]}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             currentIndex={lightboxIndex}

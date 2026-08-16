@@ -124,12 +124,16 @@ export default function ComparePage() {
                         className="p-4 bg-card border border-border/70 min-w-[240px] max-w-[300px] text-left align-top space-y-3"
                       >
                         {/* Image Preview */}
-                        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-muted border border-border/60">
-                          <img
-                            src={property.coverPhoto || property.images?.[0]?.url || ""}
-                            alt={property.propertyName || ""}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-muted border border-border/60 flex items-center justify-center">
+                          {(property.coverPhoto || property.images?.[0]?.url) ? (
+                            <img
+                              src={property.coverPhoto || property.images?.[0]?.url}
+                              alt={property.propertyName || ""}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Building className="w-8 h-8 stroke-1 text-primary/40" />
+                          )}
                           <button
                             type="button"
                             data-no-intercept="true"

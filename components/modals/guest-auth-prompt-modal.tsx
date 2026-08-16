@@ -27,11 +27,22 @@ export function GuestAuthPromptModal() {
   React.useEffect(() => {
     if (isUserAuthenticated || isAuthRoute) return;
 
-    // Check if dismissed in this session
-    const isDismissed = sessionStorage.getItem(STORAGE_KEY);
-    if (isDismissed === "true") return;
+    // Check if dismissed in storage
+    const isDismissed =
+      typeof window !== "undefined" &&
+      (localStorage.getItem(STORAGE_KEY) === "true" || sessionStorage.getItem(STORAGE_KEY) === "true");
+
+    if (isDismissed) return;
 
     const handleScroll = () => {
+      if (
+        localStorage.getItem(STORAGE_KEY) === "true" ||
+        sessionStorage.getItem(STORAGE_KEY) === "true"
+      ) {
+        window.removeEventListener("scroll", handleScroll);
+        return;
+      }
+
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       if (scrollHeight <= 0) return;
       const scrollPercent = (window.scrollY / scrollHeight) * 100;
@@ -39,6 +50,8 @@ export function GuestAuthPromptModal() {
       // Show when scrolled approx 40% of the page
       if (scrollPercent >= 40) {
         setIsVisible(true);
+        // Remove scroll listener once triggered
+        window.removeEventListener("scroll", handleScroll);
       }
     };
 
@@ -47,12 +60,18 @@ export function GuestAuthPromptModal() {
   }, [isUserAuthenticated, isAuthRoute]);
 
   const handleDismiss = () => {
-    sessionStorage.setItem(STORAGE_KEY, "true");
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(STORAGE_KEY, "true");
+      localStorage.setItem(STORAGE_KEY, "true");
+    }
     setIsVisible(false);
   };
 
   const handleSignUp = () => {
-    sessionStorage.setItem(STORAGE_KEY, "true");
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(STORAGE_KEY, "true");
+      localStorage.setItem(STORAGE_KEY, "true");
+    }
     setIsVisible(false);
     router.push("/signup");
   };

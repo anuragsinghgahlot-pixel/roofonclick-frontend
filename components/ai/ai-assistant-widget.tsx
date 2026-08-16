@@ -86,7 +86,7 @@ const MOCK_RECOMMENDATION: MiniProperty = {
   price: 8500,
   rating: 4.8,
   type: "Hostel",
-  image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80",
+  image: "",
   isVerified: true,
 };
 

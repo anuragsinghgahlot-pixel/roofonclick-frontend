@@ -24,7 +24,6 @@ export interface BackendListing {
     city: string;
     full?: string;
     landmark?: string;
-    mapsLink?: string;
     street?: string;
     pincode?: string;
   };
@@ -44,7 +43,6 @@ export interface BackendListing {
   }>;
   rules?: Record<string, boolean | string>;
   photos?: Array<{ url: string; key: string }>;
-  video?: { url: string; name?: string };
   apartmentDetails?: Record<string, unknown>;
   ownerWhatsapp?: string;
   isVerified?: boolean;
@@ -108,9 +106,7 @@ export function adaptListing(bl: BackendListing): Property {
   };
 
   const photos = bl.photos ?? [];
-  const coverPhoto =
-    photos[0]?.url ||
-    "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=600&q=80";
+  const coverPhoto = photos[0]?.url || "";
 
   // Use backend stored rooms if present, or fallback to sharingOptions synthesis
   const rooms = (bl.rooms && bl.rooms.length > 0)
@@ -149,7 +145,6 @@ export function adaptListing(bl: BackendListing): Property {
     area: bl.address.area,
     address: bl.address.full || `${bl.address.area}, ${bl.address.city}`,
     landmark: bl.address.landmark,
-    mapsLink: bl.address.mapsLink,
     rooms,
     roomConfigurations: rooms,
     amenities: bl.amenities ?? [],
@@ -164,7 +159,7 @@ export function adaptListing(bl: BackendListing): Property {
     coverPhoto,
     startingRent: bl.rent.monthly,
     startingPrice: bl.rent.monthly,
-    status: bl.status === "active" ? "Published" : "Archived",
+    status: (bl.status === "active" ? "Published" : bl.status === "pending" ? "Pending Approval" : bl.status === "rejected" ? "Rejected" : "Archived") as any,
     views: bl.viewCount ?? 0,
     enquiries: 0,
     ownerId: bl.owner?._id,
@@ -226,7 +221,6 @@ export function adaptPropertyToListing(p: Partial<Property>): Record<string, unk
       city: p.city,
       full: p.address,
       landmark: p.landmark,
-      mapsLink: p.mapsLink,
     },
     amenities: p.amenities ?? [],
     nearby: p.nearby ?? [],
