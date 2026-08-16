@@ -23,21 +23,9 @@ export default function AdminLayout({
     }
   }, [user, isLoading, router]);
 
-  /**
-   * Disable Lenis smooth-scroll on admin pages.
-   * Lenis hijacks document-level wheel events which conflicts with the
-   * admin panel's own inner scroll container (`<main>`).
-   * We stop it on mount and restart on unmount so the rest of the site is unaffected.
-   */
   React.useEffect(() => {
-    // Stop Lenis if it's running (it observes body.style mutations)
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      // Restore so Lenis restarts when navigating away from admin
-      document.body.style.overflow = "";
-    };
+    // Reset body overflow so native container scroll is never blocked
+    document.body.style.overflow = "";
   }, []);
 
   return (

@@ -185,12 +185,12 @@ export default function AdminDashboardPage() {
       {/* ═══ Charts (Row 2) ═══ */}
       <motion.div variants={fadeUp}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {charts && charts.length > 0
+          {charts && charts.length >= 4
             ? <>
                 <AreaChart chartData={charts[0]} />
                 <BarChart chartData={charts[1]} />
                 <BarChart chartData={charts[2]} />
-                <AreaChart chartData={charts[3]} />
+                <BarChart chartData={charts[3]} />
               </>
             : Array.from({ length: 4 }).map((_, i) => <ChartSkeleton key={i} />)}
         </div>

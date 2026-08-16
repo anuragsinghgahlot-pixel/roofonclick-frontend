@@ -503,6 +503,18 @@ export class AdminDashboardService {
             { label: "Confirmed", value: Math.max(0, kpis.totalBookings - kpis.pendingBookings) },
           ],
         },
+        {
+          id: "reviews",
+          title: "Reviews Moderation",
+          subtitle: "User feedback volume",
+          total: String(kpis.totalReviews),
+          color: "hsl(215, 80%, 55%)",
+          data: [
+            { label: "Total", value: kpis.totalReviews },
+            { label: "Approved", value: kpis.totalReviews },
+            { label: "Pending", value: 0 },
+          ],
+        },
       ];
     } catch {
       return MOCK_CHARTS;

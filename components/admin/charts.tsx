@@ -32,7 +32,7 @@ function useAnimatedCounter(target: number, duration: number = 1200) {
   return current;
 }
 
-/* ─── Mini Sparkline (SVG) ─── */
+/* ─── Mini Sparkline (Recharts) ─── */
 function Sparkline({
   data,
   color,
@@ -44,55 +44,63 @@ function Sparkline({
   height?: number;
   className?: string;
 }) {
-  const width = 120;
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const range = max - min || 1;
-  const padding = 2;
-
-  const points = data.map((val, i) => {
-    const x = padding + (i / (data.length - 1)) * (width - padding * 2);
-    const y = padding + ((max - val) / range) * (height - padding * 2);
-    return `${x},${y}`;
-  });
-
-  const polyline = points.join(" ");
-
-  // Create gradient fill area
-  const firstPoint = points[0];
-  const lastPoint = points[points.length - 1];
-  const areaPath = `M${firstPoint} ${points.map((_, i) => points[i]).join(" L")} L${lastPoint.split(",")[0]},${height} L${firstPoint.split(",")[0]},${height} Z`;
+  const chartData = data.map((v, i) => ({ i, v }));
+  const gradId = `spark-${color.replace(/[^a-z0-9]/gi, "")}`;
 
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className={cn("overflow-visible", className)}
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id={`sparkGrad-${color.replace(/[^a-z0-9]/gi, "")}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.2" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path
-        d={areaPath}
-        fill={`url(#sparkGrad-${color.replace(/[^a-z0-9]/gi, "")})`}
-      />
-      <polyline
-        points={polyline}
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="drop-shadow-sm"
-      />
-    </svg>
+    <div className={cn("w-16", className)} style={{ height }} aria-hidden="true">
+      <ResponsiveContainer width="100%" height="100%">
+        <RechartsAreaChart data={chartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <Area
+            type="monotone"
+            dataKey="v"
+            stroke={color}
+            strokeWidth={2}
+            fill={`url(#${gradId})`}
+            dot={false}
+            isAnimationActive={false}
+          />
+        </RechartsAreaChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
 
-/* ─── Bar Chart (SVG) ─── */
+import {
+  ResponsiveContainer,
+  AreaChart as RechartsAreaChart,
+  Area,
+  BarChart as RechartsBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  CartesianGrid,
+  Cell,
+} from "recharts";
+
+/* ─── Custom Recharts Tooltip ─── */
+function CustomChartTooltip({ active, payload, label }: any) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-popover/95 backdrop-blur-md border border-border px-3 py-2 rounded-xl shadow-xl z-50">
+        <p className="text-[11px] font-bold text-muted-foreground">{label}</p>
+        <p className="text-sm font-extrabold text-foreground font-heading">
+          {Number(payload[0].value).toLocaleString()}
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
+/* ─── Bar Chart (Recharts) ─── */
 export function BarChart({
   chartData,
   className,
@@ -105,13 +113,11 @@ export function BarChart({
   }
 
   const { data, color, title, subtitle, total } = chartData;
-  const max = Math.max(...data.map((d) => d.value));
-  const [hoveredIdx, setHoveredIdx] = React.useState<number | null>(null);
 
   return (
     <div
       className={cn(
-        "bg-card border border-border/60 rounded-2xl p-5 flex flex-col gap-4 hover:border-primary/30 transition-all",
+        "bg-card border border-border/60 rounded-2xl p-5 flex flex-col gap-4 hover:border-primary/30 transition-all shadow-sm",
         className
       )}
     >
@@ -133,50 +139,56 @@ export function BarChart({
       </div>
 
       {/* Chart Area */}
-      <div className="relative h-[140px] flex items-end gap-[6px]" role="img" aria-label={`${title} bar chart`}>
-        {data.map((point, idx) => {
-          const heightPct = (point.value / max) * 100;
-          const isHovered = hoveredIdx === idx;
-
-          return (
-            <div
-              key={point.label}
-              className="flex-1 flex flex-col items-center gap-1 relative"
-              onMouseEnter={() => setHoveredIdx(idx)}
-              onMouseLeave={() => setHoveredIdx(null)}
+      <div className="h-[150px] w-full pt-1" role="img" aria-label={`${title} bar chart`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <RechartsBarChart
+            data={data}
+            margin={{ top: 12, right: 10, left: -20, bottom: 0 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="hsl(var(--border) / 0.5)"
+            />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: 600 }}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: 500 }}
+              allowDecimals={false}
+            />
+            <RechartsTooltip
+              content={<CustomChartTooltip />}
+              cursor={{ fill: "rgba(255,255,255,0.06)", radius: 8 }}
+              wrapperStyle={{ outline: "none" }}
+            />
+            <Bar
+              dataKey="value"
+              radius={[6, 6, 0, 0]}
+              maxBarSize={50}
+              fill={color || "hsl(var(--primary))"}
             >
-              {/* Tooltip */}
-              {isHovered && (
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-foreground text-background text-[10px] font-heading font-bold rounded-lg whitespace-nowrap z-10 shadow-md pointer-events-none">
-                  {point.value.toLocaleString()}
-                </div>
-              )}
-
-              {/* Bar */}
-              <div className="w-full flex items-end h-[110px]">
-                <div
-                  className="w-full rounded-t-md transition-all duration-300 ease-[var(--ease-premium)] cursor-pointer"
-                  style={{
-                    height: `${heightPct}%`,
-                    backgroundColor: isHovered ? color : `${color}80`,
-                    minHeight: "4px",
-                  }}
+              {data.map((_, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={color || "hsl(var(--primary))"}
+                  fillOpacity={0.88}
                 />
-              </div>
-
-              {/* Label */}
-              <span className="font-body text-[9px] font-semibold text-muted-foreground/70 leading-none">
-                {point.label}
-              </span>
-            </div>
-          );
-        })}
+              ))}
+            </Bar>
+          </RechartsBarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
 }
 
-/* ─── Area Chart (SVG) ─── */
+/* ─── Area Chart (Recharts) ─── */
 export function AreaChart({
   chartData,
   className,
@@ -189,32 +201,13 @@ export function AreaChart({
   }
 
   const { data, color, title, subtitle, total } = chartData;
-  const max = Math.max(...data.map((d) => d.value));
-  const min = Math.min(...data.map((d) => d.value));
-  const range = max - min || 1;
-
-  const svgWidth = 400;
-  const svgHeight = 120;
-  const padX = 10;
-  const padY = 10;
-
-  const points = data.map((d, i) => {
-    const x = padX + (i / (data.length - 1)) * (svgWidth - padX * 2);
-    const y = padY + ((max - d.value) / range) * (svgHeight - padY * 2);
-    return { x, y, ...d };
-  });
-
-  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-  const areaPath = `${linePath} L${points[points.length - 1].x},${svgHeight} L${points[0].x},${svgHeight} Z`;
-
-  const gradId = `areaGrad-${chartData.id}`;
-
-  const [hoveredIdx, setHoveredIdx] = React.useState<number | null>(null);
+  const gradId = `areaGrad-${chartData.id || "default"}`;
+  const strokeColor = color || "hsl(var(--primary))";
 
   return (
     <div
       className={cn(
-        "bg-card border border-border/60 rounded-2xl p-5 flex flex-col gap-4 hover:border-primary/30 transition-all",
+        "bg-card border border-border/60 rounded-2xl p-5 flex flex-col gap-4 hover:border-primary/30 transition-all shadow-sm",
         className
       )}
     >
@@ -235,58 +228,52 @@ export function AreaChart({
         )}
       </div>
 
-      {/* Chart */}
-      <div className="relative" role="img" aria-label={`${title} area chart`}>
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-[140px]">
-          <defs>
-            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-              <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-            </linearGradient>
-          </defs>
-          <path d={areaPath} fill={`url(#${gradId})`} />
-          <path d={linePath} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-
-          {/* Data Points */}
-          {points.map((p, i) => (
-            <g key={i}>
-              <circle
-                cx={p.x}
-                cy={p.y}
-                r={hoveredIdx === i ? 5 : 3}
-                fill={hoveredIdx === i ? color : "white"}
-                stroke={color}
-                strokeWidth="2"
-                className="transition-all duration-200 cursor-pointer"
-                onMouseEnter={() => setHoveredIdx(i)}
-                onMouseLeave={() => setHoveredIdx(null)}
-              />
-            </g>
-          ))}
-        </svg>
-
-        {/* Tooltip */}
-        {hoveredIdx !== null && (
-          <div
-            className="absolute px-2.5 py-1.5 bg-foreground text-background text-[10px] font-heading font-bold rounded-lg shadow-md pointer-events-none z-10 whitespace-nowrap"
-            style={{
-              left: `${(points[hoveredIdx].x / svgWidth) * 100}%`,
-              top: `${(points[hoveredIdx].y / svgHeight) * 100 - 16}%`,
-              transform: "translateX(-50%)",
-            }}
+      {/* Chart Area */}
+      <div className="h-[150px] w-full pt-1" role="img" aria-label={`${title} area chart`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <RechartsAreaChart
+            data={data}
+            margin={{ top: 12, right: 10, left: -20, bottom: 0 }}
           >
-            {points[hoveredIdx].label}: {points[hoveredIdx].value.toLocaleString()}
-          </div>
-        )}
-
-        {/* X-axis labels */}
-        <div className="flex justify-between mt-2 px-2">
-          {data.filter((_, i) => i % 2 === 0 || i === data.length - 1).map((d) => (
-            <span key={d.label} className="font-body text-[9px] font-semibold text-muted-foreground/60">
-              {d.label}
-            </span>
-          ))}
-        </div>
+            <defs>
+              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={strokeColor} stopOpacity={0.45} />
+                <stop offset="100%" stopColor={strokeColor} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="hsl(var(--border) / 0.5)"
+            />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: 600 }}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: 500 }}
+              allowDecimals={false}
+            />
+            <RechartsTooltip
+              content={<CustomChartTooltip />}
+              wrapperStyle={{ outline: "none" }}
+            />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={strokeColor}
+              strokeWidth={2.5}
+              fillOpacity={1}
+              fill={`url(#${gradId})`}
+              dot={{ r: 4, fill: strokeColor, strokeWidth: 1, stroke: "#fff" }}
+              activeDot={{ r: 6, fill: strokeColor, stroke: "#fff", strokeWidth: 2 }}
+            />
+          </RechartsAreaChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
@@ -334,45 +321,36 @@ export function KpiCard({
   return (
     <div
       className={cn(
-        "bg-card border border-border/60 rounded-2xl p-4 sm:p-5 flex flex-col gap-3 hover:border-primary/30 hover:shadow-md transition-all group relative overflow-hidden",
+        "bg-card border border-border/60 rounded-xl p-3 flex flex-col gap-2 hover:border-primary/30 hover:shadow-md transition-all group relative overflow-hidden",
         className
       )}
     >
       {/* Ambient glow */}
-      <div className="absolute -top-8 -right-8 w-24 h-24 bg-primary/5 rounded-full blur-2xl pointer-events-none group-hover:bg-primary/10 transition-all" />
+      <div className="absolute -top-6 -right-6 w-16 h-16 bg-primary/5 rounded-full blur-xl pointer-events-none group-hover:bg-primary/10 transition-all" />
 
-      <div className="flex items-start justify-between relative z-10">
-        <div className="space-y-2 min-w-0 flex-1">
-          <span className="font-body text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
-            {label}
-          </span>
-          <span className="font-heading text-xl sm:text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight leading-none block">
-            {formattedValue}
-          </span>
-        </div>
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform">
-          <Icon className="w-5 h-5" />
+      {/* Top row: label + icon */}
+      <div className="flex items-start justify-between gap-1 relative z-10">
+        <span className="font-body text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight truncate flex-1 pr-1">
+          {label}
+        </span>
+        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform">
+          <Icon className="w-3.5 h-3.5" />
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2 relative z-10">
-        <div className="flex items-center gap-1.5">
-          <span className={cn("font-heading text-[11px] font-extrabold", changeColors[changeType])}>
-            {isUp ? "↑" : "↓"} {Math.abs(change)}%
-          </span>
-          <span className="font-body text-[10px] text-muted-foreground">
-            {comparisonLabel}
-          </span>
-        </div>
+      {/* Value */}
+      <span className="font-heading text-lg sm:text-xl font-extrabold text-foreground tracking-tight leading-none relative z-10 truncate">
+        {formattedValue}
+      </span>
 
-        {sparklineData && (
-          <Sparkline
-            data={sparklineData}
-            color={sparklineColor || "hsl(155, 43%, 21%)"}
-            height={28}
-            className="w-16 h-7 opacity-60 group-hover:opacity-100 transition-opacity"
-          />
-        )}
+      {/* Change indicator */}
+      <div className="flex items-center gap-1 relative z-10 flex-wrap">
+        <span className={cn("font-heading text-[10px] font-extrabold whitespace-nowrap", changeColors[changeType])}>
+          {isUp ? "↑" : "↓"} {Math.abs(change)}%
+        </span>
+        <span className="font-body text-[9px] text-muted-foreground truncate">
+          {comparisonLabel}
+        </span>
       </div>
     </div>
   );

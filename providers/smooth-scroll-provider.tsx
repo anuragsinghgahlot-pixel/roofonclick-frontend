@@ -86,7 +86,7 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
       instance.destroy();
       setLenis(null);
     };
-  }, []);
+  }, [pathname]);
 
   // Scroll to top on App Router route changes & recalculate full document height
   React.useEffect(() => {
