@@ -112,66 +112,11 @@ export function NotificationsButton({
   isOpen,
   onOpenChange,
 }: NotificationsButtonProps) {
-  const { user, role } = useAuth();
-  const isOwner = user !== null && (user.role === "owner" || role === "owner");
-
-  if (!isOwner) {
-    return (
-      <NotificationDropdown
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-      />
-    );
-  }
-
-  const getCombinedCount = React.useCallback(() => {
-    return EnquiryService.getPendingCount() + CallbackService.getPendingCount();
-  }, []);
-
-  const [unreadCount, setUnreadCount] = React.useState<number>(() => {
-    return EnquiryService.getPendingCount() + CallbackService.getPendingCount();
-  });
-
-  React.useEffect(() => {
-    const updateCount = () => {
-      setUnreadCount(getCombinedCount());
-    };
-    updateCount();
-    window.addEventListener("focus", updateCount);
-    window.addEventListener(CALLBACK_UPDATED_EVENT, updateCount);
-    const interval = setInterval(updateCount, 2000);
-    return () => {
-      window.removeEventListener("focus", updateCount);
-      window.removeEventListener(CALLBACK_UPDATED_EVENT, updateCount);
-      clearInterval(interval);
-    };
-  }, [getCombinedCount]);
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (unreadCount > 0) {
-      showToast.info("Pending Enquiries & Visits", `You have ${unreadCount} pending request(s) on your Owner Dashboard.`);
-    } else {
-      showToast.info("You're all caught up.", "You have no new notifications or property alerts.");
-    }
-  };
-
   return (
-    <button
-      type="button"
-      data-no-intercept="true"
-      onClick={handleClick}
-      aria-label="Notifications"
-      className="relative p-2.5 rounded-full text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
-    >
-      <Bell className="w-4.5 h-4.5 pointer-events-none" />
-      {unreadCount > 0 && (
-        <span className="absolute top-1.5 right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-extrabold flex items-center justify-center ring-2 ring-background animate-pulse pointer-events-none">
-          {unreadCount}
-        </span>
-      )}
-    </button>
+    <NotificationDropdown
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+    />
   );
 }
 

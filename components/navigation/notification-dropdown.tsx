@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
+  BellRing,
   CheckCheck,
   Calendar,
   MessageSquare,
@@ -18,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { NotificationItem, NotificationService, NotificationCategory } from "@/services/notifications";
+import { PushNotificationService } from "@/services/push-notification";
 import { showToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { Portal } from "@/components/shared/portal";
@@ -69,7 +71,33 @@ export function NotificationDropdown({
   const [internalIsOpen, setInternalIsOpen] = React.useState(false);
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
   const [notifications, setNotifications] = React.useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = React.useState<number>(0);
+  const [isPushSupported, setIsPushSupported] = React.useState(false);
+  const [isPushSubscribed, setIsPushSubscribed] = React.useState(false);
+  const [isSubscribingPush, setIsSubscribingPush] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Check Web Push availability and subscription status
+  React.useEffect(() => {
+    if (PushNotificationService.isSupported()) {
+      setIsPushSupported(true);
+      PushNotificationService.getSubscription().then((sub) => {
+        setIsPushSubscribed(!!sub);
+      });
+    }
+  }, []);
+
+  const handleEnablePush = async () => {
+    setIsSubscribingPush(true);
+    try {
+      const ok = await PushNotificationService.subscribe();
+      if (ok) {
+        setIsPushSubscribed(true);
+      }
+    } finally {
+      setIsSubscribingPush(false);
+    }
+  };
 
   const toggleOpen = React.useCallback(
     (nextState?: boolean) => {
@@ -83,13 +111,43 @@ export function NotificationDropdown({
     [isOpen, onOpenChange]
   );
 
-  const refreshList = React.useCallback(() => {
-    setNotifications(NotificationService.getNotifications());
+  const refreshList = React.useCallback(async () => {
+    try {
+      const res = await NotificationService.fetchNotifications({ limit: 15 });
+      setNotifications(res.notifications);
+      setUnreadCount(res.unreadCount);
+    } catch {
+      // Ignored
+    }
   }, []);
 
   React.useEffect(() => {
+    // Initial fetch on mount
     refreshList();
+
+    // Subscribe to live Server-Sent Events (SSE) stream for real-time in-app pushes
+    const unsubscribe = NotificationService.subscribeToStream({
+      onNotification: (newNotification) => {
+        setNotifications((prev) => [newNotification, ...prev.filter((n) => n.id !== newNotification.id)]);
+        setUnreadCount((prev) => prev + 1);
+        showToast.info(newNotification.title, newNotification.description);
+      },
+      onUnreadCount: (count) => {
+        setUnreadCount(count);
+      },
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [refreshList]);
+
+  // Refresh whenever opened
+  React.useEffect(() => {
+    if (isOpen) {
+      refreshList();
+    }
+  }, [isOpen, refreshList]);
 
   // Lock body scrolling when mobile notification panel is open
   React.useEffect(() => {
@@ -114,22 +172,27 @@ export function NotificationDropdown({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, toggleOpen]);
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-
-  const handleMarkAllRead = () => {
-    NotificationService.markAllAsRead();
+  const handleMarkAllRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    setUnreadCount(0);
+    await NotificationService.markAllAsRead();
     showToast.success("All Marked as Read", "Notifications updated.");
-    refreshList();
   };
 
-  const handleItemClick = (item: NotificationItem) => {
-    NotificationService.markAsRead(item.id);
-    refreshList();
+  const handleItemClick = async (item: NotificationItem) => {
+    if (!item.isRead) {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === item.id ? { ...n, isRead: true } : n))
+      );
+      setUnreadCount((c) => Math.max(0, c - 1));
+      await NotificationService.markAsRead(item.id);
+    }
     toggleOpen(false);
     if (item.actionUrl) {
       router.push(item.actionUrl);
     }
   };
+
 
   return (
     <div ref={dropdownRef} data-no-intercept="true" className="relative inline-block text-left">
@@ -209,6 +272,30 @@ export function NotificationDropdown({
                     </button>
                   </div>
                 </div>
+
+                {/* Mobile Web Push Opt-In Banner */}
+                {isPushSupported && !isPushSubscribed && (
+                  <div className="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-2 shrink-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <BellRing className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0 text-left">
+                        <p className="text-[11px] font-heading font-extrabold text-foreground truncate">Get Lock-Screen Alerts</p>
+                        <p className="text-[10px] font-body text-muted-foreground truncate">Receive instant alerts when app is closed</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      data-no-intercept="true"
+                      onClick={handleEnablePush}
+                      disabled={isSubscribingPush}
+                      className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-heading text-[10px] font-extrabold transition-all shrink-0 cursor-pointer shadow-xs"
+                    >
+                      {isSubscribingPush ? "Enabling..." : "Enable"}
+                    </button>
+                  </div>
+                )}
 
                 {/* Mobile Internal Scroll Content */}
                 <div
@@ -304,6 +391,30 @@ export function NotificationDropdown({
                   </button>
                 )}
               </div>
+
+              {/* Desktop Web Push Opt-In Banner */}
+              {isPushSupported && !isPushSubscribed && (
+                <div className="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <BellRing className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 text-left">
+                      <p className="text-[11px] font-heading font-extrabold text-foreground truncate">Get Lock-Screen Alerts</p>
+                      <p className="text-[10px] font-body text-muted-foreground truncate">Receive instant alerts when app is closed</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    data-no-intercept="true"
+                    onClick={handleEnablePush}
+                    disabled={isSubscribingPush}
+                    className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-heading text-[10px] font-extrabold transition-all shrink-0 cursor-pointer shadow-xs"
+                  >
+                    {isSubscribingPush ? "Enabling..." : "Enable"}
+                  </button>
+                </div>
+              )}
 
               {/* Notifications List */}
               <div

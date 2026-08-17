@@ -78,9 +78,11 @@ export default function AdminPropertiesPage() {
   const handleApprove = async (prop: AdminProperty) => {
     try {
       await AdminPropertyService.approveListing(prop.id);
+      const updated = { ...prop, status: "approved" as const, isVerified: true };
       setProperties((prev) =>
-        prev.map((p) => (p.id === prop.id ? { ...p, status: "approved", isVerified: true } : p))
+        prev.map((p) => (p.id === prop.id ? updated : p))
       );
+      setSelectedProperty((prev) => (prev?.id === prop.id ? updated : prev));
       toast.success(`Property ${prop.propertyName} approved & published!`);
     } catch {
       toast.error("Failed to approve property.");
@@ -90,32 +92,57 @@ export default function AdminPropertiesPage() {
   const handleReject = async (prop: AdminProperty) => {
     try {
       await AdminPropertyService.rejectListing(prop.id);
+      const updated = { ...prop, status: "rejected" as const, isVerified: false };
       setProperties((prev) =>
-        prev.map((p) => (p.id === prop.id ? { ...p, status: "rejected", isVerified: false } : p))
+        prev.map((p) => (p.id === prop.id ? updated : p))
       );
+      setSelectedProperty((prev) => (prev?.id === prop.id ? updated : prev));
       toast.error(`Property ${prop.propertyName} rejected.`);
     } catch {
       toast.error("Failed to reject property.");
     }
   };
 
-  const handleFeatureToggle = (prop: AdminProperty) => {
-    setProperties((prev) =>
-      prev.map((p) => (p.id === prop.id ? { ...p, isFeatured: !p.isFeatured } : p))
-    );
-    toast.info(`Property ${prop.id} featured status toggled.`);
+  const handleFeatureToggle = async (prop: AdminProperty) => {
+    try {
+      await AdminPropertyService.toggleVerifyListing(prop.id);
+      const updated = { ...prop, isFeatured: !prop.isFeatured, isVerified: !prop.isVerified };
+      setProperties((prev) =>
+        prev.map((p) => (p.id === prop.id ? updated : p))
+      );
+      setSelectedProperty((prev) => (prev?.id === prop.id ? updated : prev));
+      toast.info(`Property ${prop.propertyName || prop.id} verification status updated.`);
+    } catch {
+      toast.error("Failed to update property status.");
+    }
   };
 
-  const handleSuspend = (prop: AdminProperty) => {
-    setProperties((prev) =>
-      prev.map((p) => (p.id === prop.id ? { ...p, status: "suspended" } : p))
-    );
-    toast.warning(`Property ${prop.id} suspended.`);
+  const handleSuspend = async (prop: AdminProperty) => {
+    try {
+      await AdminPropertyService.suspendListing(prop.id);
+      const updated = { ...prop, status: "suspended" as const };
+      setProperties((prev) =>
+        prev.map((p) => (p.id === prop.id ? updated : p))
+      );
+      setSelectedProperty((prev) => (prev?.id === prop.id ? updated : prev));
+      toast.warning(`Property ${prop.propertyName || prop.id} suspended.`);
+    } catch {
+      toast.error("Failed to suspend property.");
+    }
   };
 
-  const handleDelete = (prop: AdminProperty) => {
-    setProperties((prev) => prev.filter((p) => p.id !== prop.id));
-    toast.success(`Property ${prop.id} deleted.`);
+  const handleDelete = async (prop: AdminProperty) => {
+    try {
+      await AdminPropertyService.deleteListing(prop.id);
+      setProperties((prev) => prev.filter((p) => p.id !== prop.id));
+      if (selectedProperty?.id === prop.id) {
+        setIsDrawerOpen(false);
+        setSelectedProperty(null);
+      }
+      toast.success(`Property ${prop.propertyName || prop.id} deleted.`);
+    } catch {
+      toast.error("Failed to delete property.");
+    }
   };
 
   const handleDuplicate = (prop: AdminProperty) => {
@@ -131,26 +158,41 @@ export default function AdminPropertiesPage() {
   };
 
   /* ─── Bulk Handlers ─── */
-  const handleBulkApprove = (selected: AdminProperty[]) => {
-    const ids = new Set(selected.map((s) => s.id));
-    setProperties((prev) =>
-      prev.map((p) => (ids.has(p.id) ? { ...p, status: "approved", isVerified: true } : p))
-    );
-    toast.success(`Approved ${selected.length} properties.`);
+  const handleBulkApprove = async (selected: AdminProperty[]) => {
+    try {
+      const ids = new Set(selected.map((s) => s.id));
+      await Promise.allSettled(selected.map((p) => AdminPropertyService.approveListing(p.id)));
+      setProperties((prev) =>
+        prev.map((p) => (ids.has(p.id) ? { ...p, status: "approved", isVerified: true } : p))
+      );
+      toast.success(`Approved & published ${selected.length} properties.`);
+    } catch {
+      toast.error("Failed to approve some properties.");
+    }
   };
 
-  const handleBulkReject = (selected: AdminProperty[]) => {
-    const ids = new Set(selected.map((s) => s.id));
-    setProperties((prev) =>
-      prev.map((p) => (ids.has(p.id) ? { ...p, status: "rejected" } : p))
-    );
-    toast.error(`Rejected ${selected.length} properties.`);
+  const handleBulkReject = async (selected: AdminProperty[]) => {
+    try {
+      const ids = new Set(selected.map((s) => s.id));
+      await Promise.allSettled(selected.map((p) => AdminPropertyService.rejectListing(p.id)));
+      setProperties((prev) =>
+        prev.map((p) => (ids.has(p.id) ? { ...p, status: "rejected", isVerified: false } : p))
+      );
+      toast.error(`Rejected ${selected.length} properties.`);
+    } catch {
+      toast.error("Failed to reject some properties.");
+    }
   };
 
-  const handleBulkDelete = (selected: AdminProperty[]) => {
-    const ids = new Set(selected.map((s) => s.id));
-    setProperties((prev) => prev.filter((p) => !ids.has(p.id)));
-    toast.success(`Deleted ${selected.length} properties.`);
+  const handleBulkDelete = async (selected: AdminProperty[]) => {
+    try {
+      const ids = new Set(selected.map((s) => s.id));
+      await Promise.allSettled(selected.map((p) => AdminPropertyService.deleteListing(p.id)));
+      setProperties((prev) => prev.filter((p) => !ids.has(p.id)));
+      toast.success(`Deleted ${selected.length} properties.`);
+    } catch {
+      toast.error("Failed to delete some properties.");
+    }
   };
 
   /* ─── Advanced Filtering ─── */
@@ -332,37 +374,37 @@ export default function AdminPropertiesPage() {
       id: "edit",
       label: "Edit Listing",
       icon: Edit,
-      onClick: (row) => toast.info(`Edit ${row.id}`),
+      onClick: (row) => handleViewProperty(row),
     },
     {
       id: "approve",
-      label: "Approve",
+      label: "Approve / Activate",
       icon: CheckCircle,
       variant: "success",
-      visible: (row) => row.status === "pending" || row.status === "rejected",
+      visible: (row) => row.status !== "approved" && row.status !== "active",
       onClick: (row) => handleApprove(row),
     },
     {
-      id: "reject",
-      label: "Reject",
-      icon: XCircle,
-      variant: "destructive",
-      visible: (row) => row.status === "pending",
-      onClick: (row) => handleReject(row),
-    },
-    {
-      id: "feature",
-      label: "Feature Listing",
-      icon: Sparkles,
-      onClick: (row) => handleFeatureToggle(row),
-    },
-    {
       id: "suspend",
-      label: "Suspend",
+      label: "Suspend Listing",
       icon: Ban,
       variant: "warning",
       visible: (row) => row.status === "approved" || row.status === "active",
       onClick: (row) => handleSuspend(row),
+    },
+    {
+      id: "reject",
+      label: "Reject Listing",
+      icon: XCircle,
+      variant: "destructive",
+      visible: (row) => row.status !== "rejected",
+      onClick: (row) => handleReject(row),
+    },
+    {
+      id: "feature",
+      label: "Feature / Assured",
+      icon: Sparkles,
+      onClick: (row) => handleFeatureToggle(row),
     },
     {
       id: "duplicate",
@@ -373,7 +415,7 @@ export default function AdminPropertiesPage() {
     },
     {
       id: "delete",
-      label: "Delete",
+      label: "Delete Listing",
       icon: Trash2,
       variant: "destructive",
       onClick: (row) => handleDelete(row),
@@ -609,6 +651,10 @@ export default function AdminPropertiesPage() {
         property={selectedProperty}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        onApprove={handleApprove}
+        onSuspend={handleSuspend}
+        onReject={handleReject}
+        onFeatureToggle={handleFeatureToggle}
       />
     </AdminPageContainer>
   );

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { CommandPalette } from "@/components/admin/command-palette";
+import { NotificationDropdown } from "@/components/navigation/notification-dropdown";
 import { useAuth } from "@/providers/auth-provider";
 
 /* ─── Dynamic Auto-Generated Breadcrumbs ─── */
@@ -87,49 +88,6 @@ export function AdminTopNavbar({
   const userEmail = user?.email || "admin@roofonclick.com";
   const userInitial = userName.charAt(0).toUpperCase();
 
-  const [notifications, setNotifications] = React.useState([
-    {
-      id: "1",
-      title: "New Booking #ROC-1091",
-      description: "Student Rahul Verma booked Elite Residency PG.",
-      time: "5 mins ago",
-      read: false,
-    },
-    {
-      id: "2",
-      title: "Settlement Processed",
-      description: "₹22,800 transferred to owner Rajesh Kumar.",
-      time: "1 hour ago",
-      read: false,
-    },
-    {
-      id: "3",
-      title: "New Visit Scheduled",
-      description: "Priya Sharma requested visit for Vijay Nagar PG.",
-      time: "3 hours ago",
-      read: false,
-    },
-    {
-      id: "4",
-      title: "System Update Complete",
-      description: "RoofOnClick Platform updated to v2.4.",
-      time: "1 day ago",
-      read: true,
-    },
-  ]);
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const handleMarkAllRead = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const handleMarkItemRead = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-  };
-
   return (
     <>
       <header className="h-16 border-b border-border/60 bg-card/80 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-4 sticky top-0 z-20 shrink-0 select-none">
@@ -164,104 +122,8 @@ export function AdminTopNavbar({
             </kbd>
           </button>
 
-          {/* Notification Button & Drawer */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsNotifOpen(!isNotifOpen)}
-              aria-label="Notifications"
-              aria-expanded={isNotifOpen}
-              className="p-2.5 rounded-xl border border-border/60 bg-card text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-all cursor-pointer relative flex items-center justify-center min-w-[42px] min-h-[42px]"
-            >
-              <Bell className="w-4 h-4" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-heading font-extrabold flex items-center justify-center ring-2 ring-card animate-pulse">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* Notification Dropdown Panel */}
-            <AnimatePresence>
-              {isNotifOpen && (
-                <>
-                  <div
-                    onClick={() => setIsNotifOpen(false)}
-                    className="fixed inset-0 z-40"
-                  />
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-80 sm:w-88 bg-card border border-border/80 rounded-2xl shadow-xl z-50 p-4 space-y-3 text-left overflow-hidden select-none"
-                  >
-                    <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-heading text-xs font-extrabold text-foreground">Notifications</span>
-                        {unreadCount > 0 && (
-                          <span className="bg-primary/10 text-primary text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-primary/20">
-                            {unreadCount} new
-                          </span>
-                        )}
-                      </div>
-                      {unreadCount > 0 && (
-                        <button
-                          type="button"
-                          onClick={handleMarkAllRead}
-                          className="font-heading text-[10px] font-bold text-primary hover:underline cursor-pointer flex items-center gap-1"
-                        >
-                          <Check className="w-3 h-3" />
-                          <span>Mark All Read</span>
-                        </button>
-                      )}
-                    </div>
-
-                    <div
-                      onWheel={(e) => e.stopPropagation()}
-                      onTouchMove={(e) => e.stopPropagation()}
-                      className="space-y-2 text-xs font-body max-h-[320px] overflow-y-auto overscroll-contain touch-auto pr-1 scrollbar-thin"
-                    >
-                      {notifications.length === 0 ? (
-                        <div className="py-8 text-center space-y-2">
-                          <Bell className="w-7 h-7 text-muted-foreground/40 mx-auto" />
-                          <p className="font-heading text-xs font-bold text-muted-foreground">No notifications yet</p>
-                        </div>
-                      ) : (
-                        notifications.map((item) => (
-                          <div
-                            key={item.id}
-                            onClick={() => handleMarkItemRead(item.id)}
-                            className={cn(
-                              "p-3 rounded-xl border transition-all cursor-pointer space-y-1 relative group text-left",
-                              item.read
-                                ? "bg-card/40 border-border/40 hover:bg-card/80"
-                                : "bg-primary/5 border-primary/25 hover:bg-primary/10"
-                            )}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <span className={cn("font-heading text-xs truncate", item.read ? "font-bold text-foreground/80" : "font-extrabold text-primary")}>
-                                {item.title}
-                              </span>
-                              <span className="text-[9px] text-muted-foreground shrink-0 font-body">
-                                {item.time}
-                              </span>
-                            </div>
-                            <p className="text-muted-foreground text-[11px] font-body leading-tight line-clamp-2">
-                              {item.description}
-                            </p>
-                            {!item.read && (
-                              <span className="absolute top-3 right-2 w-1.5 h-1.5 rounded-full bg-primary" />
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
+          {/* Unified Real-Time Notifications Dropdown */}
+          <NotificationDropdown isOpen={isNotifOpen} onOpenChange={setIsNotifOpen} />
 
           {/* Admin Profile Menu */}
           <div className="relative">

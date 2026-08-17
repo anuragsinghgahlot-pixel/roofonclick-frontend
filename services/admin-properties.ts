@@ -153,6 +153,18 @@ export class AdminPropertyService {
     await apiClient.put(`/api/admin/listings/${id}/status`, { status: "rejected" });
   }
 
+  static async suspendListing(id: string): Promise<void> {
+    await apiClient.put(`/api/admin/listings/${id}/status`, { status: "inactive" });
+  }
+
+  static async deleteListing(id: string): Promise<void> {
+    await apiClient.put(`/api/admin/listings/${id}/status`, { status: "deleted" });
+  }
+
+  static async toggleVerifyListing(id: string): Promise<void> {
+    await apiClient.put(`/api/admin/listings/${id}/verify`);
+  }
+
   static getAllProperties(): AdminProperty[] {
     return MOCK_ADMIN_PROPERTIES;
   }

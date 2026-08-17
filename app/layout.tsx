@@ -28,6 +28,7 @@ export const metadata: Metadata = {
 
 import { GuestAuthPromptModal } from "@/components/modals/guest-auth-prompt-modal";
 import { PlatformReviewModal } from "@/components/modals/platform-review-modal";
+import { PushNotificationPrompt } from "@/components/shared/push-notification-prompt";
 import { Toaster } from "@/components/ui/toaster";
 import { CompareProvider } from "@/providers/compare-provider";
 import { CompareBar } from "@/components/compare/compare-bar";
@@ -70,7 +71,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-body bg-background text-foreground">
+      <body className="font-body bg-background text-foreground" suppressHydrationWarning>
         <NavigationHandler />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
@@ -83,6 +84,7 @@ export default function RootLayout({
                       <CompareBar />
                       <GuestAuthPromptModal />
                       <PlatformReviewModal />
+                      <PushNotificationPrompt />
                       <Toaster />
                     </NavigationProvider>
                   </Suspense>
