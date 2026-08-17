@@ -60,32 +60,46 @@ type TabType = "All" | "Unread" | "Bookings" | "Enquiries" | "Wishlist" | "Updat
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = React.useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = React.useState<number>(0);
+  const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [activeTab, setActiveTab] = React.useState<TabType>("All");
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  const refreshList = React.useCallback(() => {
-    setNotifications(NotificationService.getNotifications());
+  const refreshList = React.useCallback(async () => {
+    try {
+      const res = await NotificationService.fetchNotifications({ limit: 50 });
+      setNotifications(res.notifications);
+      setUnreadCount(res.unreadCount);
+    } catch {
+      // Ignored
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   React.useEffect(() => {
     refreshList();
   }, [refreshList]);
 
-  const handleMarkRead = (id: string) => {
-    NotificationService.markAsRead(id);
-    refreshList();
+  const handleMarkRead = async (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    );
+    setUnreadCount((c) => Math.max(0, c - 1));
+    await NotificationService.markAsRead(id);
   };
 
-  const handleMarkAllRead = () => {
-    NotificationService.markAllAsRead();
+  const handleMarkAllRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    setUnreadCount(0);
+    await NotificationService.markAllAsRead();
     showToast.success("All Marked as Read", "Notifications updated.");
-    refreshList();
   };
 
-  const handleDelete = (id: string) => {
-    NotificationService.deleteNotification(id);
+  const handleDelete = async (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    await NotificationService.deleteNotification(id);
     showToast.info("Notification Removed", "Notification item deleted.");
-    refreshList();
   };
 
   const filteredNotifications = React.useMemo(() => {
@@ -106,8 +120,6 @@ export default function NotificationsPage() {
       return true;
     });
   }, [notifications, activeTab, searchQuery]);
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
     <div className="relative flex flex-col min-h-[100dvh] bg-background">

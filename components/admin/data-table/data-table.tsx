@@ -893,7 +893,10 @@ export function DataTable<T>({
                   <button
                     key={action.id}
                     type="button"
-                    onClick={() => action.onClick(selectedRowData)}
+                    onClick={() => {
+                      action.onClick(selectedRowData);
+                      setSelectedRows(new Set());
+                    }}
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-heading font-bold transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
                       variantClasses[action.variant || "default"]
@@ -953,10 +956,15 @@ function RowActionMenu<T>({
   if (visibleActions.length === 0) return null;
 
   return (
-    <div ref={menuRef} className="relative inline-block">
+    <div ref={menuRef} className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
       <button
         type="button"
-        onClick={onToggle}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggle();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
         aria-label="Row actions"
         aria-expanded={isOpen}
         aria-haspopup="true"
@@ -973,14 +981,15 @@ function RowActionMenu<T>({
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
             transition={{ duration: 0.12 }}
             role="menu"
-            className="absolute right-0 top-[calc(100%+4px)] w-44 bg-card border border-border/60 rounded-2xl shadow-lg py-1.5 z-50"
+            onMouseDown={(e) => e.stopPropagation()}
+            className="absolute right-0 top-[calc(100%+4px)] w-44 bg-card border border-border/60 rounded-2xl shadow-xl py-1.5 z-[100] backdrop-blur-md"
           >
             {visibleActions.map((action, idx) => {
               const variantClasses = {
-                default: "text-foreground hover:bg-muted/30",
+                default: "text-foreground hover:bg-muted/40",
                 destructive: "text-destructive hover:bg-destructive/10",
-                success: "text-emerald-600 hover:bg-emerald-500/10",
-                warning: "text-amber-600 hover:bg-amber-500/10",
+                success: "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10",
+                warning: "text-amber-600 dark:text-amber-400 hover:bg-amber-500/10",
               };
 
               return (
@@ -991,14 +1000,23 @@ function RowActionMenu<T>({
                   <button
                     type="button"
                     role="menuitem"
-                    onClick={() => { action.onClick(row); onClose(); }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onClose();
+                      action.onClick(row);
+                    }}
                     className={cn(
-                      "flex items-center gap-2.5 w-full px-4 py-2 text-xs font-heading font-semibold transition-colors cursor-pointer outline-none focus-visible:bg-muted/30",
+                      "flex items-center gap-2.5 w-full px-4 py-2 text-xs font-heading font-semibold transition-colors cursor-pointer outline-none focus-visible:bg-muted/30 text-left select-none",
                       variantClasses[action.variant || "default"]
                     )}
                   >
-                    {action.icon && <action.icon className="w-3.5 h-3.5" />}
-                    <span>{action.label}</span>
+                    {action.icon && <action.icon className="w-3.5 h-3.5 shrink-0" />}
+                    <span className="truncate">{action.label}</span>
                   </button>
                 </React.Fragment>
               );

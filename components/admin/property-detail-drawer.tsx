@@ -55,10 +55,18 @@ export function PropertyDetailDrawer({
   property,
   isOpen,
   onClose,
+  onApprove,
+  onSuspend,
+  onReject,
+  onFeatureToggle,
 }: {
   property: AdminProperty | null;
   isOpen: boolean;
   onClose: () => void;
+  onApprove?: (property: AdminProperty) => void;
+  onSuspend?: (property: AdminProperty) => void;
+  onReject?: (property: AdminProperty) => void;
+  onFeatureToggle?: (property: AdminProperty) => void;
 }) {
   const [activeTab, setActiveTab] = React.useState<TabId>("overview");
 
@@ -414,6 +422,52 @@ export function PropertyDetailDrawer({
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* ═══ Action Footer ═══ */}
+            <div className="p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                {onFeatureToggle && (
+                  <button
+                    type="button"
+                    onClick={() => onFeatureToggle(property)}
+                    className="px-3 py-2 rounded-xl border border-border/60 hover:bg-card active:scale-95 text-xs font-heading font-bold text-foreground transition-all cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <span>{property.isFeatured ? "Unfeature" : "Feature"}</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {onReject && property.status !== "rejected" && (
+                  <button
+                    type="button"
+                    onClick={() => onReject(property)}
+                    className="px-3.5 py-2 rounded-xl bg-destructive/10 hover:bg-destructive/20 active:scale-95 text-destructive text-xs font-heading font-bold transition-all cursor-pointer"
+                  >
+                    Reject
+                  </button>
+                )}
+                {onSuspend && (property.status === "approved" || property.status === "active") && (
+                  <button
+                    type="button"
+                    onClick={() => onSuspend(property)}
+                    className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-700 dark:text-amber-400 text-xs font-heading font-bold transition-all cursor-pointer"
+                  >
+                    Suspend
+                  </button>
+                )}
+                {onApprove && property.status !== "approved" && property.status !== "active" && (
+                  <button
+                    type="button"
+                    onClick={() => onApprove(property)}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-heading font-extrabold shadow-sm transition-all cursor-pointer"
+                  >
+                    Approve & Activate
+                  </button>
+                )}
+              </div>
             </div>
           </motion.div>
         </>
