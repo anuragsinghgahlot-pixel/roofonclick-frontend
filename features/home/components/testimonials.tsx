@@ -110,6 +110,7 @@ function TestimonialCard({ t }: { t: TestimonialItem }) {
         {t.review.length > 90 && (
           <button
             type="button"
+            suppressHydrationWarning
             onClick={() => setIsExpanded((prev) => !prev)}
             className="font-heading text-[11px] font-extrabold text-primary hover:text-secondary transition-colors cursor-pointer text-left self-start"
           >
@@ -174,6 +175,7 @@ export function Testimonials() {
           <div className="flex items-center justify-between mt-5">
             <button
               type="button"
+              suppressHydrationWarning
               onClick={prev}
               aria-label="Previous review"
               className="w-11 h-11 rounded-full border border-border/80 bg-card flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-all duration-200 active:scale-90 shadow-sm"
@@ -187,6 +189,7 @@ export function Testimonials() {
                 <button
                   key={idx}
                   type="button"
+                  suppressHydrationWarning
                   onClick={() => setActiveIndex(idx)}
                   aria-label={`Go to review ${idx + 1}`}
                   className={`rounded-full transition-all duration-300 ${
@@ -198,6 +201,7 @@ export function Testimonials() {
 
             <button
               type="button"
+              suppressHydrationWarning
               onClick={next}
               aria-label="Next review"
               className="w-11 h-11 rounded-full border border-border/80 bg-card flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-all duration-200 active:scale-90 shadow-sm"

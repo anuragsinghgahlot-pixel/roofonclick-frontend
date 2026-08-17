@@ -90,6 +90,7 @@ export function PartnerCTA() {
             {/* Get Started / Explore */}
             <motion.button
               type="button"
+              suppressHydrationWarning
               onClick={handleGetStarted}
               whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
@@ -102,6 +103,7 @@ export function PartnerCTA() {
             {/* List Property */}
             <motion.button
               type="button"
+              suppressHydrationWarning
               onClick={handleListProperty}
               whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
