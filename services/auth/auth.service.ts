@@ -1,102 +1,97 @@
 /**
- * AuthService — Password Reset helpers.
- *
- * NOTE: The backend does not currently have a forgot-password/OTP endpoint.
- * These methods are stubs that surface a "coming soon" message.
- * They will be wired to real API calls once the backend adds this feature.
+ * AuthService — Password Reset via Resend email link.
  */
 
-export interface ResetState {
-  email: string;
-  emailOrPhone: string;
-  method: "email" | "phone";
-  isVerified: boolean;
-}
+import { apiClient } from "@/lib/api-client";
 
 class AuthServiceImpl {
   /**
-   * Helper to mask a recovery destination (email or phone)
+   * Mask an email for display e.g. "ad****@gmail.com"
    */
-  public maskValue(value: string, method: "email" | "phone"): string {
-    if (!value) return "";
-    if (method === "email") {
-      const [local, domain] = value.split("@");
-      if (!local || !domain) return value;
-      if (local.length <= 2) return `${local[0]}***@${domain}`;
-      return `${local.substring(0, 2)}****@${domain}`;
-    } else {
-      const cleaned = value.replace(/\D/g, "");
-      if (cleaned.length < 4) return value;
-      return `${cleaned.substring(0, 2)}******${cleaned.substring(cleaned.length - 2)}`;
-    }
+  public maskEmail(email: string): string {
+    if (!email) return "";
+    const [local, domain] = email.split("@");
+    if (!local || !domain) return email;
+    if (local.length <= 2) return `${local[0]}***@${domain}`;
+    return `${local.substring(0, 2)}****@${domain}`;
   }
 
   /**
-   * Request Password Reset — STUB (backend endpoint not yet available)
+   * POST /api/auth/forgot-password
    */
   public async requestPasswordReset(
-    emailOrPhone: string,
-    method: "email" | "phone"
+    email: string
   ): Promise<{ success: boolean; message: string }> {
-    const cleanInput = emailOrPhone.trim();
-    if (!cleanInput) {
-      return {
-        success: false,
-        message: `Please enter your ${method === "email" ? "email address" : "phone number"}.`,
-      };
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      return { success: false, message: "Please enter your email address." };
     }
-    // TODO: Call POST /api/auth/forgot-password once backend implements it
-    return {
-      success: false,
-      message:
-        "Password reset via OTP is coming soon. Please contact support to reset your password.",
-    };
+    try {
+      const res = await apiClient.post<null>("/api/auth/forgot-password", { email: cleanEmail });
+      return { success: true, message: res.message };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      return { success: false, message: msg };
+    }
   }
 
   /**
-   * Resend OTP — STUB
+   * GET /api/auth/verify-reset-token?token=
    */
+  public async verifyResetToken(
+    token: string
+  ): Promise<{ valid: boolean; message: string }> {
+    if (!token) {
+      return { valid: false, message: "No reset token provided." };
+    }
+    try {
+      await apiClient.get(`/api/auth/verify-reset-token?token=${encodeURIComponent(token)}`);
+      return { valid: true, message: "Token is valid." };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Reset link is invalid or has expired.";
+      return { valid: false, message: msg };
+    }
+  }
+
+  /**
+   * POST /api/auth/reset-password
+   */
+  public async resetPassword(
+    token: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> {
+    if (!token || !newPassword) {
+      return { success: false, message: "Token and new password are required." };
+    }
+    try {
+      const res = await apiClient.post<null>("/api/auth/reset-password", {
+        token,
+        password: newPassword,
+      });
+      return { success: true, message: res.message };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      return { success: false, message: msg };
+    }
+  }
+  /** @deprecated OTP flow replaced by email-link reset. Kept for legacy verify-otp page compatibility. */
+  public getActiveResetState(): null { return null; }
+
+  /** @deprecated */
   public async resendOTP(): Promise<{ success: boolean; message: string }> {
-    return {
-      success: false,
-      message: "Password reset via OTP is coming soon.",
-    };
+    return { success: false, message: "OTP reset is no longer supported. Use the email link flow." };
   }
 
-  /**
-   * Verify OTP — STUB
-   */
+  /** @deprecated */
   public async verifyOTP(
     _emailOrPhone: string,
     _otp: string
   ): Promise<{ success: boolean; token?: string; message: string }> {
-    return {
-      success: false,
-      message: "OTP verification is coming soon.",
-    };
+    return { success: false, message: "OTP reset is no longer supported. Use the email link flow." };
   }
-
-  /**
-   * Reset Password — STUB
-   */
-  public async resetPassword(
-    _newPassword: string
-  ): Promise<{ success: boolean; message: string }> {
-    return {
-      success: false,
-      message: "Password reset is coming soon.",
-    };
-  }
-
-  /**
-   * Legacy compat: returns null since there is no active reset session.
-   */
-  public getActiveResetState(): null {
-    return null;
-  }
-
-  /** Legacy compat: no-op */
-  public clearResetState(): void {}
 }
 
 export const AuthService = new AuthServiceImpl();
+
+
+

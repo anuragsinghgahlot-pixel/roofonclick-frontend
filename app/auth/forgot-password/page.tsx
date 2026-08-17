@@ -2,51 +2,41 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Phone, ArrowLeft, KeyRound, Sparkles, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Mail, ArrowLeft, KeyRound, Send, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/navigation/navbar";
 import Footer from "@/components/navigation/footer";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
 import { AuthService } from "@/services/auth/auth.service";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const [method, setMethod] = React.useState<"email" | "phone">("email");
-  const [inputValue, setInputValue] = React.useState("");
+  const [email, setEmail] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [sent, setSent] = React.useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    const cleanInput = inputValue.trim();
-    if (!cleanInput) {
-      setError(`Please enter your ${method === "email" ? "email address" : "phone number"}.`);
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      setError("Please enter your email address.");
       return;
     }
-
-    if (method === "email") {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanInput.toLowerCase())) {
-        setError("Please enter a valid email address format.");
-        return;
-      }
-    } else {
-      if (!/^\d{10}$/.test(cleanInput)) {
-        setError("Phone number must be exactly 10 digits and numeric only.");
-        return;
-      }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setError("Please enter a valid email address.");
+      return;
     }
 
     setIsLoading(true);
     try {
-      const res = await AuthService.requestPasswordReset(cleanInput, method);
+      const res = await AuthService.requestPasswordReset(cleanEmail);
       if (res.success) {
-        toast.success(res.message);
-        router.push("/auth/verify-otp");
+        setSent(true);
       } else {
         setError(res.message);
       }
@@ -70,125 +60,137 @@ export default function ForgotPasswordPage() {
               transition={{ duration: 0.5 }}
               className="bg-card border border-border/80 p-6 sm:p-8 rounded-3xl shadow-premium text-center space-y-6"
             >
-              {/* Icon & Title */}
-              <div className="space-y-2">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto shadow-sm">
-                  <KeyRound className="w-7 h-7" />
-                </div>
-                <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary block">
-                  Account Recovery
-                </span>
-                <h1 className="font-heading text-2xl font-extrabold text-primary tracking-tight">
-                  Forgot Password?
-                </h1>
-                <p className="font-body text-xs text-muted-foreground leading-relaxed">
-                  Choose your recovery method and enter details below. We will send a 6-digit OTP code to reset your password.
-                </p>
-              </div>
+              <AnimatePresence mode="wait">
+                {/* ── Success: Check inbox ── */}
+                {sent ? (
+                  <motion.div
+                    key="success"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="space-y-5 py-2"
+                  >
+                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="w-8 h-8" />
+                    </div>
+                    <div className="space-y-2">
+                      <h1 className="font-heading text-2xl font-extrabold text-foreground">
+                        Check your inbox
+                      </h1>
+                      <p className="font-body text-sm text-muted-foreground leading-relaxed">
+                        If an account with{" "}
+                        <span className="text-primary font-semibold">
+                          {AuthService.maskEmail(email)}
+                        </span>{" "}
+                        exists, we&apos;ve sent a password reset link. The link expires in{" "}
+                        <strong className="text-foreground">15 minutes</strong>.
+                      </p>
+                    </div>
 
-              {/* Method Selection Toggle */}
-              <div className="flex border border-border/80 rounded-2xl p-1 bg-muted/20 relative z-10 select-none">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMethod("email");
-                    setInputValue("");
-                    setError(null);
-                  }}
-                  className={cn(
-                    "flex-1 py-2 text-xs font-bold font-heading rounded-xl transition-all cursor-pointer",
-                    method === "email"
-                      ? "bg-card text-primary shadow-sm border border-border/50"
-                      : "text-muted-foreground hover:text-primary"
-                  )}
-                >
-                  Email Address
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMethod("phone");
-                    setInputValue("");
-                    setError(null);
-                  }}
-                  className={cn(
-                    "flex-1 py-2 text-xs font-bold font-heading rounded-xl transition-all cursor-pointer",
-                    method === "phone"
-                      ? "bg-card text-primary shadow-sm border border-border/50"
-                      : "text-muted-foreground hover:text-primary"
-                  )}
-                >
-                  Phone Number
-                </button>
-              </div>
+                    {/* ── Check Spam Callout ── */}
+                    <div className="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-4 text-left flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="font-heading text-xs font-bold text-amber-500">
+                          Can&apos;t find it? Check your Spam or Junk folder
+                        </p>
+                        <p className="font-body text-[11px] text-muted-foreground leading-relaxed">
+                          Automated messages sometimes land in spam. If found there, please mark it as <strong className="text-foreground">&ldquo;Not Spam&rdquo;</strong> so future emails reach your inbox directly.
+                        </p>
+                      </div>
+                    </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-4 text-left">
-                <div className="space-y-1.5">
-                  <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
-                    {method === "email" ? "Email Address" : "Phone Number"} <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative flex items-center">
-                    {method === "email" ? (
-                      <Mail className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
-                    ) : (
-                      <Phone className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
-                    )}
-                    <input
-                      type={method === "email" ? "email" : "tel"}
-                      required
-                      value={inputValue}
-                      onChange={(e) => {
-                        if (method === "phone") {
-                          setInputValue(e.target.value.replace(/[^0-9]/g, "").slice(0, 10));
-                        } else {
-                          setInputValue(e.target.value);
-                        }
-                        setError(null);
-                      }}
-                      placeholder={method === "email" ? "e.g. alex@example.com" : "e.g. 9876543210"}
-                      className="w-full bg-background border border-border/80 rounded-xl pl-10 pr-4 py-3 text-xs font-semibold font-body text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                    />
-                  </div>
-                </div>
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => { setSent(false); setEmail(""); }}
+                        className="font-heading text-xs font-bold text-primary hover:text-accent transition-colors cursor-pointer"
+                      >
+                        Try a different email
+                      </button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  /* ── Form ── */
+                  <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                    <div className="space-y-2">
+                      <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto shadow-sm">
+                        <KeyRound className="w-7 h-7" />
+                      </div>
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary block">
+                        Account Recovery
+                      </span>
+                      <h1 className="font-heading text-2xl font-extrabold text-primary tracking-tight">
+                        Forgot Password?
+                      </h1>
+                      <p className="font-body text-xs text-muted-foreground leading-relaxed">
+                        Enter your email and we&apos;ll send you a secure link to reset your password.
+                      </p>
+                    </div>
 
-                {error && (
-                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 font-body text-xs font-semibold">
-                    {error}
-                  </div>
+                    <form onSubmit={handleSubmit} className="space-y-4 text-left">
+                      <div className="space-y-1.5">
+                        <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
+                          Email Address <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="relative flex items-center">
+                          <Mail className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
+                          <input
+                            id="forgot-email"
+                            type="email"
+                            required
+                            autoComplete="email"
+                            value={email}
+                            onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                            placeholder="e.g. alex@example.com"
+                            className={cn(
+                              "w-full bg-background border border-border/80 rounded-xl pl-10 pr-4 py-3 text-xs font-semibold font-body text-foreground",
+                              "focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all",
+                              error && "border-rose-500/60"
+                            )}
+                          />
+                        </div>
+                      </div>
+
+                      {error && (
+                        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 font-body text-xs font-semibold">
+                          {error}
+                        </div>
+                      )}
+
+                      <button
+                        id="forgot-password-submit"
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full bg-primary hover:bg-accent text-primary-foreground hover:text-accent-foreground py-3.5 rounded-xl font-heading text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Sending link...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            <span>Send Reset Link</span>
+                          </>
+                        )}
+                      </button>
+                    </form>
+
+                    <div className="pt-2 border-t border-border/50">
+                      <button
+                        type="button"
+                        data-no-intercept="true"
+                        onClick={() => router.push("/login")}
+                        className="inline-flex items-center gap-1.5 text-xs font-heading font-bold text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        <span>Back to Sign In</span>
+                      </button>
+                    </div>
+                  </motion.div>
                 )}
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-primary hover:bg-accent text-primary-foreground hover:text-accent-foreground py-3.5 rounded-xl font-heading text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Sending OTP...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      <span>Send OTP Code</span>
-                    </>
-                  )}
-                </button>
-              </form>
-
-              {/* Back to Login */}
-              <div className="pt-2 border-t border-border/50">
-                <button
-                  type="button"
-                  data-no-intercept="true"
-                  onClick={() => router.push("/login")}
-                  className="inline-flex items-center gap-1.5 text-xs font-heading font-bold text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Sign In</span>
-                </button>
-              </div>
+              </AnimatePresence>
             </motion.div>
           </Container>
         </Section>

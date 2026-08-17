@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 export function NavigationHandler() {
   const router = useRouter();
 
-  // ── Auto-recovery for Deployment ChunkLoadErrors ─────────────────────────
   React.useEffect(() => {
     const handleChunkError = (event: ErrorEvent | PromiseRejectionEvent) => {
       const errorMsg =
@@ -19,7 +18,11 @@ export function NavigationHandler() {
         const now = Date.now();
         if (!lastReload || now - Number(lastReload) > 10000) {
           sessionStorage.setItem("chunk_reload_ts", String(now));
-          window.location.reload();
+          // Navigate to the clean pathname WITHOUT the _rsc query param.
+          // window.location.reload() would reload the RSC fetch URL (?_rsc=xxx)
+          // which renders raw RSC flight payload as text instead of HTML.
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.location.href = cleanUrl;
         }
       }
     };
