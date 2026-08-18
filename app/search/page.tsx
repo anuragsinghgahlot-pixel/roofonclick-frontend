@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { Bookmark } from "lucide-react";
 import Navbar from "@/components/navigation/navbar";
@@ -21,45 +21,60 @@ import { RecommendedSection } from "@/components/recommendations/recommended-sec
 
 import { ListingsAPI } from "@/services/listings/listings.api";
 import { Property } from "@/services/property/property.types";
+import { useCity } from "@/providers/city-provider";
 
 // Helper to format slug to title case / display name
 function getDisplayTitle(slug: string): string {
+  const decoded = decodeURIComponent(slug).replace(/[-_+]/g, " ").trim();
   const mapping: { [key: string]: string } = {
-    "vijay-nagar": "Vijay Nagar",
+    "vijay nagar": "Vijay Nagar",
     "palasia": "Palasia",
     "bhawarkuan": "Bhawarkuan",
-    "iet-davv": "IET DAVV",
-    "medanta-hospital": "Medanta Hospital",
-    "c21-mall": "C21 Mall",
+    "iet davv": "IET DAVV",
+    "medanta hospital": "Medanta Hospital",
+    "c21 mall": "C21 Mall",
   };
-  return mapping[slug.toLowerCase()] || slug.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+  return mapping[decoded.toLowerCase()] || decoded.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 }
 
 function SearchPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const locationSlug = searchParams.get("location") || searchParams.get("area");
+  const { selectedCity, setCity } = useCity();
+  const cityParam = searchParams.get("city");
+  const locationSlug = searchParams.get("location") || searchParams.get("area") || searchParams.get("q");
   const typeParam = searchParams.get("type") || searchParams.get("category");
 
-  const [selectedType, setSelectedType] = React.useState<string>(() => {
-    if (!typeParam) return "All";
-    if (typeParam.toLowerCase().includes("hostel")) return "Hostel";
-    if (typeParam.toLowerCase().includes("pg")) return "PG";
-    if (typeParam.toLowerCase().includes("studio") || typeParam.toLowerCase().includes("rk")) return "Studio/RK";
-    if (typeParam.toLowerCase().includes("bhk") || typeParam.toLowerCase().includes("apartment")) return "Apartment";
-    return "All";
+  // Sync city param from URL if present
+  React.useEffect(() => {
+    if (cityParam && cityParam.toLowerCase() !== selectedCity.id.toLowerCase()) {
+      setCity(cityParam);
+    }
+  }, [cityParam, selectedCity.id, setCity]);
+
+  const [selectedSidebarTypes, setSelectedSidebarTypes] = React.useState<string[]>(() => {
+    if (!typeParam) return [];
+    const t = typeParam.toLowerCase().trim();
+    if (t.includes("hostel")) return ["Hostel"];
+    if (t.includes("pg")) return ["PG"];
+    if (t.includes("studio") || t.includes("rk")) return ["Studio Apartment"];
+    if (t.includes("bhk") || t.includes("apartment")) return ["Apartment"];
+    return [typeParam];
   });
 
   React.useEffect(() => {
     if (typeParam) {
-      if (typeParam.toLowerCase().includes("hostel")) setSelectedType("Hostel");
-      else if (typeParam.toLowerCase().includes("pg")) setSelectedType("PG");
-      else if (typeParam.toLowerCase().includes("studio") || typeParam.toLowerCase().includes("rk")) setSelectedType("Studio/RK");
-      else if (typeParam.toLowerCase().includes("bhk") || typeParam.toLowerCase().includes("apartment")) setSelectedType("Apartment");
+      const t = typeParam.toLowerCase().trim();
+      if (t.includes("hostel")) setSelectedSidebarTypes(["Hostel"]);
+      else if (t.includes("pg")) setSelectedSidebarTypes(["PG"]);
+      else if (t.includes("studio") || t.includes("rk")) setSelectedSidebarTypes(["Studio Apartment"]);
+      else if (t.includes("bhk") || t.includes("apartment")) setSelectedSidebarTypes(["Apartment"]);
+      else setSelectedSidebarTypes([typeParam]);
     }
   }, [typeParam]);
+
   const [isSaveModalOpen, setIsSaveModalOpen] = React.useState(false);
   const [selectedGenders, setSelectedGenders] = React.useState<string[]>([]);
-  const [selectedSidebarTypes, setSelectedSidebarTypes] = React.useState<string[]>([]);
   const [selectedBhk, setSelectedBhk] = React.useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = React.useState<string | null>(null);
   const [selectedAmenities, setSelectedAmenities] = React.useState<string[]>([]);
@@ -133,7 +148,10 @@ function SearchPageContent() {
     setSelectedBudget(null);
     setSelectedAmenities([]);
     setSelectedSharing([]);
-  }, []);
+    const base = `/search?city=${encodeURIComponent(selectedCity.id)}`;
+    const url = locationSlug ? `${base}&location=${encodeURIComponent(locationSlug)}` : base;
+    router.replace(url);
+  }, [router, selectedCity.id, locationSlug]);
 
   const hasActiveFilters = React.useMemo(() => {
     return (
@@ -147,65 +165,110 @@ function SearchPageContent() {
   }, [selectedGenders, selectedSidebarTypes, selectedBhk, selectedBudget, selectedAmenities, selectedSharing]);
 
   const [dbProperties, setDbProperties] = React.useState<Property[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     let isMounted = true;
-    ListingsAPI.getListings()
+    setIsLoading(true);
+    ListingsAPI.getListings({ city: selectedCity.name })
       .then((res) => {
-        if (isMounted) setDbProperties(res.listings || []);
+        if (isMounted) {
+          setDbProperties(res.listings || []);
+          setIsLoading(false);
+        }
       })
       .catch(() => {
-        if (isMounted) setDbProperties([]);
+        if (isMounted) {
+          setDbProperties([]);
+          setIsLoading(false);
+        }
       });
     return () => { isMounted = false; };
-  }, []);
+  }, [selectedCity.name]);
 
   // Filter properties based on URL slug, selected top type, selected genders, selected sidebar types, bhk tags, budget range, selected amenities AND sharing options
   const filteredProperties = React.useMemo(() => {
     let result = [...dbProperties];
 
-    // 1. Filter by location/area slug
-    if (locationSlug) {
-      const targetSlug = locationSlug.toLowerCase().trim();
-      const targetClean = targetSlug.replace(/[-_]/g, " ");
+    // Filter by active city
+    if (selectedCity.name) {
+      const cityName = selectedCity.name.toLowerCase();
       result = result.filter((p: any) => {
-        const loc = (p.area || p.location || p.city || "").toLowerCase();
-        return loc.includes(targetClean) || targetClean.includes(loc) || loc.replace(/\s+/g, "-") === targetSlug;
+        const pCity = (p.city || "").toLowerCase();
+        return !pCity || pCity.includes(cityName) || cityName.includes(pCity);
       });
     }
 
-    // 2. Filter by selected top property type chip
-    if (selectedType !== "All") {
-      result = result.filter((p: any) => (p.propertyType || p.type) === selectedType);
+    // 1. Filter by location / search query slug (URL-safe & space-normalized)
+    if (locationSlug) {
+      const targetSlug = decodeURIComponent(locationSlug).toLowerCase().trim();
+      const targetClean = targetSlug.replace(/[-_+]/g, " ").replace(/\s+/g, " ").trim();
+      
+      // If the location slug is the city itself, it represents a city-wide search
+      const isCityWideSearch =
+        targetClean === selectedCity.name.toLowerCase() ||
+        targetClean === selectedCity.id.toLowerCase() ||
+        targetClean === "all" ||
+        targetClean === "all areas" ||
+        targetClean === "all locations";
+
+      if (!isCityWideSearch) {
+        result = result.filter((p: any) => {
+          const loc = (p.area || p.location || p.city || "").toLowerCase().replace(/[-_+]/g, " ").trim();
+          const title = (p.propertyName || p.name || "").toLowerCase().replace(/[-_+]/g, " ").trim();
+          const address = (p.address || "").toLowerCase().replace(/[-_+]/g, " ").trim();
+          const landmark = (p.landmark || "").toLowerCase().replace(/[-_+]/g, " ").trim();
+          const desc = (p.description || "").toLowerCase().replace(/[-_+]/g, " ").trim();
+          return (
+            loc.includes(targetClean) ||
+            targetClean.includes(loc) ||
+            loc.replace(/\s+/g, "-") === targetSlug ||
+            loc.replace(/\s+/g, "+") === targetSlug ||
+            title.includes(targetClean) ||
+            address.includes(targetClean) ||
+            landmark.includes(targetClean) ||
+            desc.includes(targetClean)
+          );
+        });
+      }
     }
 
-    // 3. Filter by selected genders
+    // 2. Filter by selected property types (PG / Hostel / Apartment / Studio, case-insensitive)
+    if (selectedSidebarTypes.length > 0) {
+      const lowerSidebar = selectedSidebarTypes.map((t) => t.toLowerCase().trim());
+      result = result.filter((p: any) => {
+        const pType = (p.propertyTypeGroup || p.propertyType || p.type || "").toLowerCase().trim();
+        return lowerSidebar.some((st) => {
+          if (st.includes("hostel")) return pType.includes("hostel");
+          if (st.includes("pg")) return pType.includes("pg");
+          if (st.includes("studio") || st.includes("rk")) return pType.includes("studio") || pType.includes("rk");
+          if (st.includes("apartment") || st.includes("bhk")) return pType.includes("apartment") || pType.includes("bhk") || pType.includes("flat");
+          return pType.includes(st) || st.includes(pType);
+        });
+      });
+    }
+
+    // 3. Filter by selected genders (case-insensitive)
     if (selectedGenders.length > 0) {
-      if (selectedGenders.includes("boys") && selectedGenders.includes("girls")) {
-        result = result.filter(
-          (p: any) => {
-            const g = (p.gender || "").toLowerCase();
-            return g.includes("boy") || g.includes("girl") || g.includes("co");
-          }
-        );
-      } else if (selectedGenders.includes("boys")) {
+      const lowerGenders = selectedGenders.map((g) => g.toLowerCase().trim());
+      if (lowerGenders.includes("boys") && lowerGenders.includes("girls")) {
+        result = result.filter((p: any) => {
+          const g = (p.gender || "").toLowerCase();
+          return g.includes("boy") || g.includes("girl") || g.includes("co") || g.includes("unisex");
+        });
+      } else if (lowerGenders.includes("boys")) {
         result = result.filter((p: any) => (p.gender || "").toLowerCase().includes("boy"));
-      } else if (selectedGenders.includes("girls")) {
+      } else if (lowerGenders.includes("girls")) {
         result = result.filter((p: any) => (p.gender || "").toLowerCase().includes("girl"));
       }
     }
 
-    // 4. Filter by selected sidebar property types (PG / Hostel)
-    if (selectedSidebarTypes.length > 0) {
-      result = result.filter((p: any) => selectedSidebarTypes.includes(p.propertyTypeGroup || p.propertyType || p.type));
-    }
-
-    // 4.5. Filter by BHK configuration tags (RK, Studio, 1 BHK, 2 BHK, 3 BHK, 4+ BHK)
+    // 4.5. Filter by BHK configuration tags (RK, Studio, 1 BHK, 2 BHK, 3 BHK, 4+ BHK, case-insensitive)
     if (selectedBhk.length > 0) {
       result = result.filter((p: any) => {
         const pText = ((p.propertyName || p.name || "") + " " + (p.propertyType || p.type || "") + " " + (p.bhk || "")).toLowerCase();
         return selectedBhk.some((bhk) => {
-          const bLower = bhk.toLowerCase();
+          const bLower = bhk.toLowerCase().trim();
           if (bLower === "rk") return pText.includes("rk") || pText.includes("1rk");
           if (bLower === "studio") return pText.includes("studio");
           if (bLower === "1 bhk") return pText.includes("1 bhk") || pText.includes("1bhk");
@@ -232,18 +295,25 @@ function SearchPageContent() {
       }
     }
 
-    // 6. Filter by selected amenities (AND logic)
+    // 6. Filter by selected amenities (AND logic, case-insensitive)
     if (selectedAmenities.length > 0) {
-      result = result.filter((p) =>
-        selectedAmenities.every((amenity) => (p.amenities || []).includes(amenity))
-      );
+      result = result.filter((p) => {
+        const pAmenities = (p.amenities || []).map((a: string) => a.toLowerCase().trim());
+        return selectedAmenities.every((amenity) =>
+          pAmenities.some((pa: string) => pa.includes(amenity.toLowerCase().trim()) || amenity.toLowerCase().trim().includes(pa))
+        );
+      });
     }
 
-    // 7. Filter by sharing options (OR logic)
+    // 7. Filter by sharing options (OR logic, case-insensitive)
     if (selectedSharing.length > 0) {
+      const lowerSharing = selectedSharing.map((s) => s.toLowerCase().trim());
       result = result.filter((p: Property) => {
-        const sharingList: string[] = (p as any).sharing || p.rooms?.map((r) => r.sharingType) || [];
-        return sharingList.some((opt: string) => selectedSharing.includes(opt));
+        const rawSharing: string[] = (p as any).sharing || p.rooms?.map((r) => r.sharingType) || [];
+        const pSharing = rawSharing.map((s) => s.toLowerCase().trim());
+        return lowerSharing.some((opt) =>
+          pSharing.some((ps) => ps.includes(opt) || opt.includes(ps))
+        );
       });
     }
 
@@ -259,10 +329,10 @@ function SearchPageContent() {
     }
 
     return result;
-  }, [locationSlug, selectedType, selectedGenders, selectedSidebarTypes, selectedBudget, selectedAmenities, selectedSharing, selectedSort]);
+  }, [dbProperties, selectedCity.name, locationSlug, selectedSidebarTypes, selectedGenders, selectedBhk, selectedBudget, selectedAmenities, selectedSharing, selectedSort]);
 
   const displayLocation = React.useMemo(() => {
-    return locationSlug ? getDisplayTitle(locationSlug) : "All Locations";
+    return locationSlug ? getDisplayTitle(locationSlug) : "All Areas";
   }, [locationSlug]);
 
   return (
@@ -280,7 +350,10 @@ function SearchPageContent() {
               title="Search Results"
               subtitle={
                 <span className="flex items-center gap-1.5">
-                  Showing stays in <span className="font-semibold text-secondary flex items-center gap-1">📍 {displayLocation}</span>
+                  Showing stays in{" "}
+                  <span className="font-semibold text-secondary flex items-center gap-1">
+                    📍 {displayLocation === "All Areas" ? selectedCity.name : `${displayLocation}, ${selectedCity.name}`}
+                  </span>
                 </span>
               }
               badge={
@@ -339,7 +412,18 @@ function SearchPageContent() {
                   selectedSort={selectedSort}
                   onSortChange={handleSortChange}
                 />
-                {filteredProperties.length > 0 ? (
+                {isLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+                    {Array.from({ length: 6 }).map((_, idx) => (
+                      <div key={idx} className="bg-card border border-border/80 rounded-3xl p-4 space-y-3 animate-pulse">
+                        <div className="aspect-[4/3] bg-muted/60 rounded-2xl" />
+                        <div className="h-4 bg-muted/60 rounded-md w-3/4" />
+                        <div className="h-3 bg-muted/40 rounded-md w-1/2" />
+                        <div className="h-5 bg-muted/50 rounded-md w-1/3 pt-2" />
+                      </div>
+                    ))}
+                  </div>
+                ) : filteredProperties.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
                     {filteredProperties.map((property) => (
                       <PropertyCard property={property as any} key={property.id} />
@@ -356,7 +440,7 @@ function SearchPageContent() {
                     }}
                     secondaryAction={{
                       label: "Browse All Locations",
-                      href: "/search",
+                      href: `/search?city=${encodeURIComponent(selectedCity.id)}`,
                     }}
                   />
                 )}

@@ -8,25 +8,50 @@ import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
 import { cn } from "@/lib/utils";
 
-const SEARCH_SUGGESTIONS = [
-  { label: "All Properties", category: "View All", description: "Explore verified stays in Indore", badge: "All Stays" },
-  { label: "Vijay Nagar", category: "Popular Area", description: "PGs and Hostels near commercial hub", badge: "Popular" },
-  { label: "Palasia", category: "Popular Area", description: "Premium stays with high connectivity", badge: "Trending" },
-  { label: "Bhawarkuan", category: "Student Area", description: "Near DAVV & SGSITS coaching hubs", badge: "Students" },
-  { label: "IET DAVV", category: "College", description: "Hostels and PGs near university campus", badge: "College" },
-  { label: "Medanta Hospital", category: "Hospital", description: "Verified PGs and suites nearby", badge: "Medical" },
-  { label: "C21 Mall", category: "Landmark", description: "Co-living and stays near AB Road", badge: "Lifestyle" },
-];
+import { useCity } from "@/providers/city-provider";
 
 const ROTATING_WORDS = ["Roof", "PG", "Hostel", "Room", "Flat", "Space"];
 
 export function Hero() {
+  const { selectedCity } = useCity();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [searchError, setSearchError] = React.useState<string | null>(null);
   const [wordIndex, setWordIndex] = React.useState(0);
   const searchRef = React.useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Dynamically generate search suggestions for the active city
+  const citySuggestions = React.useMemo(() => {
+    const suggestions = [
+      {
+        label: "All Properties",
+        category: "View All",
+        description: `Explore all verified stays in ${selectedCity.name}`,
+        badge: "All Stays",
+      },
+    ];
+
+    selectedCity.popularAreas.forEach((area) => {
+      suggestions.push({
+        label: area.name,
+        category: "Popular Area",
+        description: area.tagline || `Stays in ${area.name}`,
+        badge: "Area",
+      });
+    });
+
+    selectedCity.landmarks.forEach((landmark) => {
+      suggestions.push({
+        label: landmark.name,
+        category: landmark.category,
+        description: landmark.description,
+        badge: landmark.category,
+      });
+    });
+
+    return suggestions;
+  }, [selectedCity]);
 
   React.useEffect(() => {
     const timer = setInterval(() => {
@@ -49,13 +74,13 @@ export function Hero() {
       const clean = query.trim();
 
       if (clean.toLowerCase() === "all properties") {
-        router.push("/search");
+        router.push(`/search?city=${encodeURIComponent(selectedCity.id)}`);
       } else {
         const slug = clean.toLowerCase().replace(/\s+/g, "-");
-        router.push(`/search?location=${slug}`);
+        router.push(`/search?city=${encodeURIComponent(selectedCity.id)}&location=${slug}`);
       }
     },
-    [searchQuery, router]
+    [searchQuery, router, selectedCity]
   );
 
   React.useEffect(() => {
@@ -69,15 +94,15 @@ export function Hero() {
   }, [isSearchOpen]);
 
   const filteredSuggestions = React.useMemo(() => {
-    if (!searchQuery.trim()) return SEARCH_SUGGESTIONS;
+    if (!searchQuery.trim()) return citySuggestions;
     const lq = searchQuery.toLowerCase();
-    return SEARCH_SUGGESTIONS.filter(
+    return citySuggestions.filter(
       (item) =>
         item.label.toLowerCase().includes(lq) ||
         item.category.toLowerCase().includes(lq) ||
         item.label === "All Properties"
     );
-  }, [searchQuery]);
+  }, [searchQuery, citySuggestions]);
 
   const containerVariants = {
     hidden: { opacity: 0 },

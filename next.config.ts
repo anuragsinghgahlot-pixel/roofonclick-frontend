@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https: http:",
-              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || "http://localhost:6969"} https://accounts.google.com`,
+              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || "http://localhost:6969"} https://accounts.google.com https://ipapi.co https://freeipapi.com`,
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
         ],
       },
     ];

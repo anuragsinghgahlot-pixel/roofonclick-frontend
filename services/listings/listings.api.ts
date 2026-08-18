@@ -308,4 +308,15 @@ export const ListingsAPI = {
     if (!res.data) throw new Error(res.message || "Failed to upload image.");
     return res.data;
   },
+
+  async getCities(): Promise<Array<{ id: string; name: string; state: string; isLive: boolean; listingCount: number }>> {
+    try {
+      const res = await apiClient.get<{ cities: Array<{ id: string; name: string; state: string; isLive: boolean; listingCount: number }> }>(
+        "/api/listings/cities"
+      );
+      return res.data?.cities || [];
+    } catch {
+      return [];
+    }
+  },
 };

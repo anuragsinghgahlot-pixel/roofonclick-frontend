@@ -6,6 +6,7 @@ import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { NavigationProvider } from "@/providers/navigation-provider";
 import { SmoothScrollProvider } from "@/providers/smooth-scroll-provider";
+import { CityProvider } from "@/providers/city-provider";
 import { Suspense } from "react";
 import "./globals.css";
 
@@ -75,22 +76,24 @@ export default function RootLayout({
         <NavigationHandler />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
-            <WishlistProvider>
-              <CompareProvider>
-                <SmoothScrollProvider>
-                  <Suspense fallback={null}>
-                    <NavigationProvider>
-                      {children}
-                      <CompareBar />
-                      <GuestAuthPromptModal />
-                      <PlatformReviewModal />
-                      <PushNotificationPrompt />
-                      <Toaster />
-                    </NavigationProvider>
-                  </Suspense>
-                </SmoothScrollProvider>
-              </CompareProvider>
-            </WishlistProvider>
+            <CityProvider>
+              <WishlistProvider>
+                <CompareProvider>
+                  <SmoothScrollProvider>
+                    <Suspense fallback={null}>
+                      <NavigationProvider>
+                        {children}
+                        <CompareBar />
+                        <GuestAuthPromptModal />
+                        <PlatformReviewModal />
+                        <PushNotificationPrompt />
+                        <Toaster />
+                      </NavigationProvider>
+                    </Suspense>
+                  </SmoothScrollProvider>
+                </CompareProvider>
+              </WishlistProvider>
+            </CityProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

@@ -49,8 +49,19 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const isCompared = isInCompare(property.id);
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
 
-  const availability = property.rooms && property.rooms.length > 0
-    ? calculatePropertyAvailability(property.rooms)
+  // Normalize fields whether passed Property or PropertyItem
+  const name = property.name || (property as any).propertyName || "Property";
+  const location = property.location || (property as any).area || (property as any).city || "Indore";
+  const price = property.price ?? (property as any).startingRent ?? (property as any).startingPrice ?? 0;
+  const image = property.image || (property as any).coverPhoto || (property as any).images?.[0]?.url || "";
+  const type = property.type || (property as any).propertyType || "PG";
+  const rating = property.rating || 4.8;
+  const verified = property.verified !== undefined ? property.verified : true;
+  const amenitiesList = property.amenities || [];
+
+  const rawRooms = property.rooms || (property as any).roomConfigurations;
+  const availability = rawRooms && rawRooms.length > 0
+    ? calculatePropertyAvailability(rawRooms)
     : calculateRoomAvailability(property.availableRooms ?? 3, property.totalRooms ?? 5);
 
   const handleCardClick = () => {
@@ -66,26 +77,26 @@ export function PropertyCard({ property }: PropertyCardProps) {
     >
       {/* Image Container */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted flex items-center justify-center">
-        {property.image ? (
+        {image ? (
           <img
-            src={property.image}
-            alt={property.name}
+            src={image}
+            alt={name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-muted via-muted/80 to-muted/50 flex flex-col items-center justify-center gap-1.5 text-muted-foreground p-4 text-center">
             <Building className="w-8 h-8 stroke-1 text-primary/40" />
-            <span className="font-heading text-[11px] font-bold text-foreground/70">{property.name}</span>
+            <span className="font-heading text-[11px] font-bold text-foreground/70">{name}</span>
           </div>
         )}
         
         {/* Type Badge */}
         <span className="absolute top-3 left-3 bg-foreground/80 backdrop-blur-md text-background text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-md z-10">
-          {property.type}
+          {type}
         </span>
 
         {/* Verified Badge */}
-        {property.verified && (
+        {verified && (
           <span className="absolute top-3 right-3 bg-primary text-primary-foreground text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-md flex items-center gap-1 shadow-sm z-10">
             <ShieldCheck className="w-3.5 h-3.5" />
             Verified
@@ -167,23 +178,23 @@ export function PropertyCard({ property }: PropertyCardProps) {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1 text-muted-foreground">
               <MapPin className="w-3.5 h-3.5 text-secondary shrink-0" />
-              <span className="text-xs font-semibold font-body">{property.location}</span>
+              <span className="text-xs font-semibold font-body">{location}</span>
             </div>
             <div className="flex items-center gap-1 bg-secondary/10 px-2 py-0.5 rounded-lg">
               <Star className="w-3.5 h-3.5 text-secondary fill-current shrink-0" />
-              <span className="text-xs font-bold text-primary">{property.rating}</span>
+              <span className="text-xs font-bold text-primary">{rating}</span>
             </div>
           </div>
 
           {/* Property Name */}
           <h3 className="font-heading text-lg font-bold text-primary mb-3 group-hover:text-secondary transition-colors duration-200">
-            {property.name}
+            {name}
           </h3>
 
           {/* Amenities Tags (Single horizontal row with seamless infinite auto-scrolling loop) */}
           <div className="overflow-hidden w-full mb-4 select-none group/marquee relative py-0.5">
             <div className="flex items-center gap-1.5 animate-marquee-slow group-hover/marquee:[animation-play-state:paused]">
-              {[...property.amenities, ...property.amenities].map((amenity, idx) => (
+              {[...amenitiesList, ...amenitiesList].map((amenity, idx) => (
                 <span
                   key={`${amenity}-${idx}`}
                   className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-md shrink-0 whitespace-nowrap"
@@ -208,7 +219,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
               Starting from
             </span>
             <span className="font-heading text-lg font-extrabold text-primary">
-              ₹{property.price.toLocaleString()}
+              ₹{Number(price).toLocaleString()}
               <span className="text-xs font-semibold text-muted-foreground font-body">/mo</span>
             </span>
           </div>

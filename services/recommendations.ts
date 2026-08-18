@@ -13,19 +13,24 @@ export const RecommendationService = {
     return RecommendationService.getRecommendationsForLocation();
   },
 
-  getRecommendationsForLocation: async (location?: string, propertyType?: string): Promise<RecommendationItem[]> => {
-    const locName = location && location.trim().length > 0 ? location : "Indore";
+  getRecommendationsForLocation: async (location?: string, propertyType?: string, city?: string): Promise<RecommendationItem[]> => {
+    const locName = location && location.trim().length > 0 ? location : undefined;
     const typeName = propertyType && propertyType !== "All" ? propertyType : "Stays";
+    const cityName = city && city.trim().length > 0 ? city : "Indore";
 
     const badges = [
-      { id: "rec-loc-1", badgeLabel: "Near Your Search", reason: `Because you searched ${locName}` },
-      { id: "rec-loc-2", badgeLabel: "Best Rated Nearby", reason: `Within 2 km of ${locName}` },
+      { id: "rec-loc-1", badgeLabel: "Near Your Search", reason: locName ? `Because you searched ${locName}` : `Trending in ${cityName}` },
+      { id: "rec-loc-2", badgeLabel: "Best Rated Nearby", reason: locName ? `Within 2 km of ${locName}` : `Top rated stays in ${cityName}` },
       { id: "rec-loc-3", badgeLabel: "Best Value", reason: `Similar monthly rent for ${typeName}` },
-      { id: "rec-loc-4", badgeLabel: "New Listing", reason: `Trending in ${locName}` },
+      { id: "rec-loc-4", badgeLabel: "New Listing", reason: `Trending in ${locName || cityName}` },
     ];
 
     try {
-      const res = await ListingsAPI.getListings({ limit: 4, city: locName !== "Indore" ? locName : undefined });
+      const res = await ListingsAPI.getListings({
+        limit: 4,
+        city: cityName,
+        area: locName,
+      });
       const propsList = res.listings || [];
 
       return badges
