@@ -9,26 +9,30 @@ import { Container } from "@/components/layout/container";
 import { Section } from "@/components/shared/section";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useAuth } from "@/providers/auth-provider";
+import { useCity } from "@/providers/city-provider";
 
 interface RecommendedSectionProps {
   location?: string;
   propertyType?: string;
+  city?: string;
 }
 
-export function RecommendedSection({ location, propertyType }: RecommendedSectionProps) {
+export function RecommendedSection({ location, propertyType, city }: RecommendedSectionProps) {
   const { user, role } = useAuth();
+  const { selectedCity } = useCity();
+  const activeCity = city || selectedCity.name;
   const isOwner = user !== null && (user.role === "owner" || role === "owner");
   const [recommendations, setRecommendations] = React.useState<RecommendationItem[]>([]);
 
   React.useEffect(() => {
     let isMounted = true;
-    RecommendationService.getRecommendationsForLocation(location, propertyType).then((items) => {
+    RecommendationService.getRecommendationsForLocation(location, propertyType, activeCity).then((items) => {
       if (isMounted) setRecommendations(items);
     });
     return () => {
       isMounted = false;
     };
-  }, [location, propertyType]);
+  }, [location, propertyType, activeCity]);
 
   // Owners MUST NEVER see "Recommended For You"
   if (isOwner) return null;

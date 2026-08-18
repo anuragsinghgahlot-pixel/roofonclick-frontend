@@ -14,6 +14,8 @@ import { NotificationDropdown } from "./notification-dropdown";
 import { Portal } from "@/components/shared/portal";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { BrandLogo } from "@/components/shared/brand-logo";
+import { useCity } from "@/providers/city-provider";
+import { CitySelectorModal } from "./city-selector-modal";
 import { toast } from "sonner";
 
 export const INDORE_AREAS = [
@@ -49,6 +51,8 @@ export default function Navbar() {
   const isAuthenticated = user !== null;
 
   const wishlistCount = wishlist.length;
+  const { selectedCity } = useCity();
+  const [isCityModalOpen, setIsCityModalOpen] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
@@ -216,15 +220,32 @@ export default function Navbar() {
       >
         <Container>
           <div className="flex h-12 items-center justify-between">
-            {/* Logo */}
-            <Link href="/" className="flex items-center">
-              <BrandLogo />
-            </Link>
+            {/* Logo + City Switcher Pill */}
+            <div className="flex items-center gap-2.5 sm:gap-3.5">
+              <Link href="/" className="flex items-center">
+                <BrandLogo />
+              </Link>
+              <button
+                type="button"
+                data-no-intercept="true"
+                onClick={() => setIsCityModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-secondary/10 hover:bg-secondary/20 border border-secondary/25 text-foreground transition-all cursor-pointer select-none active:scale-95 group shadow-xs"
+                title="Select City"
+              >
+                <MapPin className="w-3.5 h-3.5 text-secondary group-hover:scale-110 transition-transform" />
+                <span className="font-heading text-xs font-extrabold text-foreground">{selectedCity.name}</span>
+                <ChevronDown className="w-3 h-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </button>
+            </div>
 
             {/* Desktop Navigation Links */}
             <nav className="hidden md:flex items-center gap-8 relative h-full">
               {visibleNavItems.map((item) => {
                 if (item === "Areas") {
+                  const currentAreas = selectedCity.popularAreas.length > 0
+                    ? selectedCity.popularAreas.map((a) => a.name)
+                    : INDORE_AREAS;
+
                   return (
                     <div key="Areas" ref={areasDropdownRef} className="relative">
                       <button
@@ -260,21 +281,21 @@ export default function Navbar() {
                           >
                             <div className="flex items-center justify-between px-2.5 py-1 border-b border-border/40">
                               <span className="font-heading text-[10px] font-extrabold uppercase tracking-widest text-primary flex items-center gap-1">
-                                <MapPin className="w-3 h-3 text-secondary" /> Indore City
+                                <MapPin className="w-3 h-3 text-secondary" /> {selectedCity.name}
                               </span>
                               <span className="text-[9px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">
-                                {INDORE_AREAS.length} Areas
+                                {currentAreas.length} Areas
                               </span>
                             </div>
 
                             <div className="grid grid-cols-2 gap-1 max-h-56 overflow-y-auto custom-scrollbar p-1">
-                              {INDORE_AREAS.map((areaName) => (
+                              {currentAreas.map((areaName) => (
                                 <button
                                   key={areaName}
                                   type="button"
                                   onClick={() => {
                                     setIsAreasOpen(false);
-                                    router.push(`/search?area=${encodeURIComponent(areaName)}`);
+                                    router.push(`/search?city=${encodeURIComponent(selectedCity.id)}&area=${encodeURIComponent(areaName)}`);
                                   }}
                                   className="text-left font-body text-xs font-semibold px-2.5 py-1.5 rounded-lg hover:bg-muted/60 text-foreground hover:text-primary transition-colors truncate cursor-pointer"
                                 >
@@ -830,6 +851,12 @@ export default function Navbar() {
           </Portal>
         )}
       </AnimatePresence>
+
+      {/* City Selector Modal */}
+      <CitySelectorModal
+        isOpen={isCityModalOpen}
+        onClose={() => setIsCityModalOpen(false)}
+      />
     </>
   );
 }

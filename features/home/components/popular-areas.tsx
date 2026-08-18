@@ -5,8 +5,9 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
+import { useCity } from "@/providers/city-provider";
 
-const POPULAR_AREAS_DATA = [
+const FALLBACK_AREAS_DATA = [
   {
     id: "vijay-nagar",
     name: "Vijay Nagar",
@@ -37,9 +38,14 @@ const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 
 export function PopularAreas() {
   const router = useRouter();
+  const { selectedCity } = useCity();
+
+  const areasList = selectedCity.popularAreas && selectedCity.popularAreas.length > 0
+    ? selectedCity.popularAreas
+    : FALLBACK_AREAS_DATA;
 
   const handleAreaClick = (areaName: string) => {
-    router.push(`/search?area=${encodeURIComponent(areaName)}`);
+    router.push(`/search?city=${encodeURIComponent(selectedCity.id)}&area=${encodeURIComponent(areaName)}`);
   };
 
   return (
@@ -48,10 +54,10 @@ export function PopularAreas() {
         {/* Header */}
         <div className="flex flex-col gap-2 mb-8 sm:mb-12 text-left">
           <span className="font-heading text-xs font-bold uppercase tracking-widest text-secondary">
-            Explore Indore
+            Explore {selectedCity.name}
           </span>
           <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-primary tracking-tight leading-[1.15]">
-            Popular Areas
+            Popular Areas in {selectedCity.name}
           </h2>
           <p className="font-body text-sm text-muted-foreground leading-relaxed max-w-md">
             Find verified stays positioned near top coaching institutes, universities, and IT hubs.
@@ -60,7 +66,7 @@ export function PopularAreas() {
 
         {/* Mobile: horizontal scroll */}
         <div className="flex sm:hidden gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-none">
-          {POPULAR_AREAS_DATA.map((area) => (
+          {areasList.map((area) => (
             <div
               key={area.id}
               onClick={() => handleAreaClick(area.name)}
@@ -96,7 +102,7 @@ export function PopularAreas() {
           viewport={{ once: true, margin: "-80px" }}
           className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full"
         >
-          {POPULAR_AREAS_DATA.map((area) => (
+          {areasList.map((area) => (
             <motion.div
               key={area.id}
               onClick={() => handleAreaClick(area.name)}

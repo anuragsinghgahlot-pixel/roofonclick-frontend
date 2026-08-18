@@ -159,10 +159,8 @@ export function EmptyState({
                 className="w-full bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground py-3 px-5 rounded-xl font-heading text-xs font-bold transition-all shadow-md text-center flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
               >
                 <span>{activePrimaryAction.label}</span>
-                {activePrimaryAction.icon ? (
+                {activePrimaryAction.icon && (
                   <activePrimaryAction.icon className="w-4 h-4 shrink-0" />
-                ) : (
-                  <ArrowRight className="w-4 h-4 shrink-0" />
                 )}
               </Link>
             ) : (
@@ -173,10 +171,8 @@ export function EmptyState({
                 className="w-full bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground py-3 px-5 rounded-xl font-heading text-xs font-bold transition-all shadow-md text-center cursor-pointer flex items-center justify-center gap-2 active:scale-95"
               >
                 <span>{activePrimaryAction.label}</span>
-                {activePrimaryAction.icon ? (
+                {activePrimaryAction.icon && (
                   <activePrimaryAction.icon className="w-4 h-4 shrink-0" />
-                ) : (
-                  <ArrowRight className="w-4 h-4 shrink-0" />
                 )}
               </button>
             )
