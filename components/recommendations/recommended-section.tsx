@@ -21,7 +21,13 @@ export function RecommendedSection({ location, propertyType }: RecommendedSectio
   const [recommendations, setRecommendations] = React.useState<RecommendationItem[]>([]);
 
   React.useEffect(() => {
-    setRecommendations(RecommendationService.getRecommendationsForLocation(location, propertyType));
+    let isMounted = true;
+    RecommendationService.getRecommendationsForLocation(location, propertyType).then((items) => {
+      if (isMounted) setRecommendations(items);
+    });
+    return () => {
+      isMounted = false;
+    };
   }, [location, propertyType]);
 
   // Owners MUST NEVER see "Recommended For You"

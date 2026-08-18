@@ -1,56 +1,5 @@
 import { Property, PropertyWizardDraft, RoomConfiguration } from "./property.types";
 import { STORAGE_KEYS, safeGetItem, safeSetItem, safeRemoveItem } from "./property.storage";
-import { MOCK_PROPERTIES } from "@/constants/mock-properties";
-
-function convertMockProperty(mp: any, customId?: string): Property {
-  const rooms: RoomConfiguration[] = (mp.sharing || ["Single Sharing"]).map((s: string, idx: number) => ({
-    id: `room-${idx}`,
-    sharingType: s,
-    monthlyRent: mp.price + (idx * 1000),
-    securityDeposit: 15000,
-    totalRooms: 5,
-    availableRooms: 2,
-    gender: (mp.gender === "girls" ? "Girls" : mp.gender === "boys" ? "Boys" : "Boys") as any,
-    attachedBathroom: true,
-    furnished: "Fully Furnished",
-    roomType: s as any,
-    rent: mp.price + (idx * 1000),
-  }));
-
-  return {
-    id: customId || mp.id,
-    propertyName: mp.name || mp.title || "Elite Residency",
-    propertyType: (mp.type?.includes("PG") ? "PG" : mp.type?.includes("Hostel") ? "Hostel" : "Co-living") as any,
-    gender: (mp.gender === "girls" ? "Girls" : mp.gender === "boys" ? "Boys" : "Boys") as any,
-    description: `Welcome to ${mp.name || mp.title || "Elite Residency"} located in ${mp.location}, Indore. Enjoy high-speed Wi-Fi, air-conditioned rooms, 24/7 security, and daily mess facilities.`,
-    city: "Indore",
-    area: mp.location || "Vijay Nagar",
-    address: `${mp.location || "Vijay Nagar"}, Indore, MP 452010`,
-    landmark: "Near Main Square",
-    rooms,
-    roomConfigurations: rooms,
-    amenities: mp.amenities || ["Wi-Fi", "AC", "Laundry", "Mess Included"],
-    rules: {
-      smokingAllowed: false,
-      drinkingAllowed: false,
-      visitorsAllowed: true,
-      petsAllowed: false,
-      loudMusicAllowed: false,
-      gateClosingEnabled: true,
-      gateClosingTime: "10:00 PM",
-    },
-    nearby: [],
-    images: [{ id: "img-1", name: "Cover", url: mp.image, isCover: true }],
-    coverPhoto: mp.image,
-    startingRent: mp.price,
-    startingPrice: mp.price,
-    status: "Published",
-    views: 145,
-    enquiries: 12,
-    createdAt: mp.createdAt || new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-}
 
 /**
  * Normalizes room configurations for backwards compatibility and consistency.
@@ -125,27 +74,7 @@ class PropertyServiceImpl {
     if (!id) return null;
     const properties = this.getAllProperties();
     const found = properties.find((p) => p.id === id || p.id?.toLowerCase() === id.toLowerCase());
-    if (found) return found;
-
-    // Fallback lookup from MOCK_PROPERTIES
-    const mockItem = MOCK_PROPERTIES.find(
-      (p) =>
-        p.id === id ||
-        p.id.toLowerCase() === id.toLowerCase() ||
-        p.name.toLowerCase().replace(/\s+/g, "-") === id.toLowerCase() ||
-        id.toLowerCase().includes(p.id.toLowerCase())
-    );
-
-    if (mockItem) {
-      return convertMockProperty(mockItem, id);
-    }
-
-    // Fallback to default mock property for any unknown string ID
-    if (MOCK_PROPERTIES.length > 0) {
-      return convertMockProperty(MOCK_PROPERTIES[0], id);
-    }
-
-    return null;
+    return found || null;
   }
 
   /**
@@ -272,3 +201,4 @@ class PropertyServiceImpl {
 }
 
 export const PropertyService = new PropertyServiceImpl();
+export const propertyService = PropertyService;

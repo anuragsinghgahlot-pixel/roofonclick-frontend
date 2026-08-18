@@ -9,13 +9,13 @@ import { Section } from "@/components/shared/section";
 import { cn } from "@/lib/utils";
 
 const SEARCH_SUGGESTIONS = [
-  { label: "All Properties", category: "View All", description: "Explore all 500+ verified stays in Indore", badge: "All Stays" },
-  { label: "Vijay Nagar", category: "Popular Area", description: "126 verified PGs available", badge: "Popular" },
-  { label: "Palasia", category: "Popular Area", description: "84 premium stays nearby", badge: "Trending" },
-  { label: "Bhawarkuan", category: "Student Area", description: "Near DAVV & SGSITS", badge: "Students" },
-  { label: "IET DAVV", category: "College", description: "54 hostels nearby", badge: "College" },
-  { label: "Medanta Hospital", category: "Hospital", description: "Premium PGs nearby", badge: "Medical" },
-  { label: "C21 Mall", category: "Landmark", description: "Luxury stays nearby", badge: "Lifestyle" },
+  { label: "All Properties", category: "View All", description: "Explore verified stays in Indore", badge: "All Stays" },
+  { label: "Vijay Nagar", category: "Popular Area", description: "PGs and Hostels near commercial hub", badge: "Popular" },
+  { label: "Palasia", category: "Popular Area", description: "Premium stays with high connectivity", badge: "Trending" },
+  { label: "Bhawarkuan", category: "Student Area", description: "Near DAVV & SGSITS coaching hubs", badge: "Students" },
+  { label: "IET DAVV", category: "College", description: "Hostels and PGs near university campus", badge: "College" },
+  { label: "Medanta Hospital", category: "Hospital", description: "Verified PGs and suites nearby", badge: "Medical" },
+  { label: "C21 Mall", category: "Landmark", description: "Co-living and stays near AB Road", badge: "Lifestyle" },
 ];
 
 const ROTATING_WORDS = ["Roof", "PG", "Hostel", "Room", "Flat", "Space"];
@@ -95,7 +95,7 @@ export function Hero() {
   };
 
   return (
-    <Section className="relative pt-6 sm:pt-8 lg:pt-6 pb-16 sm:pb-24 lg:pb-20 bg-background overflow-hidden">
+    <Section className="relative pt-4 sm:pt-6 lg:pt-4 pb-8 sm:pb-12 lg:pb-10 bg-background overflow-hidden">
       {/* Decorative glows */}
       <div className="absolute inset-0 pointer-events-none -z-20">
         <div className="absolute top-[-10%] left-[-10%] w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] bg-primary/10 rounded-full blur-[140px] animate-pulse" />
@@ -128,11 +128,11 @@ export function Hero() {
               className="font-heading text-[1.875rem] sm:text-5xl lg:text-6xl xl:text-[4.25rem] font-extrabold text-primary tracking-tight leading-[1.08] mb-5 sm:mb-6 drop-shadow-sm"
             >
               <span className="block">Find Your Perfect</span>
-              <span className="relative inline-flex items-baseline flex-wrap gap-x-2.5 sm:gap-x-3.5 mt-3 sm:mt-4 leading-[1.25] text-secondary">
+              <span className="relative inline-flex items-baseline flex-wrap gap-x-2.5 sm:gap-x-3.5 mt-0.5 sm:mt-1 leading-[1.15] text-secondary">
                 <motion.span 
                   layout
                   transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                  className="relative inline-flex overflow-y-hidden py-1 justify-start items-baseline"
+                  className="relative inline-flex overflow-y-hidden py-0 justify-start items-baseline"
                 >
                   <AnimatePresence mode="wait">
                     <motion.span
@@ -295,14 +295,14 @@ export function Hero() {
               initial={{ opacity: 0, x: 20, y: -10 }}
               animate={{ opacity: 1, x: 0, y: 0 }}
               transition={{ delay: 0.8, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute -top-4 -right-4 bg-card/85 backdrop-blur-md border border-border/80 px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 select-none z-20"
+              className="absolute -top-4 -right-4 bg-card/85 backdrop-blur-md border border-border/80 px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 select-none z-20"
             >
               <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xs">
                 <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
               </div>
               <div className="flex flex-col text-left">
-                <span className="font-heading text-xs font-extrabold text-foreground">4.9 / 5.0</span>
-                <span className="font-body text-[10px] text-muted-foreground">Verified Reviews</span>
+                <span className="font-heading text-xs font-extrabold text-foreground">Verified Reviews</span>
+                <span className="font-body text-[10px] text-muted-foreground">Resident Feedback</span>
               </div>
             </motion.div>
 

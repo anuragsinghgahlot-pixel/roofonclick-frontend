@@ -120,7 +120,7 @@ export function Categories() {
                 </p>
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/15">
                   <span className="text-[11px] font-extrabold text-secondary">
-                    {cat.propertyCount}+ Verified Options
+                    Explore Verified Stays
                   </span>
                   <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
                 </div>

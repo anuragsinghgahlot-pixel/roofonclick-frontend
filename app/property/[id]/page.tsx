@@ -88,7 +88,6 @@ const MOCK_SIMILAR_PROPERTIES = [
 import { PropertyService, Property, MediaImage, RoomConfiguration } from "@/services/property";
 import { ListingsAPI } from "@/services/listings/listings.api";
 import { ReviewService } from "@/services/reviews";
-import { MOCK_PROPERTIES } from "@/constants/mock-properties";
 
 import { ScheduleVisitModal } from "@/components/enquiry/schedule-visit-modal";
 import { SendEnquiryModal } from "@/components/enquiry/send-enquiry-modal";
@@ -131,9 +130,7 @@ function PropertyDetailsContent() {
   const ratingData = React.useMemo(() => {
     const data = ReviewService.getRatingBreakdown(propertyId);
     if (data.totalReviews === 0) {
-      const mockProp = MOCK_PROPERTIES.find(p => p.id === propertyId);
-      const defaultRating = mockProp?.rating || 4.5;
-      return { overallRating: defaultRating, totalReviews: 0 };
+      return { overallRating: 4.8, totalReviews: 0 };
     }
     return data;
   }, [propertyId, property, reviewsVersion]);

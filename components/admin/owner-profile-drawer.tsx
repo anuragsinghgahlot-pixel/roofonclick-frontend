@@ -54,11 +54,17 @@ export function OwnerProfileDrawer({
   owner,
   isOpen,
   onClose,
+  onApproveKyc,
+  onSuspend,
+  onActivate,
   onUpdateKycStatus,
 }: {
   owner: AdminOwner | null;
   isOpen: boolean;
   onClose: () => void;
+  onApproveKyc?: (owner: AdminOwner) => void;
+  onSuspend?: (owner: AdminOwner) => void;
+  onActivate?: (owner: AdminOwner) => void;
   onUpdateKycStatus?: (ownerId: string, docId: string, status: "verified" | "rejected") => void;
 }) {
   const [activeTab, setActiveTab] = React.useState<TabId>("overview");
@@ -436,6 +442,45 @@ export function OwnerProfileDrawer({
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* ═══ Action Footer ═══ */}
+            <div className="p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span className="font-heading text-[11px] font-bold text-muted-foreground">
+                  Status: <strong className="text-foreground uppercase">{owner.accountStatus}</strong>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {onSuspend && owner.accountStatus === "active" && (
+                  <button
+                    type="button"
+                    onClick={() => onSuspend(owner)}
+                    className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-700 dark:text-amber-400 text-xs font-heading font-bold transition-all cursor-pointer"
+                  >
+                    Suspend Owner
+                  </button>
+                )}
+                {onActivate && (owner.accountStatus === "suspended" || owner.accountStatus === "inactive" || owner.accountStatus === "blocked") && (
+                  <button
+                    type="button"
+                    onClick={() => onActivate(owner)}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-700 dark:text-emerald-400 text-xs font-heading font-bold transition-all cursor-pointer"
+                  >
+                    Reactivate Account
+                  </button>
+                )}
+                {onApproveKyc && owner.kycStatus !== "verified" && (
+                  <button
+                    type="button"
+                    onClick={() => onApproveKyc(owner)}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-heading font-extrabold shadow-sm transition-all cursor-pointer"
+                  >
+                    Approve KYC
+                  </button>
+                )}
+              </div>
             </div>
           </motion.div>
         </>

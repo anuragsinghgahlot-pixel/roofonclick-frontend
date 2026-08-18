@@ -9,17 +9,20 @@ import { Section } from "@/components/shared/section";
 import { useWishlist } from "@/providers/wishlist-provider";
 import { useAuth } from "@/providers/auth-provider";
 import { PropertyCard } from "@/components/cards/property-card";
-import { MOCK_PROPERTIES } from "@/constants/mock-properties";
+import { propertyService } from "@/services/property/property.service";
+import { Property } from "@/services/property";
 import { PropertyCardSkeleton } from "@/components/shared/skeletons";
 
 import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { BackButton } from "@/components/shared/back-button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+
 export function WishlistPage() {
   const router = useRouter();
   const { wishlist, getLastBrowsingRoute } = useWishlist();
   const { user, role } = useAuth();
+  const [savedProperties, setSavedProperties] = React.useState<Property[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   // Route Protection: Owners visiting /wishlist directly are redirected to /owner/dashboard
@@ -35,17 +38,35 @@ export function WishlistPage() {
     }
   }, [user, role, router]);
 
-  // Simulated API fetch delay on page load
+  // Fetch real properties in wishlist
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 700);
-    return () => clearTimeout(timer);
-  }, []);
+    let isMounted = true;
+    async function loadWishlistProperties() {
+      if (!wishlist || wishlist.length === 0) {
+        if (isMounted) {
+          setSavedProperties([]);
+          setIsLoading(false);
+        }
+        return;
+      }
 
-  // Filter properties that exist in the wishlist array
-  const savedProperties = React.useMemo(() => {
-    return MOCK_PROPERTIES.filter((property) => wishlist.includes(property.id));
+      try {
+        const promises = wishlist.map((id) => propertyService.getPropertyById(id));
+        const results = await Promise.all(promises);
+        if (isMounted) {
+          setSavedProperties(results.filter((p): p is Property => Boolean(p)));
+        }
+      } catch {
+        if (isMounted) setSavedProperties([]);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadWishlistProperties();
+    return () => {
+      isMounted = false;
+    };
   }, [wishlist]);
 
   return (
@@ -80,9 +101,21 @@ export function WishlistPage() {
               </div>
             ) : savedProperties.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {savedProperties.map((property) => (
-                  <PropertyCard property={property} key={property.id} />
-                ))}
+                {savedProperties.map((property) => {
+                  const propertyItem = {
+                    id: property.id,
+                    name: property.propertyName || "Property",
+                    location: property.area || property.city || "Indore",
+                    price: property.startingRent || property.startingPrice || 0,
+                    rating: 4.8,
+                    verified: true,
+                    image: property.coverPhoto || property.images?.[0]?.url || "",
+                    type: property.propertyType || "PG",
+                    amenities: property.amenities || [],
+                    rooms: property.rooms || property.roomConfigurations || [],
+                  };
+                  return <PropertyCard property={propertyItem} key={property.id} />;
+                })}
               </div>
             ) : (
               <EmptyState

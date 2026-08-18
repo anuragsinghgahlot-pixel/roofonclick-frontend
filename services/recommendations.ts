@@ -1,5 +1,5 @@
 import { Property } from "@/services/property";
-import { MOCK_PROPERTIES } from "@/constants/mock-properties";
+import { ListingsAPI } from "@/services/listings/listings.api";
 
 export interface RecommendationItem {
   id: string;
@@ -9,11 +9,11 @@ export interface RecommendationItem {
 }
 
 export const RecommendationService = {
-  getRecommendations: (): RecommendationItem[] => {
+  getRecommendations: async (): Promise<RecommendationItem[]> => {
     return RecommendationService.getRecommendationsForLocation();
   },
 
-  getRecommendationsForLocation: (location?: string, propertyType?: string): RecommendationItem[] => {
+  getRecommendationsForLocation: async (location?: string, propertyType?: string): Promise<RecommendationItem[]> => {
     const locName = location && location.trim().length > 0 ? location : "Indore";
     const typeName = propertyType && propertyType !== "All" ? propertyType : "Stays";
 
@@ -24,15 +24,22 @@ export const RecommendationService = {
       { id: "rec-loc-4", badgeLabel: "New Listing", reason: `Trending in ${locName}` },
     ];
 
-    return badges
-      .map((b, idx) => {
-        const prop = MOCK_PROPERTIES[idx];
-        if (!prop) return null;
-        return {
-          ...b,
-          property: prop as any,
-        };
-      })
-      .filter((item): item is RecommendationItem => item !== null && item.property !== undefined);
+    try {
+      const res = await ListingsAPI.getListings({ limit: 4, city: locName !== "Indore" ? locName : undefined });
+      const propsList = res.listings || [];
+
+      return badges
+        .map((b, idx) => {
+          const prop = propsList[idx];
+          if (!prop) return null;
+          return {
+            ...b,
+            property: prop,
+          };
+        })
+        .filter((item): item is RecommendationItem => item !== null && item.property !== undefined);
+    } catch {
+      return [];
+    }
   },
 };

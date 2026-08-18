@@ -15,10 +15,10 @@ export function Section({
 }: SectionProps) {
   const sizeClasses = {
     none: "",
-    sm: "py-8 md:py-12",
-    md: "py-12 md:py-20",
-    lg: "py-16 md:py-28",
-    xl: "py-20 md:py-36",
+    sm: "py-6 md:py-8",
+    md: "py-8 md:py-12",
+    lg: "py-10 md:py-14",
+    xl: "py-12 md:py-18",
   };
 
   return (
