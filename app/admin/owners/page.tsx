@@ -38,6 +38,7 @@ import {
   AdminOwner,
   AdminOwnerQuickStats,
 } from "@/services/admin-owners";
+import { AdminBuyerService } from "@/services/admin-buyers";
 import { OwnerProfileDrawer } from "@/components/admin/owner-profile-drawer";
 
 export default function AdminOwnersPage() {
@@ -72,61 +73,122 @@ export default function AdminOwnersPage() {
     setIsDrawerOpen(true);
   };
 
-  const handleApproveKyc = (owner: AdminOwner) => {
-    setOwners((prev) =>
-      prev.map((o) => (o.id === owner.id ? { ...o, kycStatus: "verified", accountStatus: "active" } : o))
-    );
-    toast.success(`Owner ${owner.name} KYC verified & account approved.`);
+  const handleApproveKyc = async (owner: AdminOwner) => {
+    try {
+      await AdminOwnerService.updateKyc(owner.id, "verified");
+      await AdminOwnerService.updateStatus(owner.id, "active");
+      const updated = { ...owner, kycStatus: "verified" as const, accountStatus: "active" as const };
+      setOwners((prev) => prev.map((o) => (o.id === owner.id ? updated : o)));
+      setSelectedOwner((prev) => (prev?.id === owner.id ? updated : prev));
+      toast.success(`Owner ${owner.name} KYC verified & account activated!`);
+    } catch {
+      toast.error("Failed to approve owner KYC.");
+    }
   };
 
-  const handleSuspend = (owner: AdminOwner) => {
-    setOwners((prev) =>
-      prev.map((o) => (o.id === owner.id ? { ...o, accountStatus: "suspended" } : o))
-    );
-    toast.warning(`Owner ${owner.name} account suspended.`);
+  const handleSuspend = async (owner: AdminOwner) => {
+    try {
+      await AdminOwnerService.updateStatus(owner.id, "suspended");
+      const updated = { ...owner, accountStatus: "suspended" as const };
+      setOwners((prev) => prev.map((o) => (o.id === owner.id ? updated : o)));
+      setSelectedOwner((prev) => (prev?.id === owner.id ? updated : prev));
+      toast.warning(`Owner ${owner.name} account suspended.`);
+    } catch {
+      toast.error("Failed to suspend owner account.");
+    }
   };
 
-  const handleDeactivate = (owner: AdminOwner) => {
-    setOwners((prev) =>
-      prev.map((o) => (o.id === owner.id ? { ...o, accountStatus: "inactive" } : o))
-    );
-    toast.info(`Owner ${owner.name} account deactivated.`);
+  const handleDeactivate = async (owner: AdminOwner) => {
+    try {
+      await AdminOwnerService.updateStatus(owner.id, "inactive");
+      const updated = { ...owner, accountStatus: "inactive" as const };
+      setOwners((prev) => prev.map((o) => (o.id === owner.id ? updated : o)));
+      setSelectedOwner((prev) => (prev?.id === owner.id ? updated : prev));
+      toast.info(`Owner ${owner.name} account deactivated.`);
+    } catch {
+      toast.error("Failed to deactivate owner account.");
+    }
   };
 
-  const handleDelete = (owner: AdminOwner) => {
-    setOwners((prev) => prev.filter((o) => o.id !== owner.id));
-    toast.success(`Owner ${owner.name} deleted.`);
+  const handleDelete = async (owner: AdminOwner) => {
+    try {
+      await AdminOwnerService.deleteOwner(owner.id);
+      setOwners((prev) => prev.filter((o) => o.id !== owner.id));
+      if (selectedOwner?.id === owner.id) {
+        setIsDrawerOpen(false);
+        setSelectedOwner(null);
+      }
+      toast.success(`Owner ${owner.name} account deleted.`);
+    } catch {
+      toast.error("Failed to delete owner account.");
+    }
   };
 
-  const handleSendNotification = (owner: AdminOwner) => {
-    toast.info(`Sent notification prompt to ${owner.name} (${owner.email})`);
+  const handleSendNotification = async (owner: AdminOwner) => {
+    try {
+      await AdminBuyerService.broadcastNotification({
+        userIds: [owner.id],
+        title: "Important Admin Notice",
+        message: `Hello ${owner.name}, please check your RoofOnClick owner dashboard for important property updates.`,
+      });
+      toast.success(`Notification sent to ${owner.name} (${owner.email})`);
+    } catch {
+      toast.error("Failed to send notification.");
+    }
   };
 
   /* ─── Bulk Handlers ─── */
-  const handleBulkApprove = (selected: AdminOwner[]) => {
-    const ids = new Set(selected.map((s) => s.id));
-    setOwners((prev) =>
-      prev.map((o) => (ids.has(o.id) ? { ...o, kycStatus: "verified", accountStatus: "active" } : o))
-    );
-    toast.success(`Approved KYC for ${selected.length} owners.`);
+  const handleBulkApprove = async (selected: AdminOwner[]) => {
+    try {
+      const ids = selected.map((s) => s.id);
+      await AdminOwnerService.bulkUpdate(ids, "approve");
+      const idsSet = new Set(ids);
+      setOwners((prev) =>
+        prev.map((o) => (idsSet.has(o.id) ? { ...o, kycStatus: "verified", accountStatus: "active" } : o))
+      );
+      toast.success(`Approved KYC & activated ${selected.length} owner account(s).`);
+    } catch {
+      toast.error("Bulk approval failed.");
+    }
   };
 
-  const handleBulkSuspend = (selected: AdminOwner[]) => {
-    const ids = new Set(selected.map((s) => s.id));
-    setOwners((prev) =>
-      prev.map((o) => (ids.has(o.id) ? { ...o, accountStatus: "suspended" } : o))
-    );
-    toast.warning(`Suspended ${selected.length} owner accounts.`);
+  const handleBulkSuspend = async (selected: AdminOwner[]) => {
+    try {
+      const ids = selected.map((s) => s.id);
+      await AdminOwnerService.bulkUpdate(ids, "suspend");
+      const idsSet = new Set(ids);
+      setOwners((prev) =>
+        prev.map((o) => (idsSet.has(o.id) ? { ...o, accountStatus: "suspended" } : o))
+      );
+      toast.warning(`Suspended ${selected.length} owner account(s).`);
+    } catch {
+      toast.error("Bulk suspension failed.");
+    }
   };
 
-  const handleBulkDelete = (selected: AdminOwner[]) => {
-    const ids = new Set(selected.map((s) => s.id));
-    setOwners((prev) => prev.filter((o) => !ids.has(o.id)));
-    toast.success(`Deleted ${selected.length} owner accounts.`);
+  const handleBulkDelete = async (selected: AdminOwner[]) => {
+    try {
+      const ids = selected.map((s) => s.id);
+      await AdminOwnerService.bulkUpdate(ids, "delete");
+      const idsSet = new Set(ids);
+      setOwners((prev) => prev.filter((o) => !idsSet.has(o.id)));
+      toast.success(`Deleted ${selected.length} owner account(s).`);
+    } catch {
+      toast.error("Bulk deletion failed.");
+    }
   };
 
-  const handleBulkAssignManager = (selected: AdminOwner[]) => {
-    toast.info(`Assigned Account Manager for ${selected.length} owners.`);
+  const handleBulkAssignManager = async (selected: AdminOwner[]) => {
+    try {
+      const manager = { name: "Aditya Sharma", email: "aditya@roofonclick.com", phone: "+91 98930 44556" };
+      await Promise.all(selected.map((s) => AdminOwnerService.assignManager(s.id, manager)));
+      setOwners((prev) =>
+        prev.map((o) => (selected.some((s) => s.id === o.id) ? { ...o, accountManager: manager } : o))
+      );
+      toast.success(`Assigned Account Manager for ${selected.length} owner(s).`);
+    } catch {
+      toast.error("Failed to assign account manager.");
+    }
   };
 
   /* ─── Advanced Filtering ─── */
@@ -571,6 +633,9 @@ export default function AdminOwnersPage() {
         owner={selectedOwner}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        onApproveKyc={handleApproveKyc}
+        onSuspend={handleSuspend}
+        onActivate={handleApproveKyc}
       />
     </AdminPageContainer>
   );

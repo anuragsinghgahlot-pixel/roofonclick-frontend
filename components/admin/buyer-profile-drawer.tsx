@@ -54,10 +54,16 @@ export function BuyerProfileDrawer({
   buyer,
   isOpen,
   onClose,
+  onVerify,
+  onBlock,
+  onUnblock,
 }: {
   buyer: AdminBuyer | null;
   isOpen: boolean;
   onClose: () => void;
+  onVerify?: (buyer: AdminBuyer) => void;
+  onBlock?: (buyer: AdminBuyer) => void;
+  onUnblock?: (buyer: AdminBuyer) => void;
 }) {
   const [activeTab, setActiveTab] = React.useState<TabId>("overview");
 
@@ -397,6 +403,45 @@ export function BuyerProfileDrawer({
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* ═══ Action Footer ═══ */}
+            <div className="p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span className="font-heading text-[11px] font-bold text-muted-foreground">
+                  Status: <strong className="text-foreground uppercase">{buyer.accountStatus}</strong>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {onBlock && buyer.accountStatus !== "blocked" && (
+                  <button
+                    type="button"
+                    onClick={() => onBlock(buyer)}
+                    className="px-3.5 py-2 rounded-xl bg-destructive/15 hover:bg-destructive/25 active:scale-95 text-destructive text-xs font-heading font-bold transition-all cursor-pointer"
+                  >
+                    Block Resident
+                  </button>
+                )}
+                {onUnblock && buyer.accountStatus === "blocked" && (
+                  <button
+                    type="button"
+                    onClick={() => onUnblock(buyer)}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-700 dark:text-emerald-400 text-xs font-heading font-bold transition-all cursor-pointer"
+                  >
+                    Unblock Account
+                  </button>
+                )}
+                {onVerify && buyer.verificationStatus !== "verified" && (
+                  <button
+                    type="button"
+                    onClick={() => onVerify(buyer)}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-heading font-extrabold shadow-sm transition-all cursor-pointer"
+                  >
+                    Verify Resident ID
+                  </button>
+                )}
+              </div>
             </div>
           </motion.div>
         </>

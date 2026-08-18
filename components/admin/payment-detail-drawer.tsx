@@ -55,10 +55,14 @@ export function PaymentDetailDrawer({
   payment,
   isOpen,
   onClose,
+  onSettle,
+  onRefund,
 }: {
   payment: AdminPayment | null;
   isOpen: boolean;
   onClose: () => void;
+  onSettle?: (payment: AdminPayment) => void;
+  onRefund?: (payment: AdminPayment) => void;
 }) {
   const [activeTab, setActiveTab] = React.useState<TabId>("overview");
   const [notes, setNotes] = React.useState<{ id: string; author: string; note: string; date: string }[]>([]);
@@ -407,6 +411,36 @@ export function PaymentDetailDrawer({
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* ═══ Action Footer ═══ */}
+            <div className="p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span className="font-heading text-[11px] font-bold text-muted-foreground">
+                  Status: <strong className="text-foreground uppercase">{payment.status}</strong>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {onRefund && payment.status !== "Refunded" && (
+                  <button
+                    type="button"
+                    onClick={() => onRefund(payment)}
+                    className="px-3.5 py-2 rounded-xl bg-destructive/15 hover:bg-destructive/25 active:scale-95 text-destructive text-xs font-heading font-bold transition-all cursor-pointer"
+                  >
+                    Issue Refund
+                  </button>
+                )}
+                {onSettle && payment.status !== "Settled" && payment.status !== "Refunded" && (
+                  <button
+                    type="button"
+                    onClick={() => onSettle(payment)}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-heading font-extrabold shadow-sm transition-all cursor-pointer"
+                  >
+                    Mark as Settled
+                  </button>
+                )}
+              </div>
             </div>
           </motion.div>
         </>

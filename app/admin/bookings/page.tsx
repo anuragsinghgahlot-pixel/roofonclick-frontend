@@ -74,41 +74,61 @@ export default function AdminBookingsPage() {
     setIsDrawerOpen(true);
   };
 
-  const handleApprove = (booking: AdminBooking) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === booking.id ? { ...b, bookingStatus: "Confirmed" } : b))
-    );
-    toast.success(`Booking ${booking.id} confirmed.`);
+  const handleApprove = async (booking: AdminBooking) => {
+    try {
+      await AdminBookingService.updateStatus(booking.mongoId || booking.id, "confirmed");
+      const updated: AdminBooking = { ...booking, bookingStatus: "Confirmed", paymentStatus: "Paid" };
+      setBookings((prev) => prev.map((b) => (b.id === booking.id ? updated : b)));
+      setSelectedBooking((prev) => (prev?.id === booking.id ? updated : prev));
+      toast.success(`Booking ${booking.id} confirmed & tenant notified!`);
+    } catch {
+      toast.error("Failed to confirm booking.");
+    }
   };
 
-  const handleReject = (booking: AdminBooking) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === booking.id ? { ...b, bookingStatus: "Cancelled" } : b))
-    );
-    toast.error(`Booking ${booking.id} rejected.`);
+  const handleReject = async (booking: AdminBooking) => {
+    try {
+      await AdminBookingService.updateStatus(booking.mongoId || booking.id, "cancelled");
+      const updated: AdminBooking = { ...booking, bookingStatus: "Cancelled" };
+      setBookings((prev) => prev.map((b) => (b.id === booking.id ? updated : b)));
+      setSelectedBooking((prev) => (prev?.id === booking.id ? updated : prev));
+      toast.error(`Booking ${booking.id} rejected.`);
+    } catch {
+      toast.error("Failed to reject booking.");
+    }
   };
 
-  const handleCancel = (booking: AdminBooking) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === booking.id ? { ...b, bookingStatus: "Cancelled" } : b))
-    );
-    toast.warning(`Booking ${booking.id} cancelled.`);
+  const handleCancel = async (booking: AdminBooking) => {
+    try {
+      await AdminBookingService.updateStatus(booking.mongoId || booking.id, "cancelled");
+      const updated: AdminBooking = { ...booking, bookingStatus: "Cancelled" };
+      setBookings((prev) => prev.map((b) => (b.id === booking.id ? updated : b)));
+      setSelectedBooking((prev) => (prev?.id === booking.id ? updated : prev));
+      toast.warning(`Booking ${booking.id} cancelled.`);
+    } catch {
+      toast.error("Failed to cancel booking.");
+    }
   };
 
-  const handleRefund = (booking: AdminBooking) => {
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === booking.id
-          ? {
-              ...b,
-              bookingStatus: "Refunded",
-              paymentStatus: "Refunded",
-              paymentDetails: { ...b.paymentDetails, refundStatus: "Processed", refundAmount: b.totalAmount },
-            }
-          : b
-      )
-    );
-    toast.success(`Full refund of ₹${booking.totalAmount.toLocaleString()} processed for ${booking.id}.`);
+  const handleRefund = async (booking: AdminBooking) => {
+    try {
+      await AdminBookingService.processRefund(booking.mongoId || booking.id, booking.totalAmount, "Admin settlement refund");
+      const updated: AdminBooking = {
+        ...booking,
+        bookingStatus: "Refunded",
+        paymentStatus: "Refunded",
+        paymentDetails: {
+          ...booking.paymentDetails,
+          refundStatus: "Processed",
+          refundAmount: booking.totalAmount,
+        },
+      };
+      setBookings((prev) => prev.map((b) => (b.id === booking.id ? updated : b)));
+      setSelectedBooking((prev) => (prev?.id === booking.id ? updated : prev));
+      toast.success(`Full refund of ₹${booking.totalAmount.toLocaleString()} processed for ${booking.id}.`);
+    } catch {
+      toast.error("Failed to process refund.");
+    }
   };
 
   const handleContactBuyer = (booking: AdminBooking) => {
@@ -120,32 +140,59 @@ export default function AdminBookingsPage() {
   };
 
   /* ─── Bulk Handlers ─── */
-  const handleBulkApprove = (selected: AdminBooking[]) => {
-    const ids = new Set(selected.map((s) => s.id));
-    setBookings((prev) =>
-      prev.map((b) => (ids.has(b.id) ? { ...b, bookingStatus: "Confirmed" } : b))
-    );
-    toast.success(`Confirmed ${selected.length} bookings.`);
+  const handleBulkApprove = async (selected: AdminBooking[]) => {
+    try {
+      const ids = selected.map((s) => s.mongoId || s.id);
+      await AdminBookingService.bulkUpdate(ids, "approve", "confirmed");
+      const idsSet = new Set(selected.map((s) => s.id));
+      setBookings((prev) =>
+        prev.map((b) => (idsSet.has(b.id) ? { ...b, bookingStatus: "Confirmed", paymentStatus: "Paid" } : b))
+      );
+      toast.success(`Confirmed ${selected.length} booking(s).`);
+    } catch {
+      toast.error("Bulk approval failed.");
+    }
   };
 
-  const handleBulkReject = (selected: AdminBooking[]) => {
-    const ids = new Set(selected.map((s) => s.id));
-    setBookings((prev) =>
-      prev.map((b) => (ids.has(b.id) ? { ...b, bookingStatus: "Cancelled" } : b))
-    );
-    toast.error(`Rejected ${selected.length} bookings.`);
+  const handleBulkReject = async (selected: AdminBooking[]) => {
+    try {
+      const ids = selected.map((s) => s.mongoId || s.id);
+      await AdminBookingService.bulkUpdate(ids, "cancel", "cancelled");
+      const idsSet = new Set(selected.map((s) => s.id));
+      setBookings((prev) =>
+        prev.map((b) => (idsSet.has(b.id) ? { ...b, bookingStatus: "Cancelled" } : b))
+      );
+      toast.error(`Rejected ${selected.length} booking(s).`);
+    } catch {
+      toast.error("Bulk rejection failed.");
+    }
   };
 
-  const handleBulkCancel = (selected: AdminBooking[]) => {
-    const ids = new Set(selected.map((s) => s.id));
-    setBookings((prev) =>
-      prev.map((b) => (ids.has(b.id) ? { ...b, bookingStatus: "Cancelled" } : b))
-    );
-    toast.warning(`Cancelled ${selected.length} bookings.`);
+  const handleBulkCancel = async (selected: AdminBooking[]) => {
+    try {
+      const ids = selected.map((s) => s.mongoId || s.id);
+      await AdminBookingService.bulkUpdate(ids, "cancel", "cancelled");
+      const idsSet = new Set(selected.map((s) => s.id));
+      setBookings((prev) =>
+        prev.map((b) => (idsSet.has(b.id) ? { ...b, bookingStatus: "Cancelled" } : b))
+      );
+      toast.warning(`Cancelled ${selected.length} booking(s).`);
+    } catch {
+      toast.error("Bulk cancellation failed.");
+    }
   };
 
-  const handleBulkAssignExec = (selected: AdminBooking[]) => {
-    toast.info(`Assigned Operations Executive to ${selected.length} bookings.`);
+  const handleBulkAssignExec = async (selected: AdminBooking[]) => {
+    try {
+      const exec = { name: "Rajat Verma", phone: "+91 98260 11442", email: "rajat@roofonclick.com" };
+      await Promise.all(selected.map((s) => AdminBookingService.assignExecutive(s.mongoId || s.id, exec)));
+      setBookings((prev) =>
+        prev.map((b) => (selected.some((s) => s.id === b.id) ? { ...b, assignedExecutive: exec } : b))
+      );
+      toast.success(`Assigned Operations Executive to ${selected.length} booking(s).`);
+    } catch {
+      toast.error("Failed to assign operations executive.");
+    }
   };
 
   /* ─── Advanced Filtering ─── */
@@ -562,6 +609,9 @@ export default function AdminBookingsPage() {
         booking={selectedBooking}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        onConfirm={handleApprove}
+        onCancel={handleCancel}
+        onRefund={handleRefund}
       />
     </AdminPageContainer>
   );

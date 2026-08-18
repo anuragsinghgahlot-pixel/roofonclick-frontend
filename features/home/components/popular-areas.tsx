@@ -6,29 +6,29 @@ import { useRouter } from "next/navigation";
 import { Container } from "@/components/shared/container";
 import { Section } from "@/components/shared/section";
 
-const MOCK_AREAS = [
+const POPULAR_AREAS_DATA = [
   {
     id: "vijay-nagar",
     name: "Vijay Nagar",
-    count: 120,
+    tagline: "Indore IT & Commercial Hub",
     image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop&q=80",
   },
   {
     id: "bhawarkuan",
     name: "Bhawarkuan",
-    count: 85,
+    tagline: "Student & Coaching Center",
     image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80",
   },
   {
     id: "palasia",
     name: "Palasia",
-    count: 64,
+    tagline: "Central & Premium Stays",
     image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&auto=format&fit=crop&q=80",
   },
   {
     id: "lig-colony",
     name: "LIG Colony",
-    count: 42,
+    tagline: "Connected Residential Area",
     image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format&fit=crop&q=80",
   },
 ];
@@ -60,7 +60,7 @@ export function PopularAreas() {
 
         {/* Mobile: horizontal scroll */}
         <div className="flex sm:hidden gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-none">
-          {MOCK_AREAS.map((area) => (
+          {POPULAR_AREAS_DATA.map((area) => (
             <div
               key={area.id}
               onClick={() => handleAreaClick(area.name)}
@@ -77,11 +77,12 @@ export function PopularAreas() {
               <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/30 to-transparent pointer-events-none" />
               <div className="absolute top-3 right-3">
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-bold bg-card/85 backdrop-blur-sm text-foreground border border-border/30">
-                  {area.count}+ Stays
+                  Verified Stays
                 </span>
               </div>
               <div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col gap-1 z-10">
                 <h3 className="font-heading text-base font-extrabold text-secondary leading-snug">{area.name}</h3>
+                <p className="text-[10px] text-primary-foreground/90">{area.tagline}</p>
               </div>
             </div>
           ))}
@@ -95,7 +96,7 @@ export function PopularAreas() {
           viewport={{ once: true, margin: "-80px" }}
           className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full"
         >
-          {MOCK_AREAS.map((area) => (
+          {POPULAR_AREAS_DATA.map((area) => (
             <motion.div
               key={area.id}
               onClick={() => handleAreaClick(area.name)}
@@ -118,14 +119,14 @@ export function PopularAreas() {
               <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/30 to-transparent pointer-events-none" />
               <div className="absolute top-4 right-4">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-card/85 backdrop-blur-sm text-foreground border border-border/30 shadow-xs">
-                  {area.count}+ Stays
+                  Verified Stays
                 </span>
               </div>
               <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col gap-1 z-10 text-left">
                 <h3 className="font-heading text-xl font-extrabold text-secondary tracking-tight group-hover:text-primary-foreground transition-colors">
                   {area.name}
                 </h3>
-                <span className="text-[11px] font-semibold text-secondary-foreground/80">Explore Verified Options →</span>
+                <span className="text-[11px] font-semibold text-secondary-foreground/80">{area.tagline}</span>
               </div>
             </motion.div>
           ))}

@@ -26,66 +26,21 @@ import {
 } from "@/components/admin";
 import type { ColumnDef, RowAction, BulkAction } from "@/components/admin/data-table";
 
-interface ReviewItem {
+import { apiClient } from "@/lib/api-client";
+import { AdminTrustSafetyService } from "@/services/admin-trust-safety";
+
+export interface ReviewItem {
   id: string;
   reviewerName: string;
   reviewerEmail: string;
   propertyTitle: string;
-  rating: number; // 1-5
+  rating: number;
   comment: string;
   ownerReply?: string;
   status: "Approved" | "Pending" | "Hidden" | "Reported";
   reasonReported?: string;
   createdAt: string;
 }
-
-const MOCK_REVIEWS: ReviewItem[] = [
-  {
-    id: "REV-101",
-    reviewerName: "Anurag Singh Gahlot",
-    reviewerEmail: "anurag@email.com",
-    propertyTitle: "Elite Residency PG & Hostel",
-    rating: 5,
-    comment: "Spacious rooms, high-speed Wi-Fi, and top-tier food quality. Highly recommended for students!",
-    ownerReply: "Thank you Anurag! We are delighted to host you.",
-    status: "Approved",
-    createdAt: "2026-08-01 14:20",
-  },
-  {
-    id: "REV-102",
-    reviewerName: "Sneha Mukherjee",
-    reviewerEmail: "sneha@email.com",
-    propertyTitle: "Shree Comfort Stay Girls PG",
-    rating: 4,
-    comment: "Great security and clean mess. Minor water pressure issue on the 3rd floor.",
-    status: "Approved",
-    createdAt: "2026-07-28 11:10",
-  },
-  {
-    id: "REV-103",
-    reviewerName: "Kunal Sharma",
-    reviewerEmail: "kunal@email.com",
-    propertyTitle: "Royal Residency",
-    rating: 1,
-    comment: "Terrible experience, food was terrible and caretaker was very rude!",
-    status: "Reported",
-    reasonReported: "Abusive Language / Owner Dispute",
-    createdAt: "2026-07-24 16:30",
-  },
-  {
-    id: "REV-104",
-    reviewerName: "Bot Account",
-    reviewerEmail: "bot@spam.com",
-    propertyTitle: "Elite Residency PG & Hostel",
-    rating: 5,
-    comment: "Visit http://cheap-rooms.com for cheap bookings!",
-    status: "Hidden",
-    reasonReported: "Spam Link",
-    createdAt: "2026-08-02 09:00",
-  },
-];
-
-import { apiClient } from "@/lib/api-client";
 
 export default function AdminReviewsPage() {
   const [reviews, setReviews] = React.useState<ReviewItem[]>([]);
@@ -104,13 +59,13 @@ export default function AdminReviewsPage() {
           setReviews(
             items.map((r) => ({
               id: r._id,
-              reviewerName: r.userName || r.user?.name || "Anonymous",
+              reviewerName: r.userName || r.user?.name || "Verified Resident",
               reviewerEmail: r.user?.email || "N/A",
-              propertyTitle: r.property?.title || "Listed Stay",
+              propertyTitle: r.property?.title || "Indore PG / Hostel",
               rating: r.rating || 5,
-              comment: r.content || r.title || "",
+              comment: r.content || r.title || "Stay experience feedback",
               ownerReply: r.ownerReply?.replyText,
-              status: "Approved",
+              status: r.status === "hidden" ? "Hidden" : r.status === "flagged" ? "Reported" : "Approved",
               createdAt: r.createdAt ? new Date(r.createdAt).toISOString().substring(0, 10) : "N/A",
             }))
           );
@@ -133,24 +88,44 @@ export default function AdminReviewsPage() {
     setIsDrawerOpen(true);
   };
 
-  const handleApprove = (review: ReviewItem) => {
-    setReviews((prev) =>
-      prev.map((r) => (r.id === review.id ? { ...r, status: "Approved" } : r))
-    );
-    toast.success(`Review ${review.id} approved.`);
+  const handleApprove = async (review: ReviewItem) => {
+    try {
+      await AdminTrustSafetyService.updateReviewStatus(review.id, "published");
+      setReviews((prev) =>
+        prev.map((r) => (r.id === review.id ? { ...r, status: "Approved" } : r))
+      );
+      if (selectedReview?.id === review.id) {
+        setSelectedReview((prev) => (prev ? { ...prev, status: "Approved" } : null));
+      }
+      toast.success(`Review approved and published.`);
+    } catch {
+      toast.error("Failed to approve review.");
+    }
   };
 
-  const handleHide = (review: ReviewItem) => {
-    setReviews((prev) =>
-      prev.map((r) => (r.id === review.id ? { ...r, status: "Hidden" } : r))
-    );
-    toast.info(`Review ${review.id} hidden from public listing.`);
+  const handleHide = async (review: ReviewItem) => {
+    try {
+      await AdminTrustSafetyService.updateReviewStatus(review.id, "hidden");
+      setReviews((prev) =>
+        prev.map((r) => (r.id === review.id ? { ...r, status: "Hidden" } : r))
+      );
+      if (selectedReview?.id === review.id) {
+        setSelectedReview((prev) => (prev ? { ...prev, status: "Hidden" } : null));
+      }
+      toast.info(`Review hidden from public listing.`);
+    } catch {
+      toast.error("Failed to hide review.");
+    }
   };
 
   const handleDelete = async (review: ReviewItem) => {
     try {
-      await apiClient.delete(`/api/admin/reviews/${review.id}`);
+      await AdminTrustSafetyService.deleteReview(review.id);
       setReviews((prev) => prev.filter((r) => r.id !== review.id));
+      if (selectedReview?.id === review.id) {
+        setIsDrawerOpen(false);
+        setSelectedReview(null);
+      }
       toast.error(`Review deleted.`);
     } catch {
       toast.error("Failed to delete review.");
@@ -280,10 +255,15 @@ export default function AdminReviewsPage() {
       label: "Approve Selected",
       icon: CheckCircle2,
       variant: "success",
-      onClick: (rows) => {
-        const ids = new Set(rows.map((r) => r.id));
-        setReviews((prev) => prev.map((r) => (ids.has(r.id) ? { ...r, status: "Approved" } : r)));
-        toast.success(`Approved ${rows.length} reviews.`);
+      onClick: async (rows) => {
+        try {
+          await Promise.all(rows.map((r) => AdminTrustSafetyService.updateReviewStatus(r.id, "published")));
+          const ids = new Set(rows.map((r) => r.id));
+          setReviews((prev) => prev.map((r) => (ids.has(r.id) ? { ...r, status: "Approved" } : r)));
+          toast.success(`Approved ${rows.length} reviews.`);
+        } catch {
+          toast.error("Failed to approve selected reviews.");
+        }
       },
     },
     {
@@ -291,10 +271,15 @@ export default function AdminReviewsPage() {
       label: "Hide Selected",
       icon: EyeOff,
       variant: "warning",
-      onClick: (rows) => {
-        const ids = new Set(rows.map((r) => r.id));
-        setReviews((prev) => prev.map((r) => (ids.has(r.id) ? { ...r, status: "Hidden" } : r)));
-        toast.info(`Hidden ${rows.length} reviews.`);
+      onClick: async (rows) => {
+        try {
+          await Promise.all(rows.map((r) => AdminTrustSafetyService.updateReviewStatus(r.id, "hidden")));
+          const ids = new Set(rows.map((r) => r.id));
+          setReviews((prev) => prev.map((r) => (ids.has(r.id) ? { ...r, status: "Hidden" } : r)));
+          toast.info(`Hidden ${rows.length} reviews.`);
+        } catch {
+          toast.error("Failed to hide selected reviews.");
+        }
       },
     },
   ];

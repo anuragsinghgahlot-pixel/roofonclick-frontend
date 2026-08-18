@@ -1,5 +1,4 @@
 import { Property } from "@/services/property";
-import { MOCK_PROPERTIES } from "@/constants/mock-properties";
 
 export interface RecentlyViewedItem {
   id: string;
@@ -7,10 +6,8 @@ export interface RecentlyViewedItem {
   property: Property;
 }
 
-const STORAGE_KEY = "stayynest_recently_viewed_history";
+const STORAGE_KEY = "roofonclick_recently_viewed_history";
 const MAX_HISTORY_LIMIT = 10;
-
-const MOCK_RECENT_VIEWED: RecentlyViewedItem[] = [];
 
 export const RecentlyViewedService = {
   getRecentlyViewed: (): RecentlyViewedItem[] => {
@@ -30,13 +27,14 @@ export const RecentlyViewedService = {
   },
 
   addRecentlyViewed: (property: Property | any): RecentlyViewedItem[] => {
-    if (!property || !property.id) return RecentlyViewedService.getRecentlyViewed();
+    if (!property || !(property.id || property._id)) return RecentlyViewedService.getRecentlyViewed();
 
+    const propId = property.id || property._id;
     const history = RecentlyViewedService.getRecentlyViewed();
-    const existingIndex = history.findIndex((item) => item.id === property.id);
+    const existingIndex = history.findIndex((item) => item.id === propId);
 
     const newItem: RecentlyViewedItem = {
-      id: property.id,
+      id: propId,
       viewedAt: new Date().toISOString(),
       property,
     };
@@ -44,8 +42,7 @@ export const RecentlyViewedService = {
     let updated: RecentlyViewedItem[];
 
     if (existingIndex !== -1) {
-      // Move to top
-      const filtered = history.filter((item) => item.id !== property.id);
+      const filtered = history.filter((item) => item.id !== propId);
       updated = [newItem, ...filtered];
     } else {
       updated = [newItem, ...history];
@@ -60,22 +57,29 @@ export const RecentlyViewedService = {
         // Handle storage quota limits gracefully
       }
     }
+
     return updated;
   },
 
-  removeRecentlyViewed: (propertyId: string): RecentlyViewedItem[] => {
-    const history = RecentlyViewedService.getRecentlyViewed();
-    const updated = history.filter((item) => item.id !== propertyId);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    }
-    return updated;
-  },
-
-  clearRecentlyViewed: (): boolean => {
+  clearHistory: (): void => {
     if (typeof window !== "undefined") {
       localStorage.removeItem(STORAGE_KEY);
     }
-    return true;
+  },
+
+  clearRecentlyViewed: (): void => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  },
+
+  removeRecentlyViewed: (propertyId: string): RecentlyViewedItem[] => {
+    if (typeof window === "undefined") return [];
+    const history = RecentlyViewedService.getRecentlyViewed();
+    const updated = history.filter((item) => item.id !== propertyId && item.property?.id !== propertyId);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch {}
+    return updated;
   },
 };

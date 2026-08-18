@@ -70,61 +70,123 @@ export default function AdminBuyersPage() {
     setIsDrawerOpen(true);
   };
 
-  const handleVerify = (buyer: AdminBuyer) => {
-    setBuyers((prev) =>
-      prev.map((b) => (b.id === buyer.id ? { ...b, verificationStatus: "verified", accountStatus: "active" } : b))
-    );
-    toast.success(`Buyer ${buyer.name} verified.`);
+  const handleVerify = async (buyer: AdminBuyer) => {
+    try {
+      await AdminBuyerService.verifyBuyer(buyer.id);
+      await AdminBuyerService.updateStatus(buyer.id, "active");
+      const updated = { ...buyer, verificationStatus: "verified" as const, accountStatus: "active" as const };
+      setBuyers((prev) => prev.map((b) => (b.id === buyer.id ? updated : b)));
+      setSelectedBuyer((prev) => (prev?.id === buyer.id ? updated : prev));
+      toast.success(`Resident ${buyer.name} verified & activated.`);
+    } catch {
+      toast.error("Failed to verify resident.");
+    }
   };
 
-  const handleBlock = (buyer: AdminBuyer) => {
-    setBuyers((prev) =>
-      prev.map((b) => (b.id === buyer.id ? { ...b, accountStatus: "blocked" } : b))
-    );
-    toast.error(`Buyer ${buyer.name} account blocked.`);
+  const handleBlock = async (buyer: AdminBuyer) => {
+    try {
+      await AdminBuyerService.updateStatus(buyer.id, "blocked");
+      const updated = { ...buyer, accountStatus: "blocked" as const };
+      setBuyers((prev) => prev.map((b) => (b.id === buyer.id ? updated : b)));
+      setSelectedBuyer((prev) => (prev?.id === buyer.id ? updated : prev));
+      toast.error(`Resident ${buyer.name} account blocked.`);
+    } catch {
+      toast.error("Failed to block resident account.");
+    }
   };
 
-  const handleUnblock = (buyer: AdminBuyer) => {
-    setBuyers((prev) =>
-      prev.map((b) => (b.id === buyer.id ? { ...b, accountStatus: "active" } : b))
-    );
-    toast.success(`Buyer ${buyer.name} account unblocked.`);
+  const handleUnblock = async (buyer: AdminBuyer) => {
+    try {
+      await AdminBuyerService.updateStatus(buyer.id, "active");
+      const updated = { ...buyer, accountStatus: "active" as const };
+      setBuyers((prev) => prev.map((b) => (b.id === buyer.id ? updated : b)));
+      setSelectedBuyer((prev) => (prev?.id === buyer.id ? updated : prev));
+      toast.success(`Resident ${buyer.name} account unblocked & active.`);
+    } catch {
+      toast.error("Failed to unblock resident account.");
+    }
   };
 
-  const handleDelete = (buyer: AdminBuyer) => {
-    setBuyers((prev) => prev.filter((b) => b.id !== buyer.id));
-    toast.success(`Buyer ${buyer.name} deleted.`);
+  const handleDelete = async (buyer: AdminBuyer) => {
+    try {
+      await AdminBuyerService.deleteBuyer(buyer.id);
+      setBuyers((prev) => prev.filter((b) => b.id !== buyer.id));
+      if (selectedBuyer?.id === buyer.id) {
+        setIsDrawerOpen(false);
+        setSelectedBuyer(null);
+      }
+      toast.success(`Resident ${buyer.name} deleted.`);
+    } catch {
+      toast.error("Failed to delete resident.");
+    }
   };
 
-  const handleSendNotification = (buyer: AdminBuyer) => {
-    toast.info(`Notification sent to ${buyer.name} (${buyer.email})`);
+  const handleSendNotification = async (buyer: AdminBuyer) => {
+    try {
+      await AdminBuyerService.broadcastNotification({
+        userIds: [buyer.id],
+        title: "Update on Your RoofOnClick Activity",
+        message: `Hello ${buyer.name}, your account is active. Explore verified hostels and PGs in Indore!`,
+      });
+      toast.success(`Notification broadcast to ${buyer.name} (${buyer.email})`);
+    } catch {
+      toast.error("Failed to send notification.");
+    }
   };
 
   /* ─── Bulk Handlers ─── */
-  const handleBulkVerify = (selected: AdminBuyer[]) => {
-    const ids = new Set(selected.map((s) => s.id));
-    setBuyers((prev) =>
-      prev.map((b) => (ids.has(b.id) ? { ...b, verificationStatus: "verified", accountStatus: "active" } : b))
-    );
-    toast.success(`Verified ${selected.length} buyers.`);
+  const handleBulkVerify = async (selected: AdminBuyer[]) => {
+    try {
+      const ids = selected.map((s) => s.id);
+      await AdminBuyerService.bulkUpdate(ids, "verify");
+      const idsSet = new Set(ids);
+      setBuyers((prev) =>
+        prev.map((b) => (idsSet.has(b.id) ? { ...b, verificationStatus: "verified", accountStatus: "active" } : b))
+      );
+      toast.success(`Verified ${selected.length} resident account(s).`);
+    } catch {
+      toast.error("Bulk verification failed.");
+    }
   };
 
-  const handleBulkBlock = (selected: AdminBuyer[]) => {
-    const ids = new Set(selected.map((s) => s.id));
-    setBuyers((prev) =>
-      prev.map((b) => (ids.has(b.id) ? { ...b, accountStatus: "blocked" } : b))
-    );
-    toast.error(`Blocked ${selected.length} buyers.`);
+  const handleBulkBlock = async (selected: AdminBuyer[]) => {
+    try {
+      const ids = selected.map((s) => s.id);
+      await AdminBuyerService.bulkUpdate(ids, "block");
+      const idsSet = new Set(ids);
+      setBuyers((prev) =>
+        prev.map((b) => (idsSet.has(b.id) ? { ...b, accountStatus: "blocked" } : b))
+      );
+      toast.error(`Blocked ${selected.length} resident account(s).`);
+    } catch {
+      toast.error("Bulk block failed.");
+    }
   };
 
-  const handleBulkDelete = (selected: AdminBuyer[]) => {
-    const ids = new Set(selected.map((s) => s.id));
-    setBuyers((prev) => prev.filter((b) => !ids.has(b.id)));
-    toast.success(`Deleted ${selected.length} buyer accounts.`);
+  const handleBulkDelete = async (selected: AdminBuyer[]) => {
+    try {
+      const ids = selected.map((s) => s.id);
+      await AdminBuyerService.bulkUpdate(ids, "delete");
+      const idsSet = new Set(ids);
+      setBuyers((prev) => prev.filter((b) => !idsSet.has(b.id)));
+      toast.success(`Deleted ${selected.length} resident account(s).`);
+    } catch {
+      toast.error("Bulk deletion failed.");
+    }
   };
 
-  const handleBulkNotify = (selected: AdminBuyer[]) => {
-    toast.info(`Broadcast notification sent to ${selected.length} buyers.`);
+  const handleBulkNotify = async (selected: AdminBuyer[]) => {
+    try {
+      const ids = selected.map((s) => s.id);
+      await AdminBuyerService.broadcastNotification({
+        userIds: ids,
+        title: "Community Announcement",
+        message: "New verified properties and room discounts are live on RoofOnClick!",
+      });
+      toast.success(`Broadcast notification sent to ${selected.length} resident(s).`);
+    } catch {
+      toast.error("Failed to broadcast notification.");
+    }
   };
 
   /* ─── Advanced Filtering ─── */
@@ -526,6 +588,9 @@ export default function AdminBuyersPage() {
         buyer={selectedBuyer}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        onVerify={handleVerify}
+        onBlock={handleBlock}
+        onUnblock={handleUnblock}
       />
     </AdminPageContainer>
   );

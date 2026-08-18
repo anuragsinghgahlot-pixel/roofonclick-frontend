@@ -19,13 +19,17 @@ const CompareContext = React.createContext<CompareContextType | undefined>(undef
 
 export function CompareProvider({ children }: { children: React.ReactNode }) {
   const [compareIds, setCompareIds] = React.useState<string[]>(() => CompareService.getCompareIds());
+  const [compareProperties, setCompareProperties] = React.useState<Property[]>([]);
 
   React.useEffect(() => {
     CompareService.setCompareIds(compareIds);
-  }, [compareIds]);
-
-  const compareProperties = React.useMemo(() => {
-    return CompareService.getCompareProperties(compareIds);
+    let isMounted = true;
+    CompareService.getCompareProperties(compareIds).then((props) => {
+      if (isMounted) setCompareProperties(props);
+    });
+    return () => {
+      isMounted = false;
+    };
   }, [compareIds]);
 
   const addToCompare = React.useCallback(

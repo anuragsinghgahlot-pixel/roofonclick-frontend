@@ -1,5 +1,6 @@
 "use client";
 
+import { apiClient } from "@/lib/api-client";
 import type { StatusType } from "@/components/admin/data-table";
 
 export type AdminPaymentStatusType =
@@ -15,6 +16,7 @@ export type AdminPaymentStatusType =
 export interface AdminPayment {
   id: string;
   bookingId: string;
+  mongoBookingId?: string;
   buyerName: string;
   buyerEmail: string;
   buyerPhone: string;
@@ -78,48 +80,17 @@ export interface AdminFinanceQuickStats {
   outstandingPayments: number;
 }
 
-/* ─── Data ─── */
-const MOCK_ADMIN_PAYMENTS: AdminPayment[] = [];
-
-const MOCK_FINANCE_CHARTS = {
-  monthlyRevenue: {
-    id: "revenue",
-    title: "Gross Transaction Volume (GTV)",
-    subtitle: "Total booking payments processed across all properties",
-    color: "hsl(217, 91%, 60%)",
-    data: [],
-  },
-  platformCommission: {
-    id: "commission",
-    title: "Platform Revenue (5% Commission)",
-    subtitle: "Commission collected from settlements",
-    color: "hsl(142, 71%, 45%)",
-    data: [],
-  },
-  refunds: {
-    id: "refunds",
-    title: "Refunds Processed",
-    subtitle: "Total refund volume issued to buyers",
-    color: "hsl(0, 84%, 60%)",
-    data: [],
-  },
-  revenueTrend: { id: "revenueTrend", title: "Revenue Trend", subtitle: "Monthly revenue trend", color: "hsl(217, 91%, 60%)", data: [] },
-  commissionTrend: { id: "commissionTrend", title: "Commission Trend", subtitle: "Monthly commission trend", color: "hsl(142, 71%, 45%)", data: [] },
-  payoutsTrend: { id: "payoutsTrend", title: "Payouts Trend", subtitle: "Monthly payouts trend", color: "hsl(270, 70%, 60%)", data: [] },
-  refundTrend: { id: "refundTrend", title: "Refund Trend", subtitle: "Monthly refund trend", color: "hsl(0, 84%, 60%)", data: [] },
-};
-
 /* ─── Admin Payment Service ─── */
 export class AdminPaymentService {
-  static getQuickStats(payments: AdminPayment[] = MOCK_ADMIN_PAYMENTS): AdminFinanceQuickStats {
+  static getQuickStats(payments: AdminPayment[] = []): AdminFinanceQuickStats {
     const todaysRevenue = payments
       .filter((p) => p.status === "Paid" || p.status === "Settled")
-      .reduce((acc, p) => acc + p.amount, 0);
+      .reduce((acc, p) => acc + (p.amount || 0), 0);
 
-    const monthlyRevenue = payments.reduce((acc, p) => acc + p.amount, 0);
+    const monthlyRevenue = payments.reduce((acc, p) => acc + (p.amount || 0), 0);
     const platformCommission = Math.round(monthlyRevenue * 0.05);
     const pendingSettlements = payments.filter((p) => p.status === "Settlement Pending" || p.status === "Pending").length;
-    const completedSettlements = payments.filter((p) => p.status === "Settled").length;
+    const completedSettlements = payments.filter((p) => p.status === "Settled" || p.status === "Paid").length;
     const refundRequests = payments.filter((p) => p.status === "Refunded" || p.refundDetails?.status === "Requested").length;
     const failedPayments = payments.filter((p) => p.status === "Failed").length;
     const outstandingPayments = payments.filter((p) => p.status === "Pending").length;
@@ -136,11 +107,65 @@ export class AdminPaymentService {
     };
   }
 
-  static getAllPayments(): AdminPayment[] {
-    return MOCK_ADMIN_PAYMENTS;
+  static async fetchFinanceStats() {
+    try {
+      const res = await apiClient.get<{ kpis: AdminFinanceQuickStats; charts: any }>("/api/admin/finance/stats");
+      return res.data;
+    } catch {
+      return null;
+    }
   }
 
-  static getFinanceCharts() {
-    return MOCK_FINANCE_CHARTS;
+  static async fetchAdminPayments(): Promise<AdminPayment[]> {
+    try {
+      const res = await apiClient.get<{ transactions: any[] }>("/api/admin/finance/transactions");
+      const txns = res.data?.transactions || [];
+      return txns.map((t) => ({
+        id: t.id,
+        bookingId: t.bookingId,
+        mongoBookingId: t.mongoBookingId,
+        buyerName: t.buyerName || "Resident Guest",
+        buyerEmail: t.buyerEmail || "N/A",
+        buyerPhone: t.buyerPhone || "N/A",
+        ownerName: t.ownerName || "Property Owner",
+        ownerPhone: t.ownerPhone || "N/A",
+        bankAccount: t.bankAccount || "•••• •••• 8842",
+        propertyTitle: t.propertyTitle || "Indore Property",
+        city: t.city || "Indore",
+        amount: t.amount || 0,
+        platformFee: t.platformFee || 0,
+        ownerEarnings: t.ownerEarnings || 0,
+        paymentMethod: t.paymentMethod || "UPI",
+        gateway: t.gateway || "Razorpay",
+        gatewayRef: t.gatewayRef || "pay_mock",
+        status: t.status as AdminPaymentStatusType,
+        createdAt: t.createdAt || "2026-08-15",
+        settlementDetails: t.settlementDetails || {
+          settlementId: "SET-1001",
+          settlementStatus: "Settled",
+          bankName: "HDFC Bank",
+          accountNo: "•••• •••• 8842",
+          ifscCode: "HDFC0001234",
+        },
+        refundDetails: t.refundDetails,
+        timeline: t.timeline || [],
+        documents: [],
+        internalNotes: [],
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  static async settleTransaction(id: string) {
+    return apiClient.put(`/api/admin/finance/transactions/${id}/settle`);
+  }
+
+  static async refundTransaction(id: string, amount?: number, reason?: string) {
+    return apiClient.post(`/api/admin/finance/transactions/${id}/refund`, { amount, reason });
+  }
+
+  static async retryPayment(id: string) {
+    return apiClient.put(`/api/admin/finance/transactions/${id}/settle`);
   }
 }

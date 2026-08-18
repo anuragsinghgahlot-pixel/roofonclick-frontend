@@ -52,10 +52,16 @@ export function BookingDetailDrawer({
   booking,
   isOpen,
   onClose,
+  onConfirm,
+  onCancel,
+  onRefund,
 }: {
   booking: AdminBooking | null;
   isOpen: boolean;
   onClose: () => void;
+  onConfirm?: (booking: AdminBooking) => void;
+  onCancel?: (booking: AdminBooking) => void;
+  onRefund?: (booking: AdminBooking) => void;
 }) {
   const [activeTab, setActiveTab] = React.useState<TabId>("overview");
   const [notes, setNotes] = React.useState<{ id: string; author: string; note: string; date: string }[]>([]);
@@ -390,6 +396,45 @@ export function BookingDetailDrawer({
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* ═══ Action Footer ═══ */}
+            <div className="p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span className="font-heading text-[11px] font-bold text-muted-foreground">
+                  Status: <strong className="text-foreground uppercase">{booking.bookingStatus}</strong>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {onCancel && booking.bookingStatus !== "Cancelled" && booking.bookingStatus !== "Refunded" && (
+                  <button
+                    type="button"
+                    onClick={() => onCancel(booking)}
+                    className="px-3.5 py-2 rounded-xl bg-destructive/15 hover:bg-destructive/25 active:scale-95 text-destructive text-xs font-heading font-bold transition-all cursor-pointer"
+                  >
+                    Cancel Booking
+                  </button>
+                )}
+                {onRefund && booking.bookingStatus !== "Refunded" && booking.paymentStatus === "Paid" && (
+                  <button
+                    type="button"
+                    onClick={() => onRefund(booking)}
+                    className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-700 dark:text-amber-400 text-xs font-heading font-bold transition-all cursor-pointer"
+                  >
+                    Process Refund
+                  </button>
+                )}
+                {onConfirm && booking.bookingStatus !== "Confirmed" && booking.bookingStatus !== "Completed" && (
+                  <button
+                    type="button"
+                    onClick={() => onConfirm(booking)}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-heading font-extrabold shadow-sm transition-all cursor-pointer"
+                  >
+                    Confirm Booking
+                  </button>
+                )}
+              </div>
             </div>
           </motion.div>
         </>

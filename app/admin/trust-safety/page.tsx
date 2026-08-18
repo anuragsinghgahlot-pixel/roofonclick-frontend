@@ -50,16 +50,37 @@ export default function AdminTrustSafetyPage() {
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 
   /* Data state */
-  const [tickets, setTickets] = React.useState<SupportTicketItem[]>(() => AdminTrustSafetyService.getTickets());
-  const [complaints, setComplaints] = React.useState<ComplaintItem[]>(() => AdminTrustSafetyService.getComplaints());
-  const [reviews, setReviews] = React.useState<ReviewModerationItem[]>(() => AdminTrustSafetyService.getReviews());
-  const [properties, setProperties] = React.useState<ReportedListingItem[]>(() => AdminTrustSafetyService.getReportedProperties());
-  const [users, setUsers] = React.useState<ReportedUserItem[]>(() => AdminTrustSafetyService.getReportedUsers());
+  const [tickets, setTickets] = React.useState<SupportTicketItem[]>([]);
+  const [complaints, setComplaints] = React.useState<ComplaintItem[]>([]);
+  const [reviews, setReviews] = React.useState<ReviewModerationItem[]>([]);
+  const [properties, setProperties] = React.useState<ReportedListingItem[]>([]);
+  const [users, setUsers] = React.useState<ReportedUserItem[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    Promise.all([
+      AdminTrustSafetyService.fetchTickets(),
+      AdminTrustSafetyService.fetchReports(),
+      AdminTrustSafetyService.fetchReviews(),
+    ]).then(([tList, cList, rList]) => {
+      if (isMounted) {
+        setTickets(tList);
+        setComplaints(cList);
+        setReviews(rList);
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   /* Stats calculation */
   const stats: TrustSafetyQuickStats = React.useMemo(
-    () => AdminTrustSafetyService.getQuickStats(),
-    []
+    () => AdminTrustSafetyService.getQuickStats(tickets, complaints, reviews),
+    [tickets, complaints, reviews]
   );
 
   /* Handlers */
@@ -244,7 +265,21 @@ export default function AdminTrustSafetyPage() {
           searchPlaceholder="Search ticket ID, buyer, owner, category..."
           rowActions={[
             { id: "view", label: "Inspect Case", icon: Eye, onClick: (r) => handleViewTicket(r) },
-            { id: "resolve", label: "Mark Resolved", icon: CheckCircle2, variant: "success", onClick: (r) => toast.success(`Ticket ${r.id} resolved`) },
+            {
+              id: "resolve",
+              label: "Mark Resolved",
+              icon: CheckCircle2,
+              variant: "success",
+              onClick: async (r) => {
+                try {
+                  await AdminTrustSafetyService.updateTicket(r.mongoId || r.id, { status: "resolved" });
+                  setTickets((prev) => prev.map((t) => (t.id === r.id ? { ...t, status: "Resolved" } : t)));
+                  toast.success(`Ticket ${r.id} marked as resolved.`);
+                } catch {
+                  toast.error("Failed to resolve ticket.");
+                }
+              },
+            },
           ]}
         />
       )}
@@ -267,9 +302,51 @@ export default function AdminTrustSafetyPage() {
           searchable={true}
           searchPlaceholder="Search review comment, reviewer, property..."
           rowActions={[
-            { id: "approve", label: "Approve Review", icon: Check, variant: "success", onClick: (r) => toast.success("Review approved") },
-            { id: "hide", label: "Hide Review", icon: EyeOff, variant: "warning", onClick: (r) => toast.info("Review hidden") },
-            { id: "delete", label: "Delete Review", icon: Trash2, variant: "destructive", onClick: (r) => toast.error("Review deleted") },
+            {
+              id: "approve",
+              label: "Approve Review",
+              icon: Check,
+              variant: "success",
+              onClick: async (r) => {
+                try {
+                  await AdminTrustSafetyService.updateReviewStatus(r.id, "published");
+                  setReviews((prev) => prev.map((item) => (item.id === r.id ? { ...item, status: "Approved" } : item)));
+                  toast.success("Review approved.");
+                } catch {
+                  toast.error("Failed to approve review.");
+                }
+              },
+            },
+            {
+              id: "hide",
+              label: "Hide Review",
+              icon: EyeOff,
+              variant: "warning",
+              onClick: async (r) => {
+                try {
+                  await AdminTrustSafetyService.updateReviewStatus(r.id, "hidden");
+                  setReviews((prev) => prev.map((item) => (item.id === r.id ? { ...item, status: "Hidden" } : item)));
+                  toast.info("Review hidden.");
+                } catch {
+                  toast.error("Failed to hide review.");
+                }
+              },
+            },
+            {
+              id: "delete",
+              label: "Delete Review",
+              icon: Trash2,
+              variant: "destructive",
+              onClick: async (r) => {
+                try {
+                  await AdminTrustSafetyService.deleteReview(r.id);
+                  setReviews((prev) => prev.filter((item) => item.id !== r.id));
+                  toast.error("Review deleted.");
+                } catch {
+                  toast.error("Failed to delete review.");
+                }
+              },
+            },
           ]}
         />
       )}
