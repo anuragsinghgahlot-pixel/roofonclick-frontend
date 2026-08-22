@@ -27,10 +27,10 @@ export function ProgressTimeline({ currentStep }: ProgressTimelineProps) {
       {/* Desktop Horizontal Timeline (md+) */}
       <div className="hidden md:flex items-center justify-between w-full relative mb-10 px-4 select-none">
         {/* Connecting progress line */}
-        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-muted -translate-y-1/2 -z-10 w-full" />
+        <div className="absolute top-4 left-6 right-6 h-0.5 bg-border z-0" />
         <div
-          className="absolute top-1/2 left-0 h-0.5 bg-primary -translate-y-1/2 -z-10 transition-all duration-500 ease-out"
-          style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
+          className="absolute top-4 left-6 h-0.5 bg-primary z-0 transition-all duration-500 ease-out"
+          style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 92}%` }}
         />
 
         {STEPS.map((s) => {
@@ -46,13 +46,13 @@ export function ProgressTimeline({ currentStep }: ProgressTimelineProps) {
               disabled={!isUnlocked}
               onClick={() => isUnlocked && setStep(s.step)}
               className={cn(
-                "flex flex-col items-center gap-2 relative bg-background px-3 transition-transform duration-200 border-none outline-none select-none",
+                "flex flex-col items-center gap-2 relative z-10 bg-background px-3 transition-transform duration-200 border-none outline-none select-none",
                 isUnlocked ? "cursor-pointer hover:scale-[1.05]" : "cursor-not-allowed opacity-65"
               )}
             >
               <div
                 className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 font-heading text-xs font-bold",
+                  "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 font-heading text-xs font-bold bg-card",
                   isCompleted && "border-primary bg-primary text-primary-foreground",
                   isActive && "border-primary bg-primary/10 text-primary scale-110 shadow-sm",
                   isFuture && "border-border bg-card text-muted-foreground/60"
@@ -78,17 +78,15 @@ export function ProgressTimeline({ currentStep }: ProgressTimelineProps) {
       </div>
 
       {/* Mobile: compact horizontal pill progress bar (below md) */}
-      <div className="flex md:hidden items-center gap-2 mb-5 select-none overflow-x-auto scrollbar-none pb-1">
-        {/* Progress bar */}
-        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden shrink-0 min-w-[60px]">
+      <div className="flex md:hidden flex-col gap-2.5 mb-4 select-none w-full max-w-full">
+        {/* Step dots with connecting line */}
+        <div className="relative flex items-center justify-between w-full px-1">
+          <div className="absolute top-1/2 left-3 right-3 h-0.5 bg-border z-0" />
           <div
-            className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
+            className="absolute top-1/2 left-3 h-0.5 bg-primary z-0 transition-all duration-300 ease-out"
+            style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 92}%` }}
           />
-        </div>
 
-        {/* Step dots */}
-        <div className="flex items-center gap-1.5 shrink-0">
           {STEPS.map((s) => {
             const isCompleted = s.step < currentStep;
             const isActive = s.step === currentStep;
@@ -103,17 +101,17 @@ export function ProgressTimeline({ currentStep }: ProgressTimelineProps) {
                 title={s.label}
                 aria-label={`Go to step ${s.step}: ${s.label}`}
                 className={cn(
-                  "rounded-full flex items-center justify-center border-2 transition-all duration-300 font-heading text-[9px] font-bold shrink-0",
+                  "rounded-full flex items-center justify-center border-2 transition-all duration-300 font-heading font-bold shrink-0 relative z-10 bg-background",
                   isActive
-                    ? "w-8 h-8 border-primary bg-primary/10 text-primary shadow-sm"
+                    ? "w-6 h-6 border-primary bg-primary/10 text-primary text-[10px] shadow-xs scale-110"
                     : isCompleted
-                    ? "w-6 h-6 border-primary bg-primary text-primary-foreground"
-                    : "w-5 h-5 border-border bg-card text-muted-foreground/60",
+                    ? "w-5 h-5 border-primary bg-primary text-primary-foreground text-[9px]"
+                    : "w-4.5 h-4.5 border-border bg-card text-muted-foreground/60 text-[8px]",
                   isUnlocked ? "cursor-pointer" : "cursor-not-allowed opacity-50"
                 )}
               >
                 {isCompleted ? (
-                  <Check className="w-3 h-3 stroke-[3]" />
+                  <Check className="w-2.5 h-2.5 stroke-[3]" />
                 ) : (
                   <span>{s.step}</span>
                 )}
@@ -122,10 +120,15 @@ export function ProgressTimeline({ currentStep }: ProgressTimelineProps) {
           })}
         </div>
 
-        {/* Current step label */}
-        <span className="font-heading text-[10px] font-bold text-primary uppercase tracking-wide shrink-0">
-          {STEPS[currentStep - 1]?.label}
-        </span>
+        {/* Current step label & completion */}
+        <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground px-1">
+          <span className="text-primary uppercase tracking-wide">
+            {STEPS[currentStep - 1]?.label}
+          </span>
+          <span className="text-emerald-500 font-extrabold">
+            {Math.round(((currentStep - 1) / (STEPS.length - 1)) * 100)}% Complete
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -1,17 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/shared/section";
 import Navbar from "@/components/navigation/navbar";
 import Footer from "@/components/navigation/footer";
-import { Plus, Minus, Building, Users, Calendar, BarChart3, ArrowRight, Eye, Trash2, Edit3, ExternalLink, MapPin, AlertTriangle, X, ChevronDown, Sliders, PhoneCall, MessageSquare } from "lucide-react";
+import { Plus, Minus, Building, Users, Calendar, BarChart3, ArrowRight, Eye, Trash2, Edit3, ExternalLink, MapPin, AlertTriangle, X, ChevronDown, Sliders, PhoneCall, MessageSquare, Bookmark, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
-import { PropertyService, Property } from "@/services/property";
+import { PropertyService, Property, PropertyWizardDraft } from "@/services/property";
 import { UserAPI } from "@/services/user/user.api";
 import { ListingsAPI } from "@/services/listings/listings.api";
 import { EnquiryService } from "@/services/enquiry";
@@ -30,6 +30,8 @@ const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 export default function OwnerDashboardPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
   const { user, role, logout, isLoading } = useAuth();
   const [pathnameKey, setPathnameKey] = React.useState(pathname);
 
@@ -42,10 +44,52 @@ export default function OwnerDashboardPage() {
       router.replace("/");
     }
   }, [user, currentRole, isLoading, router]);
+
+  const [activeTab, setActiveTab] = React.useState<"PROPERTIES" | "BOOKINGS" | "ENQUIRIES" | "CALLBACKS" | "REVIEWS">("PROPERTIES");
+
+  React.useEffect(() => {
+    if (tabParam) {
+      const upper = tabParam.toUpperCase();
+      if (["PROPERTIES", "BOOKINGS", "ENQUIRIES", "CALLBACKS", "REVIEWS"].includes(upper)) {
+        setActiveTab(upper as any);
+      }
+    }
+  }, [tabParam]);
   const [properties, setProperties] = React.useState<Property[]>([]);
+  const [activeDraft, setActiveDraft] = React.useState<PropertyWizardDraft | null>(null);
   const [propertyToDelete, setPropertyToDelete] = React.useState<Property | null>(null);
 
+  const refreshDraft = React.useCallback(() => {
+    const draft = PropertyService.getDraft();
+    if (
+      draft &&
+      draft.formValues &&
+      (draft.formValues.propertyName ||
+        draft.formValues.city ||
+        (draft.formValues.rooms && (draft.formValues.rooms as any[]).length > 0))
+    ) {
+      setActiveDraft(draft);
+    } else {
+      setActiveDraft(null);
+    }
+  }, []);
+
+  const handleResumeDraft = () => {
+    if (activeDraft) {
+      router.push(`/owner/property/new?step=${activeDraft.currentStep || 1}`);
+    }
+  };
+
+  const handleDiscardDraft = () => {
+    if (confirm("Are you sure you want to discard this unfinished property listing draft?")) {
+      PropertyService.clearDraft();
+      setActiveDraft(null);
+      toast.success("Draft discarded successfully.");
+    }
+  };
+
   const fetchOwnerListings = React.useCallback(() => {
+    refreshDraft();
     // Clear legacy mock local storage cache if any
     if (typeof window !== "undefined") {
       try {
@@ -65,7 +109,7 @@ export default function OwnerDashboardPage() {
         // Fall back to PropertyService if offline/unauthenticated
         setProperties(PropertyService.getAllProperties());
       });
-  }, []);
+  }, [refreshDraft]);
 
   React.useEffect(() => {
     fetchOwnerListings();
@@ -81,8 +125,8 @@ export default function OwnerDashboardPage() {
     }));
   };
 
-  const handleQuickUpdateAvailability = (propertyId: string, roomIndex: number, delta: number) => {
-    const targetProperty = PropertyService.getPropertyById(propertyId);
+  const handleQuickUpdateAvailability = async (propertyId: string, roomIndex: number, delta: number) => {
+    const targetProperty = properties.find((p) => p.id === propertyId || (p as any)._id === propertyId);
     if (!targetProperty || !targetProperty.rooms || !targetProperty.rooms[roomIndex]) return;
 
     const currentRoom = targetProperty.rooms[roomIndex];
@@ -92,6 +136,7 @@ export default function OwnerDashboardPage() {
 
     if (newAvail === currentAvail) return;
 
+    const previousRooms = targetProperty.rooms;
     const updatedRooms = targetProperty.rooms.map((rm, idx) => {
       if (idx === roomIndex) {
         return {
@@ -102,22 +147,53 @@ export default function OwnerDashboardPage() {
       return rm;
     });
 
-    // Save directly to PropertyService
+    // 1. Optimistically update local React state for instantaneous UI responsiveness
+    setProperties((prev) =>
+      prev.map((p) => {
+        if (p.id === propertyId || (p as any)._id === propertyId) {
+          return {
+            ...p,
+            rooms: updatedRooms,
+          };
+        }
+        return p;
+      })
+    );
+
+    // 2. Sync to local PropertyService cache
     PropertyService.updateProperty(propertyId, { rooms: updatedRooms });
 
-    // Reactively refresh properties list on dashboard
-    setProperties(PropertyService.getAllProperties());
-
     toast.success(
-      `Updated ${currentRoom.sharingType || currentRoom.roomType || "Room"} available count: ${newAvail}/${total}`,
+      `Updated ${currentRoom.sharingType || currentRoom.roomType || "Room"}: ${newAvail}/${total} available`,
       { duration: 2000 }
     );
+
+    // 3. Persist change to the MongoDB backend
+    try {
+      await ListingsAPI.updateRooms(propertyId, updatedRooms);
+    } catch (err: any) {
+      console.error("[OwnerDashboard] Failed to persist room availability:", err);
+      // Rollback optimistic update on error
+      setProperties((prev) =>
+        prev.map((p) => {
+          if (p.id === propertyId || (p as any)._id === propertyId) {
+            return {
+              ...p,
+              rooms: previousRooms,
+            };
+          }
+          return p;
+        })
+      );
+      PropertyService.updateProperty(propertyId, { rooms: previousRooms });
+      toast.error("Failed to sync availability with server. Reverted change.");
+    }
   };
 
   // Sync properties when pathname changes during client navigation
   if (pathnameKey !== pathname) {
     setPathnameKey(pathname);
-    setProperties(PropertyService.getAllProperties());
+    fetchOwnerListings();
   }
 
   // Re-sync properties on window focus
@@ -139,7 +215,6 @@ export default function OwnerDashboardPage() {
     router.push("/owner/property/new?step=1");
   };
 
-  const [activeTab, setActiveTab] = React.useState<"PROPERTIES" | "BOOKINGS" | "ENQUIRIES" | "CALLBACKS" | "REVIEWS">("PROPERTIES");
   const [enquiriesList, setEnquiriesList] = React.useState<any[]>([]);
   const [pendingEnquiriesCount, setPendingEnquiriesCount] = React.useState(0);
   const totalEnquiriesCount = enquiriesList.length;
@@ -304,33 +379,85 @@ export default function OwnerDashboardPage() {
             {/* Tab 1: Properties */}
             {activeTab === "PROPERTIES" && (
               <>
+                {/* In-Progress Draft Card / Banner */}
+                {activeDraft && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-card to-amber-500/5 border border-amber-500/30 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left mb-6"
+                  >
+                    <div className="flex items-start gap-3.5 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600 shrink-0 mt-0.5">
+                        <Bookmark className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            Autosaved Draft
+                          </span>
+                          <span className="text-[11px] font-semibold text-muted-foreground">
+                            Step {activeDraft.currentStep || 1} of 6 Completed ({Math.round(((activeDraft.currentStep || 1) / 6) * 100)}%)
+                          </span>
+                        </div>
+                        <h3 className="font-heading text-sm sm:text-base font-extrabold text-primary truncate">
+                          {(activeDraft.formValues?.propertyName as string) || "Untitled Property Listing"}
+                        </h3>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {[(activeDraft.formValues?.propertyType as string), (activeDraft.formValues?.area as string), (activeDraft.formValues?.city as string)].filter(Boolean).join(" • ") || "Incomplete details"}
+                        </p>
+                      </div>
+                    </div>
 
-            {/* Empty State vs List grid switcher */}
-            {properties.length === 0 ? (
-              <EmptyState
-                emoji="🏢"
-                title="No Properties Listed Yet"
-                description="List your hostel or PG accommodation to start receiving verified buyer leads and digital bookings."
-                primaryAction={{
-                  label: "Create First Listing",
-                  onClick: handleAddProperty,
-                }}
-                secondaryAction={{
-                  label: "Return to Homepage",
-                  href: "/",
-                }}
-              />
-            ) : (
-              /* Published Listings Section */
-              <div className="space-y-4 sm:space-y-6 text-left">
-                <div className="flex justify-between items-center border-b border-border/60 pb-3 mb-4 sm:mb-6">
-                  <h2 className="font-heading text-lg sm:text-xl font-extrabold text-primary">
-                    Your Properties
-                  </h2>
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    {properties.length} Listings
-                  </span>
-                </div>
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      <button
+                        type="button"
+                        onClick={handleDiscardDraft}
+                        className="p-2.5 rounded-xl border border-border/70 hover:border-rose-500/40 text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                        title="Discard this draft"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Discard</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleResumeDraft}
+                        className="px-4 py-2.5 rounded-xl bg-primary hover:bg-secondary text-primary-foreground text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-1.5 transition-all cursor-pointer select-none"
+                      >
+                        <span>Resume Listing</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Empty State vs List grid switcher */}
+                {properties.length === 0 ? (
+                  <EmptyState
+                    emoji="🏢"
+                    title="No Properties Listed Yet"
+                    description="List your hostel or PG accommodation to start receiving verified buyer leads and digital bookings."
+                    primaryAction={{
+                      label: "Create First Listing",
+                      onClick: handleAddProperty,
+                    }}
+                    secondaryAction={{
+                      label: "Return to Homepage",
+                      href: "/",
+                    }}
+                  />
+                ) : (
+                  /* Published Listings Section */
+                  <div className="space-y-4 sm:space-y-6 text-left">
+                    <div className="flex justify-between items-center border-b border-border/60 pb-3 mb-4 sm:mb-6">
+                      <h2 className="font-heading text-lg sm:text-xl font-extrabold text-primary">
+                        Your Properties
+                      </h2>
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        {properties.length} Listings
+                      </span>
+                    </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   <AnimatePresence>
@@ -390,7 +517,7 @@ export default function OwnerDashboardPage() {
                         {/* Card Info */}
                         <div className="p-5 flex-1 flex flex-col gap-4">
                           <div className="space-y-1">
-                            <h3 className="font-heading text-base font-extrabold text-primary line-clamp-1">
+                            <h3 className="font-heading text-base font-extrabold text-primary break-words leading-tight">
                               {prop.propertyName}
                             </h3>
                             <div className="flex items-center gap-1 text-muted-foreground text-xs">
@@ -414,11 +541,11 @@ export default function OwnerDashboardPage() {
                           <div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Eye className="w-4 h-4 text-secondary shrink-0" />
-                              {prop.views} views
+                              {prop.status === "Published" || (prop.status as string) === "active" ? (prop.views || 0) : 0} views
                             </span>
                             <span className="flex items-center gap-1">
                               <Users className="w-4 h-4 text-secondary shrink-0" />
-                              {prop.enquiries} enquiries
+                              {prop.status === "Published" || (prop.status as string) === "active" ? (prop.enquiries || 0) : 0} enquiries
                             </span>
                           </div>
 

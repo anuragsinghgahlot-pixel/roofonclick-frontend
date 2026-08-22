@@ -488,6 +488,7 @@ function PropertyDetailsContent() {
                         onScheduleVisit={() => setIsVisitModalOpen(true)}
                         onSendEnquiry={() => setIsEnquiryModalOpen(true)}
                         onContactOwner={() => setIsEnquiryModalOpen(true)}
+                        onBookCall={() => setIsBookCallModalOpen(true)}
                       />
                     </>
                   )}

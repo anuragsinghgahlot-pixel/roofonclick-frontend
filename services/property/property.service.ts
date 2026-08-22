@@ -111,8 +111,8 @@ class PropertyServiceImpl {
       startingRent,
       startingPrice: startingRent,
       status: "Published",
-      views: data.views || Math.floor(Math.random() * 45) + 12,
-      enquiries: data.enquiries || Math.floor(Math.random() * 8) + 1,
+      views: Number(data.views || 0),
+      enquiries: Number(data.enquiries || 0),
       createdAt: data.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

@@ -276,6 +276,25 @@ export const ListingsAPI = {
     return adaptListing(res.data!.listing);
   },
 
+  async updateRooms(id: string, rooms: any[]): Promise<Property> {
+    const formattedRooms = rooms.map((r) => ({
+      id: r.id,
+      roomType: r.sharingType || r.roomType,
+      sharingType: r.sharingType || r.roomType,
+      monthlyRent: r.monthlyRent || r.rent || 0,
+      securityDeposit: r.securityDeposit || 0,
+      totalRooms: Number(r.totalRooms ?? r.availableRooms ?? 1),
+      availableRooms: Number(r.availableRooms ?? 0),
+      attachedBathroom: r.attachedBathroom ?? true,
+      furnished: r.furnished || "Fully Furnished",
+    }));
+
+    const res = await apiClient.put<{ listing: BackendListing }>(`/api/listings/${id}`, {
+      rooms: formattedRooms,
+    });
+    return adaptListing(res.data!.listing);
+  },
+
   async deleteListing(id: string): Promise<void> {
     await apiClient.delete(`/api/listings/${id}`);
   },

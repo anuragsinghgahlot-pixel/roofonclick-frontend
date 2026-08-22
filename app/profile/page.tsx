@@ -426,7 +426,7 @@ export default function ProfilePage() {
                 <h2 className="font-heading text-xl font-extrabold text-primary truncate">
                   {user?.name || "RoofOnClick Member"}
                 </h2>
-                <p className="font-body text-xs text-muted-foreground truncate">
+                <p className="font-body text-xs text-muted-foreground break-all select-all">
                   {user?.email}
                 </p>
                 <div className="pt-2 flex justify-center items-center gap-2">
@@ -654,8 +654,8 @@ export default function ProfilePage() {
                     <span className="font-heading text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       Email Address
                     </span>
-                    <div className="p-3 rounded-xl bg-muted/40 border border-border/40 font-body text-xs font-semibold text-primary flex items-center justify-between">
-                      <span className="truncate">{user?.email}</span>
+                    <div className="p-3 rounded-xl bg-muted/40 border border-border/40 font-body text-xs font-semibold text-primary flex items-center justify-between gap-2">
+                      <span className="break-all select-all">{user?.email || "Not provided"}</span>
                       <Lock className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
                     </div>
                   </div>
@@ -859,37 +859,41 @@ export default function ProfilePage() {
                   {/* Email Verification */}
                   <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <Mail className="w-4 h-4 text-emerald-600" />
-                      <span className="font-heading text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      <Mail className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="font-heading text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full shrink-0">
                         Verified ✓
                       </span>
                     </div>
                     <span className="font-heading text-xs font-bold text-primary">Email Verification</span>
-                    <span className="font-body text-[11px] text-muted-foreground truncate">{user?.email}</span>
+                    <span className="font-body text-xs font-semibold text-foreground/85 break-all select-all">
+                      {user?.email || "Not provided"}
+                    </span>
                   </div>
 
                   {/* Phone Verification */}
                   <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <Phone className="w-4 h-4 text-emerald-600" />
-                      <span className="font-heading text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      <Phone className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="font-heading text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full shrink-0">
                         Verified ✓
                       </span>
                     </div>
                     <span className="font-heading text-xs font-bold text-primary">Phone Verification</span>
-                    <span className="font-body text-[11px] text-muted-foreground">{user?.phone || phoneNumber}</span>
+                    <span className="font-body text-xs font-semibold text-foreground/85 break-all select-all">
+                      {user?.phone || user?.phoneNumber || phoneNumber || "Not provided"}
+                    </span>
                   </div>
 
                   {/* Identity Verification */}
                   <div className="p-4 rounded-2xl bg-muted/30 border border-border/60 flex flex-col gap-2 opacity-75">
                     <div className="flex items-center justify-between">
-                      <Sparkles className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-heading text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border/40">
+                      <Sparkles className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span className="font-heading text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border/40 shrink-0">
                         Coming Soon
                       </span>
                     </div>
                     <span className="font-heading text-xs font-bold text-primary">Identity / Govt ID</span>
-                    <span className="font-body text-[11px] text-muted-foreground">Aadhaar / Driving License</span>
+                    <span className="font-body text-xs text-muted-foreground">Aadhaar / Driving License</span>
                   </div>
                 </div>
               </motion.div>

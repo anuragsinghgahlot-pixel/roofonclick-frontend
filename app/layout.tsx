@@ -1,40 +1,32 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { NavigationHandler } from "@/components/shared/navigation-handler";
-import { WishlistProvider } from "@/providers/wishlist-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
-import { NavigationProvider } from "@/providers/navigation-provider";
-import { SmoothScrollProvider } from "@/providers/smooth-scroll-provider";
+import { WishlistProvider } from "@/providers/wishlist-provider";
 import { CityProvider } from "@/providers/city-provider";
-import { Suspense } from "react";
+import { ClientProviders } from "@/components/shared/client-providers";
+import Script from "next/script";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-heading",
   subsets: ["latin"],
   display: "swap",
+  preload: true,
 });
 
 const inter = Inter({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {
   title: "RoofOnClick - Find Hostels & PGs in Indore",
   description: "Modern accommodation discovery platform helping students and working professionals find premium hostels and PGs in Indore.",
 };
-
-import { GuestAuthPromptModal } from "@/components/modals/guest-auth-prompt-modal";
-import { PlatformReviewModal } from "@/components/modals/platform-review-modal";
-import { PushNotificationPrompt } from "@/components/shared/push-notification-prompt";
-import { Toaster } from "@/components/ui/toaster";
-import { CompareProvider } from "@/providers/compare-provider";
-import { CompareBar } from "@/components/compare/compare-bar";
-
-import Script from "next/script";
 
 export default function RootLayout({
   children,
@@ -78,20 +70,10 @@ export default function RootLayout({
           <AuthProvider>
             <CityProvider>
               <WishlistProvider>
-                <CompareProvider>
-                  <SmoothScrollProvider>
-                    <Suspense fallback={null}>
-                      <NavigationProvider>
-                        {children}
-                        <CompareBar />
-                        <GuestAuthPromptModal />
-                        <PlatformReviewModal />
-                        <PushNotificationPrompt />
-                        <Toaster />
-                      </NavigationProvider>
-                    </Suspense>
-                  </SmoothScrollProvider>
-                </CompareProvider>
+                {/* ClientProviders is a "use client" component — all ssr:false dynamic imports live there */}
+                <ClientProviders>
+                  {children}
+                </ClientProviders>
               </WishlistProvider>
             </CityProvider>
           </AuthProvider>

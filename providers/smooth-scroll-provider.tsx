@@ -29,6 +29,10 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
 
+    // Disable Lenis on touch devices — native momentum scroll is faster & smoother on mobile
+    const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
+    if (isTouchDevice) return;
+
     // Initialize singleton Lenis instance
     const instance = new Lenis({
       duration: 1.1,
