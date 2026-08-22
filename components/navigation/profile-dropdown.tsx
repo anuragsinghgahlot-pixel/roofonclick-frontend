@@ -363,7 +363,7 @@ export function ProfileDropdown() {
                   <button
                     type="button"
                     role="menuitem"
-                    onClick={() => handleNavigate("/owner/dashboard")}
+                    onClick={() => handleNavigate("/owner/dashboard?tab=properties")}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-heading text-xs font-semibold text-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200 cursor-pointer text-left focus:outline-none focus:bg-primary/5 focus:text-primary"
                   >
                     <Building className="w-4 h-4 text-secondary shrink-0" />

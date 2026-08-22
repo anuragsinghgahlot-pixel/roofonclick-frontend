@@ -178,10 +178,12 @@ interface WizardContextType {
   handleNext: () => Promise<void>;
   handlePrev: () => void;
   handleReset: () => void;
+  handleSaveDraftAndExit: () => void;
   isStepValid: boolean;
   isStepUnlocked: (step: number) => boolean;
   handlePublish: () => void;
   isEditMode: boolean;
+  isLoadingProperty: boolean;
 }
 
 const WizardContext = React.createContext<WizardContextType | undefined>(undefined);
@@ -255,71 +257,149 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
   // Watch values for autosaving draft locally
   const formValues = useWatch({ control: form.control });
   const [isInitialized, setIsInitialized] = React.useState(false);
+  const [isLoadingProperty, setIsLoadingProperty] = React.useState(!!editPropertyId);
   const hydratedIdRef = React.useRef<string | null>(null);
 
   // Load property details on mount (Edit Mode vs Create Draft Mode)
   React.useEffect(() => {
-    if (editPropertyId) {
-      // Prevent re-resetting form when navigating steps if already hydrated
-      if (hydratedIdRef.current === editPropertyId) return;
+    let isMounted = true;
 
-      // Edit Mode: Read saved property from PropertyService
-      const found = PropertyService.getPropertyById(editPropertyId);
-      if (found) {
-        const restoredImgs = (found.images || []).map((img: MediaImage) => {
-          if (!img.url || img.url.startsWith("blob:")) {
-            return { ...img, url: "" };
-          }
-          return img;
-        });
+    async function loadPropertyForEdit(id: string) {
+      setIsLoadingProperty(true);
+      try {
+        let found: Property | null = null;
+        // 1. Fetch from live backend API first
+        try {
+          found = await ListingsAPI.getListingById(id);
+        } catch (apiErr) {
+          console.warn("[WizardContext] Backend fetch failed, falling back to local cache", apiErr);
+        }
 
-        // Ensure room configurations are mapped properly on hydration
-        const normalizedRooms = (found.rooms || found.roomConfigurations || []).map((rm) => ({
-          sharingType: rm.sharingType || rm.roomType || "Single",
-          monthlyRent: Number(rm.monthlyRent ?? rm.rent ?? 8500),
-          securityDeposit: Number(rm.securityDeposit ?? 0),
-          totalRooms: Number(rm.totalRooms ?? rm.availableRooms ?? 1),
-          availableRooms: Number(rm.availableRooms ?? 1),
-          gender: (rm.gender && ["Boys", "Girls", "Co-living", "Any"].includes(rm.gender) ? rm.gender : "Boys") as "Boys" | "Girls" | "Co-living" | "Any",
-          attachedBathroom: typeof rm.attachedBathroom === "boolean" ? rm.attachedBathroom : true,
-          furnished: (rm.furnished && ["Fully Furnished", "Semi Furnished", "Unfurnished"].includes(rm.furnished) ? rm.furnished : "Fully Furnished") as "Fully Furnished" | "Semi Furnished" | "Unfurnished",
-          roomType: rm.roomType || rm.sharingType || "Single Sharing",
-          rent: Number(rm.rent ?? rm.monthlyRent ?? 8500),
-        }));
+        // 2. Fallback to local PropertyService if not found or offline
+        if (!found) {
+          found = PropertyService.getPropertyById(id);
+        }
 
-        form.reset({
-          ...found,
-          propertyType: (found.propertyType as any) || "Hostel",
-          gender: (found.gender as any) || "Boys",
-          rooms: normalizedRooms,
-          images: restoredImgs,
-        } as any);
-        hydratedIdRef.current = editPropertyId;
-      }
-    } else {
-      if (hydratedIdRef.current === "draft") return;
+        if (found && isMounted) {
+          const restoredImgs = (found.images || []).map((img: any, i: number) => {
+            if (!img.url || img.url.startsWith("blob:")) {
+              return { ...img, url: "" };
+            }
+            return {
+              id: img.id || img.key || `img-${id}-${i}`,
+              url: img.url,
+              name: img.name || `Photo ${i + 1}`,
+              isCover: img.isCover ?? i === 0,
+            };
+          });
 
-      // Create Mode: Read draft from PropertyService
-      const draft = PropertyService.getDraft();
-      if (draft && draft.formValues) {
-        const draftImgs = (draft.formValues.images as MediaImage[] | undefined) || [];
-        const restoredImgs = draftImgs.map((img: MediaImage) => {
-          if (img.url && img.url.startsWith("blob:")) {
-            return { ...img, url: "" };
-          }
-          return img;
-        });
-        form.reset({
-          ...draft.formValues,
-          images: restoredImgs,
-        } as any);
-        if (draft.currentStep && !searchParams.get("step")) {
-          setStep(draft.currentStep);
+          // Ensure room configurations are mapped properly on hydration
+          const normalizedRooms = (found.rooms || found.roomConfigurations || []).map((rm) => ({
+            id: rm.id,
+            sharingType: rm.sharingType || rm.roomType || "Single",
+            monthlyRent: Number(rm.monthlyRent ?? rm.rent ?? 8500),
+            securityDeposit: Number(rm.securityDeposit ?? 0),
+            totalRooms: Number(rm.totalRooms ?? rm.availableRooms ?? 1),
+            availableRooms: Number(rm.availableRooms ?? 1),
+            gender: (rm.gender && ["Boys", "Girls", "Co-living", "Any"].includes(rm.gender) ? rm.gender : "Boys") as "Boys" | "Girls" | "Co-living" | "Any",
+            attachedBathroom: typeof rm.attachedBathroom === "boolean" ? rm.attachedBathroom : true,
+            furnished: (rm.furnished && ["Fully Furnished", "Semi Furnished", "Unfurnished"].includes(rm.furnished) ? rm.furnished : "Fully Furnished") as "Fully Furnished" | "Semi Furnished" | "Unfurnished",
+            roomType: rm.roomType || rm.sharingType || "Single Sharing",
+            rent: Number(rm.rent ?? rm.monthlyRent ?? 8500),
+            availability: (rm as any).availability || "Available Now",
+            mealsIncluded: (rm as any).mealsIncluded ?? true,
+            electricity: (rm as any).electricity || "Included",
+          }));
+
+          const normalizedRules = {
+            smokingAllowed: !!found.rules?.smokingAllowed,
+            drinkingAllowed: !!found.rules?.drinkingAllowed,
+            visitorsAllowed: found.rules?.visitorsAllowed !== undefined ? !!found.rules.visitorsAllowed : true,
+            petsAllowed: !!found.rules?.petsAllowed,
+            loudMusicAllowed: !!found.rules?.loudMusicAllowed,
+            gateClosingEnabled: !!found.rules?.gateClosingEnabled,
+            gateClosingTime: found.rules?.gateClosingTime || "22:00",
+          };
+
+          form.reset({
+            id: found.id || (found as any)._id || id,
+            propertyName: found.propertyName || (found as any).title || "",
+            propertyType: (found.propertyType as any) || "Hostel",
+            gender: (found.gender as any) || "Boys",
+            description: found.description || "",
+            city: found.city || (found.address as any)?.city || "Indore",
+            area: found.area || (found.address as any)?.area || "",
+            address: (typeof found.address === "string" ? found.address : (found.address as any)?.full) || "",
+            landmark: found.landmark || (found.address as any)?.landmark || "",
+            rooms: normalizedRooms.length > 0 ? normalizedRooms : [
+              {
+                sharingType: "Single",
+                monthlyRent: found.startingRent || 8500,
+                securityDeposit: 0,
+                totalRooms: 1,
+                availableRooms: 1,
+                gender: (found.gender as any) || "Boys",
+                attachedBathroom: true,
+                furnished: "Fully Furnished",
+                roomType: "Single Sharing",
+                rent: found.startingRent || 8500,
+                availability: "Available Now",
+                mealsIncluded: true,
+                electricity: "Included",
+              },
+            ],
+            apartmentDetails: found.apartmentDetails,
+            apartmentPricing: found.apartmentPricing,
+            amenities: found.amenities || [],
+            rules: normalizedRules,
+            nearby: found.nearby || [],
+            images: restoredImgs,
+          } as any);
+
+          hydratedIdRef.current = id;
+        }
+      } catch (e) {
+        console.error("[WizardContext] Error loading property for editing:", e);
+      } finally {
+        if (isMounted) {
+          setIsLoadingProperty(false);
+          setIsInitialized(true);
         }
       }
-      hydratedIdRef.current = "draft";
     }
-    setIsInitialized(true);
+
+    if (editPropertyId) {
+      if (hydratedIdRef.current !== editPropertyId) {
+        loadPropertyForEdit(editPropertyId);
+      }
+    } else {
+      if (hydratedIdRef.current !== "draft") {
+        const draft = PropertyService.getDraft();
+        if (draft && draft.formValues) {
+          const draftImgs = (draft.formValues.images as MediaImage[] | undefined) || [];
+          const restoredImgs = draftImgs.map((img: MediaImage) => {
+            if (img.url && img.url.startsWith("blob:")) {
+              return { ...img, url: "" };
+            }
+            return img;
+          });
+          form.reset({
+            ...draft.formValues,
+            images: restoredImgs,
+          } as any);
+          if (draft.currentStep && !searchParams.get("step")) {
+            setStep(draft.currentStep);
+          }
+        }
+        hydratedIdRef.current = "draft";
+      }
+      setIsInitialized(true);
+      setIsLoadingProperty(false);
+    }
+
+    return () => {
+      isMounted = false;
+    };
   }, [editPropertyId, form, searchParams, setStep]);
 
   // Autosave currentStep and formValues via PropertyService (Only for Create mode)
@@ -328,14 +408,18 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
       const rawImgs = (formValues.images as Partial<MediaImage>[] | undefined) || [];
       const cleanFormValues = {
         ...formValues,
-        images: rawImgs.map((img: Partial<MediaImage>) => ({
-          ...img,
-          url: img.url && img.url.startsWith("blob:") ? "blob:expired" : img.url,
+        images: rawImgs.map((img) => ({
+          id: img.id || "",
+          url: img.url || "",
+          name: img.name || "",
+          size: img.size || 0,
+          isCover: !!img.isCover,
+          status: img.status || "success",
         })),
       };
       PropertyService.saveDraft({
         currentStep,
-        formValues: cleanFormValues,
+        formValues: cleanFormValues as any,
       });
     }
   }, [currentStep, formValues, isInitialized, editPropertyId]);
@@ -390,24 +474,34 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
 
   // Derived validation status for the active step
   const isStepValid = React.useMemo(() => {
-    if (currentStep === 1) return step1Valid;
-    if (currentStep === 2) return step2Valid;
-    if (currentStep === 3) return step3Valid;
-    if (currentStep === 4) return step4Valid;
-    if (currentStep === 5) return step5Valid;
-    return true; // Step 6 Review is always valid
+    switch (currentStep) {
+      case 1:
+        return step1Valid;
+      case 2:
+        return step2Valid;
+      case 3:
+        return step3Valid;
+      case 4:
+        return step4Valid;
+      case 5:
+        return step5Valid;
+      case 6:
+        return step1Valid && step2Valid && step3Valid && step4Valid && step5Valid;
+      default:
+        return false;
+    }
   }, [currentStep, step1Valid, step2Valid, step3Valid, step4Valid, step5Valid]);
 
   // Check if a step is unlocked
   const isStepUnlocked = React.useCallback(
-    (stepIndex: number) => {
-      if (editPropertyId) return true; // In Edit Mode, all steps are unlocked!
-      if (stepIndex === 1) return true;
-      if (stepIndex === 2) return step1Valid;
-      if (stepIndex === 3) return step1Valid && step2Valid;
-      if (stepIndex === 4) return step1Valid && step2Valid && step3Valid;
-      if (stepIndex === 5) return step1Valid && step2Valid && step3Valid && step4Valid;
-      if (stepIndex === 6) return step1Valid && step2Valid && step3Valid && step4Valid && step5Valid;
+    (step: number) => {
+      if (editPropertyId) return true; // In edit mode, all steps are unlocked for seamless jumping
+      if (step === 1) return true;
+      if (step === 2) return step1Valid;
+      if (step === 3) return step1Valid && step2Valid;
+      if (step === 4) return step1Valid && step2Valid && step3Valid;
+      if (step === 5) return step1Valid && step2Valid && step3Valid && step4Valid;
+      if (step === 6) return step1Valid && step2Valid && step3Valid && step4Valid && step5Valid;
       return false;
     },
     [editPropertyId, step1Valid, step2Valid, step3Valid, step4Valid, step5Valid]
@@ -432,7 +526,7 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
       const validCount = images.filter((img) => img.status === "success" || (!img.status && img.url)).length;
 
       if (isUploading) {
-        toast.error("Please wait for all photos to finish uploading to Cloudflare R2.");
+        toast.error("Please wait for all property photos to finish uploading to RoofOnClick.");
         return;
       }
       if (hasErrors) {
@@ -495,6 +589,29 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
     }
   }, [form, setStep]);
 
+  const handleSaveDraftAndExit = React.useCallback(() => {
+    const rawImgs = (form.getValues("images") as Partial<MediaImage>[] | undefined) || [];
+    const cleanFormValues = {
+      ...form.getValues(),
+      images: rawImgs.map((img) => ({
+        id: img.id || "",
+        url: img.url || "",
+        name: img.name || "",
+        size: img.size || 0,
+        isCover: !!img.isCover,
+        status: img.status || "success",
+      })),
+    };
+    PropertyService.saveDraft({
+      currentStep,
+      formValues: cleanFormValues as any,
+    });
+    toast.success("Draft saved successfully! You can resume anytime from your dashboard.", {
+      duration: 3000,
+    });
+    router.push("/owner/dashboard");
+  }, [currentStep, form, router]);
+
   const handlePublish = React.useCallback(async () => {
     const values = form.getValues() as Partial<Property>;
 
@@ -525,10 +642,12 @@ export function WizardProvider({ children, editPropertyId }: { children: React.R
         handleNext,
         handlePrev,
         handleReset,
+        handleSaveDraftAndExit,
         isStepValid,
         isStepUnlocked,
         handlePublish,
         isEditMode: !!editPropertyId,
+        isLoadingProperty,
       }}
     >
       {children}

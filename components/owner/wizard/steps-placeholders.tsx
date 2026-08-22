@@ -79,24 +79,30 @@ export function StepReview() {
                 {values.propertyType || "—"} ({values.gender || "—"})
               </span>
             </div>
-            <div>
-              <span className="text-[10px] font-semibold text-muted-foreground block">Ownership Structure</span>
-              <span className="font-body text-xs font-bold text-secondary">
-                {values.propertyManagementType || "Independent Property"}
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] font-semibold text-muted-foreground block">Food / Mess Facility</span>
-              <span className="font-body text-xs font-bold text-primary">
-                {values.foodType || "3-Time Mess Available"}
-              </span>
-            </div>
-            <div className="sm:col-span-2">
-              <span className="text-[10px] font-semibold text-muted-foreground block">Short Description</span>
-              <span className="font-body text-xs text-muted-foreground leading-relaxed italic block">
-                &quot;{values.description || "No description provided."}&quot;
-              </span>
-            </div>
+            {values.propertyManagementType && (
+              <div>
+                <span className="text-[10px] font-semibold text-muted-foreground block">Ownership Structure</span>
+                <span className="font-body text-xs font-bold text-secondary">
+                  {values.propertyManagementType}
+                </span>
+              </div>
+            )}
+            {values.foodType && (
+              <div>
+                <span className="text-[10px] font-semibold text-muted-foreground block">Food / Mess Facility</span>
+                <span className="font-body text-xs font-bold text-primary">
+                  {values.foodType}
+                </span>
+              </div>
+            )}
+            {values.description && (
+              <div className="sm:col-span-2">
+                <span className="text-[10px] font-semibold text-muted-foreground block">Short Description</span>
+                <span className="font-body text-xs text-muted-foreground leading-relaxed italic block">
+                  &quot;{values.description}&quot;
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -111,10 +117,12 @@ export function StepReview() {
               <span className="text-[10px] font-semibold text-muted-foreground block">Area / City</span>
               <span className="font-body text-xs font-bold text-primary">{values.area || "—"}, {values.city || "—"}</span>
             </div>
-            <div>
-              <span className="text-[10px] font-semibold text-muted-foreground block">Landmark</span>
-              <span className="font-body text-xs font-bold text-primary">{values.landmark || "—"}</span>
-            </div>
+            {values.landmark && (
+              <div>
+                <span className="text-[10px] font-semibold text-muted-foreground block">Landmark</span>
+                <span className="font-body text-xs font-bold text-primary">{values.landmark}</span>
+              </div>
+            )}
             <div className="sm:col-span-2">
               <span className="text-[10px] font-semibold text-muted-foreground block">Complete Address</span>
               <span className="font-body text-xs text-primary leading-relaxed block">{values.address || "—"}</span>
@@ -183,42 +191,55 @@ export function StepReview() {
                     ₹{(values.apartmentPricing?.securityDeposit || values.rooms?.[0]?.securityDeposit || 0).toLocaleString()}
                   </span>
                 </div>
-                <div>
-                  <span className="text-[10px] font-semibold text-muted-foreground block">Furnishing & Layout</span>
-                  <span className="font-bold text-primary block">
-                    {values.apartmentDetails?.furnished || values.rooms?.[0]?.furnished || "Fully Furnished"} ({values.propertyType})
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-semibold text-muted-foreground block">Kitchen & Bathroom</span>
-                  <span className="font-bold text-primary block">
-                    {values.apartmentDetails?.kitchenType || "Modular Kitchen"} • {values.apartmentDetails?.bathroomType || "Attached"} Bath
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-semibold text-muted-foreground block">Balcony & Parking</span>
-                  <span className="font-bold text-primary block">
-                    {values.apartmentDetails?.balcony ? "Balcony Included" : "No Balcony"} • {values.apartmentDetails?.parking || "Car & Bike"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-semibold text-muted-foreground block">Floor & Infrastructure</span>
-                  <span className="font-bold text-primary block">
-                    Floor {values.apartmentDetails?.floorNumber || 2} of {values.apartmentDetails?.totalFloors || 5} • {values.apartmentDetails?.liftAvailable ? "Lift Available" : "Stairs Only"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-semibold text-muted-foreground block">Brokerage & Maintenance</span>
-                  <span className="font-bold text-secondary block">
-                    {values.apartmentPricing?.brokerage || "Zero Brokerage"} • ₹{values.apartmentPricing?.maintenance || 0}/mo Maint.
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-semibold text-muted-foreground block">Utilities & Availability</span>
-                  <span className="font-bold text-emerald-600 block">
-                    {values.apartmentPricing?.electricityIncluded ? "Electricity Free" : "Electricity Extra"} • Available {values.apartmentPricing?.availabilityDate || "Immediately"}
-                  </span>
-                </div>
+                {(values.apartmentDetails?.furnished || values.rooms?.[0]?.furnished) && (
+                  <div>
+                    <span className="text-[10px] font-semibold text-muted-foreground block">Furnishing</span>
+                    <span className="font-bold text-primary block">
+                      {values.apartmentDetails?.furnished || values.rooms?.[0]?.furnished}
+                    </span>
+                  </div>
+                )}
+                {(values.apartmentDetails?.kitchenType || values.apartmentDetails?.bathroomType) && (
+                  <div>
+                    <span className="text-[10px] font-semibold text-muted-foreground block">Kitchen & Bathroom</span>
+                    <span className="font-bold text-primary block">
+                      {[values.apartmentDetails?.kitchenType, values.apartmentDetails?.bathroomType ? `${values.apartmentDetails.bathroomType} Bath` : null].filter(Boolean).join(" • ")}
+                    </span>
+                  </div>
+                )}
+                {values.apartmentDetails?.balcony !== undefined && (
+                  <div>
+                    <span className="text-[10px] font-semibold text-muted-foreground block">Balcony</span>
+                    <span className="font-bold text-primary block">
+                      {values.apartmentDetails.balcony ? "Balcony Available" : "No Balcony"}
+                    </span>
+                  </div>
+                )}
+                {values.apartmentDetails?.parking && (
+                  <div>
+                    <span className="text-[10px] font-semibold text-muted-foreground block">Parking</span>
+                    <span className="font-bold text-primary block">
+                      {values.apartmentDetails.parking}
+                    </span>
+                  </div>
+                )}
+                {(values.apartmentDetails?.floorNumber !== undefined || values.apartmentDetails?.totalFloors !== undefined) && (
+                  <div>
+                    <span className="text-[10px] font-semibold text-muted-foreground block">Floor Details</span>
+                    <span className="font-bold text-primary block">
+                      {values.apartmentDetails?.floorNumber !== undefined ? `Floor ${values.apartmentDetails.floorNumber}` : ""}
+                      {values.apartmentDetails?.totalFloors !== undefined ? ` of ${values.apartmentDetails.totalFloors}` : ""}
+                    </span>
+                  </div>
+                )}
+                {values.apartmentPricing?.maintenance !== undefined && (
+                  <div>
+                    <span className="text-[10px] font-semibold text-muted-foreground block">Maintenance</span>
+                    <span className="font-bold text-secondary block">
+                      ₹{values.apartmentPricing.maintenance}/mo
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           ) : (

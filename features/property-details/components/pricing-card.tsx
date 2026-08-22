@@ -4,6 +4,7 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import {
   Phone,
+  PhoneCall,
   Zap,
   Check,
   ShieldCheck,
@@ -50,6 +51,8 @@ export interface PricingCardProps {
   onScheduleVisit?: () => void;
   /** Callback when "Send Enquiry" is clicked */
   onSendEnquiry?: () => void;
+  /** Callback when "Book a Call" is clicked */
+  onBookCall?: () => void;
   /** Optional class override */
   className?: string;
 }
@@ -131,6 +134,7 @@ export function PricingCard({
   onContactOwner,
   onScheduleVisit,
   onSendEnquiry,
+  onBookCall,
   className,
 }: PricingCardProps) {
   const avail = AVAILABILITY_CONFIG[availability];
@@ -377,8 +381,8 @@ export function PricingCard({
             {isSoldOut ? "Sold Out" : "Book Now"}
           </motion.button>
 
-        {/* Schedule Visit & Send Enquiry Grid */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Schedule Visit, Send Enquiry & Book Call Grid */}
+        <div className="grid grid-cols-3 gap-2">
           <motion.button
             type="button"
             data-no-intercept="true"
@@ -386,10 +390,10 @@ export function PricingCard({
             whileHover={{ scale: 1.015, y: -1 }}
             whileTap={{ scale: 0.985 }}
             transition={{ duration: 0.2, ease: PREMIUM_EASE }}
-            className="flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl border border-secondary/40 bg-secondary/10 hover:bg-secondary hover:text-secondary-foreground text-secondary font-heading text-xs font-bold transition-all duration-300 cursor-pointer shadow-sm"
+            className="flex flex-col items-center justify-center gap-1 py-3 px-1.5 rounded-xl border border-secondary/40 bg-secondary/10 hover:bg-secondary hover:text-secondary-foreground text-secondary font-heading text-[11px] font-bold transition-all duration-300 cursor-pointer shadow-sm min-h-[52px]"
           >
             <CalendarCheck className="w-3.5 h-3.5" />
-            <span>Schedule Visit</span>
+            <span className="leading-none">Visit</span>
           </motion.button>
 
           <motion.button
@@ -399,10 +403,23 @@ export function PricingCard({
             whileHover={{ scale: 1.015, y: -1 }}
             whileTap={{ scale: 0.985 }}
             transition={{ duration: 0.2, ease: PREMIUM_EASE }}
-            className="flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl border border-primary/25 bg-primary/5 hover:bg-primary hover:text-primary-foreground text-primary font-heading text-xs font-bold transition-all duration-300 cursor-pointer shadow-sm"
+            className="flex flex-col items-center justify-center gap-1 py-3 px-1.5 rounded-xl border border-primary/25 bg-primary/5 hover:bg-primary hover:text-primary-foreground text-primary font-heading text-[11px] font-bold transition-all duration-300 cursor-pointer shadow-sm min-h-[52px]"
           >
             <Phone className="w-3.5 h-3.5" />
-            <span>Send Enquiry</span>
+            <span className="leading-none">Enquire</span>
+          </motion.button>
+
+          <motion.button
+            type="button"
+            data-no-intercept="true"
+            onClick={onBookCall}
+            whileHover={{ scale: 1.015, y: -1 }}
+            whileTap={{ scale: 0.985 }}
+            transition={{ duration: 0.2, ease: PREMIUM_EASE }}
+            className="flex flex-col items-center justify-center gap-1 py-3 px-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500 hover:text-white text-emerald-600 font-heading text-[11px] font-bold transition-all duration-300 cursor-pointer shadow-sm min-h-[52px]"
+          >
+            <PhoneCall className="w-3.5 h-3.5" />
+            <span className="leading-none">Call</span>
           </motion.button>
         </div>
       </div>

@@ -1,12 +1,20 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bookmark } from "lucide-react";
 import { useWizard } from "./wizard-context";
 import { cn } from "@/lib/utils";
 
 export function NavigationButtons() {
-  const { currentStep, handleNext, handlePrev, handlePublish, isStepValid, isEditMode } = useWizard();
+  const {
+    currentStep,
+    handleNext,
+    handlePrev,
+    handlePublish,
+    handleSaveDraftAndExit,
+    isStepValid,
+    isEditMode,
+  } = useWizard();
 
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === 6;
@@ -43,21 +51,36 @@ export function NavigationButtons() {
         Previous
       </button>
 
-      {/* Next / Submit Button */}
-      <button
-        type="button"
-        onClick={handleNextClick}
-        disabled={!isStepValid}
-        className={cn(
-          "w-full sm:w-auto px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-300 shadow-md select-none min-h-[44px]",
-          isStepValid
-            ? "bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground cursor-pointer shadow-primary/10"
-            : "bg-muted text-muted-foreground/50 cursor-not-allowed shadow-none"
+      <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
+        {/* Save Draft Option */}
+        {!isEditMode && (
+          <button
+            type="button"
+            onClick={handleSaveDraftAndExit}
+            className="w-full sm:w-auto px-4 py-3 rounded-xl border border-border/70 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-muted/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none"
+            title="Saves all entered data and returns to owner dashboard"
+          >
+            <Bookmark className="w-3.5 h-3.5 text-secondary" />
+            <span>Save Draft & Exit</span>
+          </button>
         )}
-      >
-        <span>{finalButtonText}</span>
-        {!isLastStep && <ArrowRight className="w-3.5 h-3.5" />}
-      </button>
+
+        {/* Next / Submit Button */}
+        <button
+          type="button"
+          onClick={handleNextClick}
+          disabled={!isStepValid}
+          className={cn(
+            "w-full sm:w-auto px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-300 shadow-md select-none min-h-[44px]",
+            isStepValid
+              ? "bg-primary hover:bg-secondary text-primary-foreground hover:text-secondary-foreground cursor-pointer shadow-primary/10"
+              : "bg-muted text-muted-foreground/50 cursor-not-allowed shadow-none"
+          )}
+        >
+          <span>{finalButtonText}</span>
+          {!isLastStep && <ArrowRight className="w-3.5 h-3.5" />}
+        </button>
+      </div>
     </div>
   );
 }

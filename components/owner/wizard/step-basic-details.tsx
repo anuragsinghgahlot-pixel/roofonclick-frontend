@@ -31,9 +31,9 @@ export function StepBasicDetails() {
   const genderValue = watch("gender") || "Boys";
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 w-full min-w-0">
       {/* Property Name */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5 w-full min-w-0">
         <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider pl-1">
           Property Name <span className="text-rose-500">*</span>
         </label>
@@ -42,12 +42,12 @@ export function StepBasicDetails() {
           required
           {...register("propertyName")}
           placeholder="e.g. Skyline Elite 2 BHK Flat or Premium PG"
-          className="w-full bg-card border border-border/80 rounded-xl px-4.5 py-3.5 text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/45 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
+          className="w-full bg-card border border-border/80 rounded-xl px-4 py-3 text-xs sm:text-sm font-semibold font-body text-foreground placeholder:text-muted-foreground/45 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-300"
         />
       </div>
 
       {/* Property Type — Card Grid Selector */}
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-2.5 w-full min-w-0">
         <div className="flex items-center justify-between pl-1">
           <label className="font-heading text-xs font-bold text-primary uppercase tracking-wider">
             Property Type <span className="text-rose-500">*</span>
@@ -57,7 +57,7 @@ export function StepBasicDetails() {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 w-full min-w-0">
           {PROPERTY_TYPE_CARDS.map((type) => {
             const isSelected = propertyTypeValue === type.value;
             return (
@@ -69,27 +69,35 @@ export function StepBasicDetails() {
                   setValue("propertyType", type.value as any, { shouldValidate: true });
                 }}
                 className={cn(
-                  "flex flex-col items-start p-3 sm:p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer select-none relative overflow-hidden group",
+                  "flex flex-col items-start p-3 sm:p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer select-none relative overflow-hidden group min-w-0 w-full",
                   isSelected
                     ? "border-primary bg-primary/10 text-primary shadow-sm font-bold ring-1 ring-primary/30"
                     : "border-border/80 bg-card hover:border-primary/50 text-foreground hover:bg-muted/30"
                 )}
               >
                 <div className="flex items-center justify-between w-full mb-1">
-                  <span className="text-xl select-none">{type.icon}</span>
+                  <span className="text-lg sm:text-xl select-none">{type.icon}</span>
                   {isSelected && (
                     <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   )}
                 </div>
-                <span className="font-heading text-xs font-bold truncate w-full">
+                <span className="font-heading text-[11px] sm:text-xs font-bold truncate w-full block">
                   {type.label}
                 </span>
-                <span className="font-body text-[10px] text-muted-foreground truncate w-full mt-0.5">
+                <span className="font-body text-[9px] sm:text-[10px] text-muted-foreground truncate w-full mt-0.5 block">
                   {type.desc}
                 </span>
               </button>
             );
           })}
+        </div>
+
+        {/* Multi-unit building tip */}
+        <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 flex items-center gap-2.5 text-left mt-1">
+          <span className="text-base shrink-0">💡</span>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            <span className="font-bold text-primary">Have multiple unit types in one building?</span> (e.g. both 1 BHK & 2 BHK, or 1 BHK & 1 RK). Choose your primary category here — you can add all individual flat & room configurations in <span className="font-bold text-primary">Step 3 (Pricing & Sharing)</span>!
+          </p>
         </div>
       </div>
 
