@@ -54,6 +54,9 @@ async function request<T>(
   options: RequestInit = {},
   _retry = false
 ): Promise<ApiResponse<T>> {
+  if (!API_BASE) {
+    throw new Error("[apiClient] NEXT_PUBLIC_API_URL is not configured.");
+  }
   const url = `${API_BASE}${path}`;
   const at = TokenManager.getAT();
 

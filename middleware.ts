@@ -24,15 +24,15 @@ const AUTH_ONLY_PATHS = ["/login", "/signup"];
 const RT_KEY = "_roc_sid"; // must match TokenManager
 
 function isProtected(pathname: string): boolean {
-  return PROTECTED_PATHS.some((p) => pathname.startsWith(p));
+  return PROTECTED_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
 function isAdminPath(pathname: string): boolean {
-  return ADMIN_PATHS.some((p) => pathname.startsWith(p));
+  return ADMIN_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
 function isAuthOnlyPath(pathname: string): boolean {
-  return AUTH_ONLY_PATHS.some((p) => pathname.startsWith(p));
+  return AUTH_ONLY_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
 export function middleware(request: NextRequest) {
