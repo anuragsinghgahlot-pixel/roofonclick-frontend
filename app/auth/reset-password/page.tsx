@@ -14,7 +14,7 @@ import { evaluatePasswordStrength } from "@/lib/password-utils";
 import { AuthService } from "@/services/auth/auth.service";
 import { toast } from "sonner";
 
-export default function ResetPasswordPage() {
+export function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -238,5 +238,13 @@ export default function ResetPasswordPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <ResetPasswordContent />
+    </React.Suspense>
   );
 }

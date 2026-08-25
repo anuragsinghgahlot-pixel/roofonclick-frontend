@@ -11,16 +11,38 @@ interface NavigationContextType {
   appliedFilters: Record<string, string>;
 }
 
-const NavigationContext = React.createContext<NavigationContextType | undefined>(undefined);
+const NavigationContext = React.createContext<NavigationContextType>({
+  sourceRoute: null,
+  currentRoute: "",
+  routeParameters: {},
+  searchQuery: "",
+  appliedFilters: {},
+});
+
+function SearchParamsListener({
+  onUpdate,
+}: {
+  onUpdate: (sp: URLSearchParams | null) => void;
+}) {
+  const searchParams = useSearchParams();
+  React.useEffect(() => {
+    onUpdate(searchParams);
+  }, [searchParams, onUpdate]);
+  return null;
+}
 
 export function NavigationProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const params = useParams();
+  const [searchParams, setSearchParams] = React.useState<URLSearchParams | null>(null);
+
+  const handleParamsUpdate = React.useCallback((sp: URLSearchParams | null) => {
+    setSearchParams(sp);
+  }, []);
 
   const currentRoute = React.useMemo(() => {
     const search = searchParams?.toString();
-    return `${pathname}${search ? `?${search}` : ""}`;
+    return `${pathname || ""}${search ? `?${search}` : ""}`;
   }, [pathname, searchParams]);
 
   const sourceRoute = React.useMemo(() => {
@@ -80,6 +102,9 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
         appliedFilters,
       }}
     >
+      <React.Suspense fallback={null}>
+        <SearchParamsListener onUpdate={handleParamsUpdate} />
+      </React.Suspense>
       {children}
     </NavigationContext.Provider>
   );
@@ -87,8 +112,5 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
 
 export function useNavigation() {
   const context = React.useContext(NavigationContext);
-  if (context === undefined) {
-    throw new Error("useNavigation must be used within a NavigationProvider");
-  }
   return context;
 }

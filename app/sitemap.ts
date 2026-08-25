@@ -71,30 +71,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // ─── 2. Public Category & Type Routes ──────────────────────────────────────
-  const categoryTypes = ["Hostel", "PG", "Studio Apartment", "1 BHK", "2 BHK", "3 BHK", "Co-living"];
-  const categoryRoutes: MetadataRoute.Sitemap = categoryTypes.map((type) => ({
-    url: `${BASE_URL}/search?type=${encodeURIComponent(type)}`,
-    lastModified: now,
-    changeFrequency: "daily",
-    priority: 0.8,
-  }));
+  // ─── 2. Clean Location & Category SEO Landing Pages ───────────────────────
+  const landingRoutes: MetadataRoute.Sitemap = [];
+  const allowedCategories = ["hostels", "pg", "studio-rk", "1-bhk", "2-bhk", "3-bhk", "4-bhk"];
 
-  // ─── 3. Public City & Area Locality Routes ──────────────────────────────────
-  const areaRoutes: MetadataRoute.Sitemap = [];
   CITIES_REGISTRY.filter((city) => city.isLive).forEach((city) => {
-    // City-level search
-    areaRoutes.push({
-      url: `${BASE_URL}/search?city=${encodeURIComponent(city.id)}`,
+    // City Landing Page (/indore)
+    landingRoutes.push({
+      url: `${BASE_URL}/${encodeURIComponent(city.id)}`,
       lastModified: now,
       changeFrequency: "daily",
-      priority: 0.8,
+      priority: 0.9,
     });
 
-    // Area-level search
+    // Locality Landing Pages (/indore/vijay-nagar, etc.)
     city.popularAreas.forEach((area) => {
-      areaRoutes.push({
-        url: `${BASE_URL}/search?city=${encodeURIComponent(city.id)}&area=${encodeURIComponent(area.name)}`,
+      landingRoutes.push({
+        url: `${BASE_URL}/${encodeURIComponent(city.id)}/${encodeURIComponent(area.id)}`,
+        lastModified: now,
+        changeFrequency: "daily",
+        priority: 0.8,
+      });
+    });
+
+    // Category Landing Pages (/indore/hostels, etc.)
+    allowedCategories.forEach((catSlug) => {
+      landingRoutes.push({
+        url: `${BASE_URL}/${encodeURIComponent(city.id)}/${encodeURIComponent(catSlug)}`,
         lastModified: now,
         changeFrequency: "daily",
         priority: 0.8,
@@ -102,7 +105,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   });
 
-  // ─── 4. Dynamic Public Property Pages ──────────────────────────────────────
+  // ─── 3. Dynamic Public Active Property Pages ──────────────────────────────
   const propertyRoutes: MetadataRoute.Sitemap = [];
   try {
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
@@ -114,10 +117,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       if (res.ok) {
         const json = await res.json();
-        const listings: Array<{ _id?: string; id?: string; updatedAt?: string }> =
+        const listings: Array<{ _id?: string; id?: string; updatedAt?: string; status?: string }> =
           json.data?.listings || json.listings || [];
 
         listings.forEach((item) => {
+          // Strictly only include status="active" properties
+          const isListingActive = !item.status || item.status === "active";
+          if (!isListingActive) return;
+
           const id = item._id || item.id;
           if (id) {
             propertyRoutes.push({
@@ -137,7 +144,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Deduplicate and combine all indexable public URLs
   const urlMap = new Map<string, MetadataRoute.Sitemap[number]>();
-  [...staticRoutes, ...categoryRoutes, ...areaRoutes, ...propertyRoutes].forEach((entry) => {
+  [
+    ...staticRoutes,
+    ...landingRoutes,
+    ...propertyRoutes,
+  ].forEach((entry) => {
     if (!urlMap.has(entry.url)) {
       urlMap.set(entry.url, entry);
     }

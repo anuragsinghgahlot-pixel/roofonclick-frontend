@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 
-export default function SignupPage() {
+export function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signup } = useAuth();
@@ -441,5 +441,13 @@ export default function SignupPage() {
         </AnimatePresence>
       </main>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <SignupForm />
+    </React.Suspense>
   );
 }
