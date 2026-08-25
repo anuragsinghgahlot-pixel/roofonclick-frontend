@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 
 const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
 
-export default function OwnerDashboardPage() {
+export function OwnerDashboardContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -773,5 +773,13 @@ export default function OwnerDashboardPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function OwnerDashboardPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <OwnerDashboardContent />
+    </React.Suspense>
   );
 }

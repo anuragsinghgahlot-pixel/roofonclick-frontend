@@ -17,7 +17,7 @@ import { TokenManager } from "@/lib/token-manager";
 import { apiClient } from "@/lib/api-client";
 import { useAuth } from "@/providers/auth-provider";
 
-export default function AuthCallbackPage() {
+export function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { loginWithTokens } = useAuth();
@@ -122,5 +122,13 @@ export default function AuthCallbackPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <AuthCallbackContent />
+    </React.Suspense>
   );
 }

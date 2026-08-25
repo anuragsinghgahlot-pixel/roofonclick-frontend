@@ -24,8 +24,76 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "RoofOnClick - Find Hostels & PGs in Indore",
-  description: "Modern accommodation discovery platform helping students and working professionals find premium hostels and PGs in Indore.",
+  metadataBase: new URL("https://roofonclick.com"),
+  title: {
+    default: "RoofOnClick | Verified Hostels, PGs & Rentals in Indore",
+    template: "%s | RoofOnClick",
+  },
+  description:
+    "Discover verified student housing, boys & girls PGs, hostels, studio rooms, and BHK rental flats across popular educational and IT hubs in Indore with zero brokerage hassle.",
+  alternates: {
+    canonical: "https://roofonclick.com",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: "https://roofonclick.com/",
+    siteName: "RoofOnClick",
+    title: "RoofOnClick | Verified Hostels, PGs & Rentals in Indore",
+    description:
+      "Discover verified student housing, boys & girls PGs, hostels, studio rooms, and BHK rental flats across popular educational and IT hubs in Indore with zero brokerage hassle.",
+    images: [
+      {
+        url: "/logos/roofonclick-brand-logo.png",
+        width: 512,
+        height: 512,
+        alt: "RoofOnClick - Verified Stays in Indore",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RoofOnClick | Verified Hostels, PGs & Rentals in Indore",
+    description:
+      "Discover verified student housing, boys & girls PGs, hostels, studio rooms, and BHK rental flats across popular educational and IT hubs in Indore with zero brokerage hassle.",
+    images: ["/logos/roofonclick-brand-logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://roofonclick.com/#organization",
+      name: "RoofOnClick",
+      url: "https://roofonclick.com",
+      logo: "https://roofonclick.com/logos/roofonclick-brand-logo.png",
+      sameAs: [
+        "https://instagram.com/roofonclick",
+      ],
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://roofonclick.com/#website",
+      url: "https://roofonclick.com",
+      name: "RoofOnClick",
+      publisher: {
+        "@id": "https://roofonclick.com/#organization",
+      },
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -40,6 +108,10 @@ export default function RootLayout({
       className={`${plusJakartaSans.variable} ${inter.variable} antialiased`}
     >
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <Script
           id="chunk-error-trap"
           strategy="beforeInteractive"

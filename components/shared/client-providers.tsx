@@ -3,8 +3,9 @@
 /**
  * ClientProviders — wraps all non-SSR providers and layout-level modals.
  *
- * This MUST be a Client Component so that next/dynamic with `ssr: false`
- * is allowed (Server Components do not support it).
+ * Context providers (CompareProvider, SmoothScrollProvider, NavigationProvider)
+ * are imported directly so their children are server-rendered.
+ * Only standalone UI widgets (modals, toasts, compare bar) use ssr: false.
  *
  * Keeps the root layout.tsx a pure Server Component for optimal RSC behaviour.
  */
@@ -12,23 +13,15 @@
 import * as React from "react";
 import dynamic from "next/dynamic";
 
-// ── Providers ────────────────────────────────────────────────────────────────
-const NavigationProvider = dynamic(
-  () => import("@/providers/navigation-provider").then((m) => ({ default: m.NavigationProvider })),
-  { ssr: false }
-);
+// ── Context Providers ────────────────────────────────────────────────────────
+// Imported directly (NOT via next/dynamic ssr:false) so that {children}
+// passes through them without triggering a full SSR bailout.
+// They are already "use client" components with SSR-safe code.
+import { NavigationProvider } from "@/providers/navigation-provider";
+import { SmoothScrollProvider } from "@/providers/smooth-scroll-provider";
+import { CompareProvider } from "@/providers/compare-provider";
 
-const SmoothScrollProvider = dynamic(
-  () => import("@/providers/smooth-scroll-provider").then((m) => ({ default: m.SmoothScrollProvider })),
-  { ssr: false }
-);
-
-const CompareProvider = dynamic(
-  () => import("@/providers/compare-provider").then((m) => ({ default: m.CompareProvider })),
-  { ssr: false }
-);
-
-// ── UI / Modals ───────────────────────────────────────────────────────────────
+// ── UI / Modals (browser-only, do NOT wrap children) ──────────────────────────
 const CompareBar = dynamic(
   () => import("@/components/compare/compare-bar").then((m) => ({ default: m.CompareBar })),
   { ssr: false }
@@ -59,16 +52,16 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
     <CompareProvider>
       <SmoothScrollProvider>
-        <React.Suspense fallback={null}>
-          <NavigationProvider>
-            {children}
+        <NavigationProvider>
+          {children}
+          <React.Suspense fallback={null}>
             <CompareBar />
             <GuestAuthPromptModal />
             <PlatformReviewModal />
             <PushNotificationPrompt />
             <Toaster />
-          </NavigationProvider>
-        </React.Suspense>
+          </React.Suspense>
+        </NavigationProvider>
       </SmoothScrollProvider>
     </CompareProvider>
   );
